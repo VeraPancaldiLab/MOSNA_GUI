@@ -1,7 +1,7 @@
 # Mosna_analysis
 
--[Installation](#installation)
--[Tool](#tool)
+    -[Installation](#installation)
+    -[Tool](#tool)
 
 Using mosna to analyse IMC picture with niches analysis         ( WORK IN PROGRESS )
 
