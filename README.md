@@ -32,7 +32,3 @@ then cd /path/to/mosna_benchmark/
     pip install scipy==1.13
 
 ## Tool
-
-
-
-[def]: #tool
