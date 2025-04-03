@@ -25,7 +25,9 @@ then do:
 
     pip install ipykernel ipywidgets
     pip install tysserand
+
     cd /path/to/mosna_benchmark/
+    
     pip install -e .
     pip install scipy==1.13
 
