@@ -50,8 +50,8 @@ print("DONE\n")
 
 ##### extract data
 
-data_dir = Path("data/MBTMEStrIMCPublic/MBTMEIMCPublic")
-objects_path = data_dir / "SingleCells.csv"
+data_dir = Path("data/processed/Bram_IMC/acquired_csv_files")
+objects_path = data_dir / "15T011146-16_01.csv"
 
 if objects_path.with_suffix('.parquet').exists():
     obj = pd.read_parquet(objects_path.with_suffix('.parquet'))
