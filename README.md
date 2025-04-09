@@ -7,11 +7,11 @@ Using mosna to analyse IMC picture with niches analysis         ( WORK IN PROGRE
 
 ## Installation
 
-### To install only mosna lib and ohter dependancies you can make the following steps :
-
 First clone this repo :
 
     git clone https://github.com/AlexCoul/mosna.git
+
+### To install only mosna lib and ohter dependancies you can make the following steps :
 
 To use mosna with GPU-compatible libraries, you can try:
 
