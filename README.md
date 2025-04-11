@@ -25,7 +25,7 @@ without GPU you can do:
 
 then do:
 
-    pip install ipykernel ipywidgets
+    pip install ipykernel ipywidgets napari
     pip install tysserand
 
 then cd /path/to/mosna_benchmark/
@@ -40,8 +40,6 @@ clone my repo and run this scrip :
     cd Mosna_analysis
     conda env create -f mosna.yml -n mosna
     conda activate mosna
-    pip install ipykernel ipywidgets napari
-    pip install tysserand
     cd mosna
     pip install -e .
     pip install scipy==1.13
