@@ -40,7 +40,7 @@ clone my repo and run this scrip :
     cd Mosna_analysis
     conda env create -f mosna.yml -n mosna
     conda activate mosna
-    pip install ipykernel ipywidgets
+    pip install ipykernel ipywidgets napari
     pip install tysserand
     cd mosna
     pip install -e .
