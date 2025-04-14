@@ -48,4 +48,6 @@ clone my repo and run this scrip :
 
 Mosna use tysserand to build networks to analyse them after. This image is a tysserand network of IMC data from one patient and one sample where each nodes are cells, colored by cluster and the clustering was found by using phenograp on 34 markers.
 
-![Mon Image](images/network_tysserand_16_01.png)
+![Mon Image](images/IMC_network_A_01.png)
+
+![Mon Image](images/IF_network_A.png)
