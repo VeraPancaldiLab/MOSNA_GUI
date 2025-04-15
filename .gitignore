@@ -1,4 +1,6 @@
 mosna/
 data/processed/
 scripts_Bram/
+pandas_data/
+
 test.ipynb
