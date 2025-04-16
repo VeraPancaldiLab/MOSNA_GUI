@@ -24,5 +24,6 @@ python test_parser.py --file config.yaml
 printf "TEST --- DONE\n\n"
 
 echo '########### Tysserand Plotting ###########'
-python draw_tysserand.py 
+python draw_tysserand.py --file config.yaml
+
 conda deactivate

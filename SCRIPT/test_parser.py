@@ -9,10 +9,9 @@ def get_arguments():
 
     parser = argparse.ArgumentParser(description = "Draw tysserand for IMC / IF")
     parser.add_argument('--file', type = str, required=True, help = "config file")
-    parser.add_argument('--partial', type= bool, help="To test only one dataframe")
     args = parser.parse_args()
 
-    return args.file, args.partial
+    return args.file
 
 def get_config(config_path):
         
@@ -60,14 +59,15 @@ def merge(df1, df2, df3, df_to_compare):
     return value_compt(df_merged, df_to_compare)
 
 def main():
-    config_path, partial = get_arguments()
+    config_path = get_arguments()
     config_file = get_config(config_path)
-
-    directory_to_test = import_data(config_file['test']['directory_to_test'])
-    test_directory = import_data(config_file['test']['test_directory'])
-
-    print(f"IF markers (pandas length, originals concatenated csv length, same row between them)\t-->\t{merge(directory_to_test['IF_markers'],directory_to_test['IF_cell_pos'],directory_to_test['IF_sample_cell'],test_directory['merged_IF'])}")
-    print(f"IMC markers (pandas length, originals concatenated csv length, same row between them)\t-->\t{merge(directory_to_test['IMC_markers'],directory_to_test['IMC_cell_pos'],directory_to_test['IMC_sample_cell'],test_directory['merged_IMC'])}")
-    
+    if not config_file['test']['partial']:
+        directory_to_test = import_data(config_file['test']['directory_to_test'])
+        test_directory = import_data(config_file['test']['test_directory'])
+        if config_file['IF_import']['present_in']:
+            print(f"IF markers (pandas length, originals concatenated csv length, same row between them)\t-->\t{merge(directory_to_test['IF_markers'],directory_to_test['IF_cell_pos'],directory_to_test['IF_sample_cell'],test_directory['merged_IF'])}")
+        if config_file['IMC_import']['present_in']:
+            print(f"IMC markers (pandas length, originals concatenated csv length, same row between them)\t-->\t{merge(directory_to_test['IMC_markers'],directory_to_test['IMC_cell_pos'],directory_to_test['IMC_sample_cell'],test_directory['merged_IMC'])}")
+      
 if __name__ == "__main__":
     main()
