@@ -17,14 +17,20 @@ print("DONE")
 def get_arguments():
 
     parser = argparse.ArgumentParser(description = "Draw tysserand for IMC / IF")
-    parser.add_argument('--file', type = str, help = "config file")
+    parser.add_argument('--file', type = str, required=True, help = "config file")
     args = parser.parse_args()
 
-    return args
+    return args.file
 
 def get_config(config_path):
+        
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    full_path = os.path.join(base_path, config_path)
 
-    with open('config.yaml', 'r') as f:
+    if not os.path.exists(full_path):
+        raise FileNotFoundError(f"❌ Config file not found : {full_path}")
+    
+    with open(full_path, 'r') as f:
         config = yaml.safe_load(f)
     return config
 
