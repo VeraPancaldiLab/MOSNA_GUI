@@ -2,8 +2,8 @@
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate mosna
 
-mkdir -p pandas_data
-mkdir -p pandas_data/test
+mkdir -p ../pandas_data
+mkdir -p ../pandas_data/test
 
 python parser_csv_to_pandas.py --file config.yaml
 
