@@ -3,7 +3,6 @@ print("\n############### Welcome in parser CSV to pandas ###############")
 print("\nImport Package\t\t\t\t",end="")
 import yaml
 import argparse
-import warnings
 import numpy as np
 import pandas as pd
 import os
