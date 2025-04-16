@@ -177,8 +177,9 @@ def main():
     config_file = get_config(config_path)
     print("DONE")
 
-    print("Import IMC data\t\t\t\t",end="")
-    IMC_markers, IMC_sample_cell, IMC_cell_pos = import_data(config_file['IMC_import']['directory_path'],
+    if config_file['IMC_import']['present_in']:
+        print("Import IMC data\t\t\t\t",end="")
+        IMC_markers, IMC_sample_cell, IMC_cell_pos = import_data(config_file['IMC_import']['directory_path'],
                                                             marker_columns=config_file['IMC_import']['marker_columns'],
                                                             spatial_columns=config_file['IMC_import']['spatial_columns'],
                                                             cell_id_columns=config_file['IMC_import']['cell_id_columns'],
@@ -188,9 +189,10 @@ def main():
                                                             columns_to_drop=config_file['IMC_import']['columns_to_drop'],
                                                             other_columns_name=config_file['IMC_import']['other_columns_name']
                                                             )
-    print("DONE")
-    print("Import IF data\t\t\t\t",end="")
-    IF_markers, IF_sample_cell, IF_cell_pos = import_data(config_file['IF_import']['directory_path'],
+        print("DONE")
+    if config_file['IF_import']['present_in']:
+        print("Import IF data\t\t\t\t",end="")
+        IF_markers, IF_sample_cell, IF_cell_pos = import_data(config_file['IF_import']['directory_path'],
                                                         marker_columns=config_file['IF_import']['marker_columns'],
                                                         spatial_columns=config_file['IF_import']['spatial_columns'],
                                                         cell_id_columns=config_file['IF_import']['cell_id_columns'],
@@ -200,16 +202,17 @@ def main():
                                                         columns_to_drop=config_file['IF_import']['columns_to_drop'],
                                                         other_columns_name=config_file['IF_import']['other_columns_name']
                                                         )
-    print("DONE")
+        print("DONE")
     if config_file['standard']['saving']:
         print("Saving pandas in parquet\t\t",end='')
-        IMC_cell_pos.to_parquet(Path(config_file['standard']['output_dir']) / "IMC_cell_pos.parquet")
-        IMC_markers.to_parquet(Path(config_file['standard']['output_dir']) / "IMC_markers.parquet")
-        IMC_sample_cell.to_parquet(Path(config_file['standard']['output_dir']) / "IMC_sample_cell.parquet")
-
-        IF_cell_pos.to_parquet(Path(config_file['standard']['output_dir']) / "IF_cell_pos.parquet")
-        IF_markers.to_parquet(Path(config_file['standard']['output_dir']) / "IF_markers.parquet")
-        IF_sample_cell.to_parquet(Path(config_file['standard']['output_dir']) / "IF_sample_cell.parquet")
+        if config_file['IMC_import']['present_in']:
+            IMC_cell_pos.to_parquet(Path(config_file['standard']['output_dir']) / "IMC_cell_pos.parquet")
+            IMC_markers.to_parquet(Path(config_file['standard']['output_dir']) / "IMC_markers.parquet")
+            IMC_sample_cell.to_parquet(Path(config_file['standard']['output_dir']) / "IMC_sample_cell.parquet")
+        if config_file['IF_import']['present_in']:
+            IF_cell_pos.to_parquet(Path(config_file['standard']['output_dir']) / "IF_cell_pos.parquet")
+            IF_markers.to_parquet(Path(config_file['standard']['output_dir']) / "IF_markers.parquet")
+            IF_sample_cell.to_parquet(Path(config_file['standard']['output_dir']) / "IF_sample_cell.parquet")
         print('DONE')
 
 if __name__ == "__main__":

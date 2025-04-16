@@ -3,6 +3,7 @@ standard:
   output_dir: ../pandas_data
 
 IMC_import:
+  present_in: True
   directory_path: ../data/processed/Bram_data/acquired_csv_files/*.csv
   path_encoding_patient: ../data/processed/Bram_data/alphabetical_encoding_patient_ID/IMC_patient_id_encoding.csv
   path_file_to_patient: ../data/processed/Bram_data/file_to_patient/IMC_file_to_patient.csv
@@ -14,6 +15,7 @@ IMC_import:
   other_columns_name: 
 
 IF_import:
+  present_in: True
   directory_path: ../data/processed/Bram_data/IF_merged_by_patient/*.csv
   path_encoding_patient: 
   path_file_to_patient: ../data/processed/Bram_data/file_to_patient/IF_file_to_patient.csv

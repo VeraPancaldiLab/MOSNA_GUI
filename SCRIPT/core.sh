@@ -2,6 +2,9 @@
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate mosna
 
+mkdir -p pandas_data
+mkdir -p pandas_data/test
+
 python parser_csv_to_pandas.py --file config.yaml
 
 echo -n 'Concatenation For test --- '
@@ -20,4 +23,6 @@ echo '########### TEST ###########'
 python test_parser.py --file config.yaml
 printf "TEST --- DONE\n\n"
 
+echo '########### Tysserand Plotting ###########'
+python draw_tysserand.py 
 conda deactivate
