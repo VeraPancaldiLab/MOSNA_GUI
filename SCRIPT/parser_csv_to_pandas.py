@@ -1,43 +1,16 @@
-################################################# Import #################################################
-print("\nImport ---",end=" ")
+################################################# Import ###################################################
+print("\n############### Welcome in parser CSV to pandas ###############")
+print("\nImport Package\t\t\t\t",end="")
 import yaml
 import argparse
 import warnings
-from sklearn.exceptions import ConvergenceWarning, FitFailedWarning
-warnings.simplefilter('ignore', FitFailedWarning)
-warnings.simplefilter('ignore', ConvergenceWarning)
-warnings.simplefilter('ignore', FutureWarning)
-warnings.simplefilter('ignore', DeprecationWarning)
-warnings.simplefilter('ignore', UserWarning)
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
 import glob
-import re
-from time import time
-import warnings
-import joblib
 from pathlib import Path
-from time import time
-from tqdm import tqdm
 import copy
-import matplotlib as mpl
-import napari
-import colorcet as cc
-import composition_stats as cs
-from sklearn.impute import KNNImputer
-from lifelines import KaplanMeierFitter, CoxPHFitter
-
-from tysserand import tysserand as ty
-from mosna import mosna
-
-import matplotlib as mpl
-mpl.rcParams["figure.facecolor"] = 'white'
-mpl.rcParams["axes.facecolor"] = 'white'
-mpl.rcParams["savefig.facecolor"] = 'white'
-print("DONE\n")
+print("DONE")
 
 ################################################# Main Function ###################################################
 
@@ -188,12 +161,12 @@ def import_data(path_data, marker_columns, spatial_columns, cell_id_columns, pat
     return IMC_markers, IMC_sample_cell, IMC_cell_pos
 
 def main():
-    print('Import Config --- ',end='')
+    print('Import Config\t\t\t\t',end='')
     config_path = get_arguments()
     config_file = get_config(config_path)
-    print("DONE\n")
+    print("DONE")
 
-    print("Import IMC data --- ",end="")
+    print("Import IMC data\t\t\t\t",end="")
     IMC_markers, IMC_sample_cell, IMC_cell_pos = import_data(config_file['IMC_import']['directory_path'],
                                                             marker_columns=config_file['IMC_import']['marker_columns'],
                                                             spatial_columns=config_file['IMC_import']['spatial_columns'],
@@ -204,7 +177,7 @@ def main():
                                                             columns_to_drop=config_file['IMC_import']['columns_to_drop']
                                                             )
     print("DONE")
-    print("Import IF data --- ",end="")
+    print("Import IF data\t\t\t\t",end="")
     IF_markers, IF_sample_cell, IF_cell_pos = import_data(config_file['IF_import']['directory_path'],
                                                         marker_columns=config_file['IF_import']['marker_columns'],
                                                         spatial_columns=config_file['IF_import']['spatial_columns'],
@@ -217,7 +190,7 @@ def main():
     print("DONE")
 
     if config_file['standard']['saving']:
-        print("Saving pandas in parquet --- ",end='')
+        print("Saving pandas in parquet\t\t",end='')
         IMC_cell_pos.to_parquet(Path(config_file['standard']['output_dir']) / "IMC_cell_pos.parquet")
         IMC_markers.to_parquet(Path(config_file['standard']['output_dir']) / "IMC_markers.parquet")
         IMC_sample_cell.to_parquet(Path(config_file['standard']['output_dir']) / "IMC_sample_cell.parquet")
@@ -229,3 +202,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    print('\n')
