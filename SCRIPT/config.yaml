@@ -7,9 +7,9 @@ IMC_import:
   path_encoding_patient: ../data/processed/Bram_data/alphabetical_encoding_patient_ID/IMC_patient_id_encoding.csv
   path_file_to_patient: ../data/processed/Bram_data/file_to_patient/IMC_file_to_patient.csv
   columns_to_drop: ['Unnamed: 0']
-  marker_columns: "0:20 21:34"
+  marker_columns: "0:19 21:34"
   cell_id_columns: 20
-  spatial_columns: "34:36"
+  spatial_columns: "34:35"
   other_columns: 
   other_columns_name: 
 
@@ -18,8 +18,13 @@ IF_import:
   path_encoding_patient: 
   path_file_to_patient: ../data/processed/Bram_data/file_to_patient/IF_file_to_patient.csv
   columns_to_drop: 
-  marker_columns: "3:7"
+  marker_columns: "3:6"
   cell_id_columns: 0
   spatial_columns: "1:2"
   other_columns: 8
-  other_columns_name: ['ROI']
+  other_columns_name: ['ROI_ID']
+
+test:
+  partial: False
+  directory_to_test: ../pandas_data/*.parquet
+  test_directory: ../pandas_data/test/*.csv
