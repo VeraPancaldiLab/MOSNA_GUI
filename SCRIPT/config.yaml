@@ -8,12 +8,13 @@ IMC_import:
   path_encoding_patient: ../data/processed/Bram_data/alphabetical_encoding_patient_ID/IMC_patient_id_encoding.csv
   path_file_to_patient: ../data/processed/Bram_data/file_to_patient/IMC_file_to_patient.csv
   columns_to_drop: ['Unnamed: 0']
-  marker_columns: "0:19 21:34"
+  marker_columns: "0:19 21:33"
   cell_id_columns: 20
   spatial_columns: "34:35"
   other_columns: 
   other_columns_name: 
   normalize: True
+  re_index: True
 
 IF_import:
   present_in: True
@@ -27,6 +28,7 @@ IF_import:
   other_columns: 8
   other_columns_name: ['ROI_ID']
   normalize: False
+  re_index: False
 
 test:
   partial: False

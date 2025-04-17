@@ -127,10 +127,9 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
         unique_list = list(unique_patient_samples.itertuples(index=False, name=None))
 
         for patient_sample in unique_list:
-            print(f"Tysserand for patient {patient_sample[0]} and sample {patient_sample[1]}")
+            print(f"{type} Tysserand for patient {patient_sample[0]} and sample {patient_sample[1]}")
             filtre = ((IF_sample_cell['patient'] == patient_sample[0]) &
                         (IF_sample_cell['sample'] == patient_sample[1]))
-
 
             if there_is_duplicata:
                 cells_df = IF_sample_cell.loc[filtre, ['CellID']]
@@ -138,13 +137,13 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                 cell_ID_pos = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left')
                 coords = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left') 
                 print(f"\tTysserand networks with : {len(markers_to_cluter_IF)} cells")
+
             else:
                 cells = IF_sample_cell.loc[filtre, 'CellID'].drop_duplicates()
                 coords = IF_cell_pos.loc[filtre, ['X_position','Y_position']]
                 markers_to_cluter_IF = IF_markers[IF_markers['CellID'].isin(cells)].drop_duplicates(subset='CellID')
                 cell_ID_pos = IF_cell_pos.loc[filtre, ['CellID','X_position','Y_position']]
                         
-            verif = len(markers_to_cluter_IF) 
             markers_to_cluter_IF = markers_to_cluter_IF.set_index('CellID')
             if normalize:
                 markers_to_cluter_IF = normalize_markers(markers_to_cluter_IF)
@@ -179,7 +178,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
 
 
         for patient in unique_list:
-            print(f"Tysserand for patient {patient}")
+            print(f"{type} Tysserand for patient {patient}")
             filtre = IF_sample_cell['patient'] == patient
 
             if there_is_duplicata:
@@ -194,7 +193,6 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                 markers_to_cluter_IF = IF_markers[IF_markers['CellID'].isin(cells)].drop_duplicates(subset='CellID')
                 cell_ID_pos = IF_cell_pos.loc[filtre, ['CellID','X_position','Y_position']]
                         
-            verif = len(markers_to_cluter_IF) 
             markers_to_cluter_IF = markers_to_cluter_IF.set_index('CellID')
             if normalize:
                 markers_to_cluter_IF = normalize_markers(markers_to_cluter_IF)
@@ -246,13 +244,22 @@ def main():
         IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell = import_data(config_file['standard']['output_dir'],
                                                             config_file['IMC_import']['present_in'],
                                                             config_file['IF_import']['present_in'])
-        
+
+        if config_file['IMC_import']['re_index']:
+            IMC_cell_pos['CellID'] = IMC_cell_pos.index
+            IMC_markers['CellID'] = IMC_markers.index
+            IMC_sample_cell['CellID'] = IMC_sample_cell.index
+        if config_file['IF_import']['re_index']:
+            IF_cell_pos['CellID'] = IF_cell_pos.index
+            IF_markers['CellID'] = IF_markers.index
+            IF_sample_cell['CellID'] = IF_sample_cell.index
+        """
         tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, True, 'IF',config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
                           config_file['tysserand']['method_tysserand'],
                           config_file['tysserand']['min_neighbors'],
                           config_file['IF_import']['normalize'])
-        
+        """
         tysserand_network(IMC_cell_pos, IMC_markers, IMC_sample_cell, True, 'IMC',config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
                           config_file['tysserand']['method_tysserand'],
