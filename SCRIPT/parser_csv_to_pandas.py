@@ -100,7 +100,6 @@ def import_data(path_data, marker_columns, spatial_columns, cell_id_columns,
             IMC_markers = pd.concat([IMC_markers, file], ignore_index=True)
         nb_row_concat=IMC_markers.shape[0]
     
-
     ##### BUILD PANDAS DATAFRAME THANKS TO COLUMNS INDICES #####
 
     ### sample information
@@ -111,7 +110,7 @@ def import_data(path_data, marker_columns, spatial_columns, cell_id_columns,
         IMC_sample_cell = pd.concat([IMC_sample_cell,IMC_markers['patient']],axis=1)
     else:
         IMC_sample_cell = pd.concat([IMC_sample_cell,IMC_markers[['patient','sample']]],axis=1)
-    
+
     if other_columns is not None:
         if ':' in str(other_columns):
             ind_min_max = str(other_columns).split(':')

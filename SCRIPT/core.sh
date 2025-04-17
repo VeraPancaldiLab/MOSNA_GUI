@@ -23,6 +23,8 @@ echo '########### TEST ###########'
 python test_parser.py --file config.yaml
 printf "TEST --- DONE\n\n"
 
+
+mkdir -p ../Tysserand_network
 echo '########### Tysserand Plotting ###########'
 python draw_tysserand.py --file config.yaml
 

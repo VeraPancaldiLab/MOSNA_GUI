@@ -2,5 +2,6 @@ mosna/
 data/processed/
 scripts_Bram/
 pandas_data/
+Tysserand_network/
 
 test.ipynb

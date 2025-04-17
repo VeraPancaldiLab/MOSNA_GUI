@@ -28,5 +28,12 @@ IF_import:
 
 test:
   partial: False
+  which_file_if_partial: 
   directory_to_test: ../pandas_data/*.parquet
   test_directory: ../pandas_data/test/*.csv
+
+tysserand:
+  k_neighbors_phenograph: 30
+  primary_metric_phenograph: 'minkowski'
+  method_tysserand: 'delaunay'
+  min_neighbors: 3

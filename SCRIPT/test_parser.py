@@ -68,6 +68,5 @@ def main():
             print(f"IF data (pandas length, originals concatenated csv length, same row between them)\t-->\t{merge(directory_to_test['IF_markers'],directory_to_test['IF_cell_pos'],directory_to_test['IF_sample_cell'],test_directory['merged_IF'])}")
         if config_file['IMC_import']['present_in']:
             print(f"IMC data (pandas length, originals concatenated csv length, same row between them)\t-->\t{merge(directory_to_test['IMC_markers'],directory_to_test['IMC_cell_pos'],directory_to_test['IMC_sample_cell'],test_directory['merged_IMC'])}")
-      
 if __name__ == "__main__":
     main()
