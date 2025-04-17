@@ -1,28 +1,34 @@
-import numpy as np
-import pandas as pd
-import yaml
-import argparse
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
-from time import time
-from pathlib import Path
-from time import time
-from tqdm import tqdm
-import copy
-import matplotlib as mpl
-import colorcet as cc
-import composition_stats as cs
-from phenograph.cluster import cluster
-import contextlib
 import sys
 import warnings
+import contextlib
+import gc
+
 warnings.filterwarnings('ignore')
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+with open(os.devnull, 'w') as fnull:
+    with contextlib.redirect_stderr(fnull):
 
-from tysserand import tysserand as ty
-from mosna import mosna
-import matplotlib as mpl
+        import numpy as np
+        import pandas as pd
+        import yaml
+        import argparse
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        from time import time
+        from pathlib import Path
+        from time import time
+        from tqdm import tqdm
+        import copy
+        import matplotlib as mpl
+        import colorcet as cc
+        import composition_stats as cs
+        from phenograph.cluster import cluster
+    
+        from tysserand import tysserand as ty
+        from mosna import mosna
+
+        import matplotlib as mpl
 
 mpl.rcParams["figure.facecolor"] = 'white'
 mpl.rcParams["axes.facecolor"] = 'white'
@@ -92,12 +98,30 @@ def draw_tysserand_network(coords, clustering, Q, patient, type, method='delauna
     if sample == None:
         plt.title(f"Draw an {type} Tysserand network for patient {patient} with a clustering qualitie Q = {Q}", fontsize=30)
         plt.savefig(f"../Tysserand_network/{type}_Tysserand_network_{patient}.png")
+        plt.close(fig)
+    
     else:
         plt.title(f"Draw an {type} Tysserand network for patient {patient} and sample {sample} with a clustering qualitie Q = {Q}", fontsize=30)
         plt.savefig(f"../Tysserand_network/{type}_Tysserand_network_{patient}_{sample}.png")
+        plt.close(fig)
+    del pairs, clusters_cmap, n_colors, celltypes_color_mapper, uniq, fig
+    gc.collect()
     return 
 
-def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicata, k_neighbors = 30, primary_metrics_phenograh='minkowski', method='delaunay', min_neighbors=3):
+def normalize_markers(markers_by_patient_sample):
+    for markers in markers_by_patient_sample:
+                        # Calculate 99.9th percentile value for column
+
+        p99_9 = markers_by_patient_sample[markers].quantile(0.999)
+                            
+                        # Ensure values above the 99.9th percentile are not more than this value
+        markers_by_patient_sample[markers] = markers_by_patient_sample[markers].clip(upper=p99_9)
+                            
+                        # Normalize based on 99.9th percentile value
+        markers_by_patient_sample[markers] = (markers_by_patient_sample[markers] - markers_by_patient_sample[markers].min()) / (p99_9 - markers_by_patient_sample[markers].min())
+    return markers_by_patient_sample
+
+def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicata, type, k_neighbors = 30, primary_metrics_phenograh='minkowski', method='delaunay', min_neighbors=3, normalize = False):
     if 'sample' in IF_sample_cell.columns:
         unique_patient_samples = IF_sample_cell[['patient','sample']].drop_duplicates()
         unique_list = list(unique_patient_samples.itertuples(index=False, name=None))
@@ -106,6 +130,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
             print(f"Tysserand for patient {patient_sample[0]} and sample {patient_sample[1]}")
             filtre = ((IF_sample_cell['patient'] == patient_sample[0]) &
                         (IF_sample_cell['sample'] == patient_sample[1]))
+
 
             if there_is_duplicata:
                 cells_df = IF_sample_cell.loc[filtre, ['CellID']]
@@ -121,6 +146,8 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                         
             verif = len(markers_to_cluter_IF) 
             markers_to_cluter_IF = markers_to_cluter_IF.set_index('CellID')
+            if normalize:
+                markers_to_cluter_IF = normalize_markers(markers_to_cluter_IF)
             
             print("\tCLUSTERING BY PHENOGRAPH",end='\t\t\t')
             with open(os.devnull, 'w') as f, contextlib.redirect_stdout(f):
@@ -135,8 +162,16 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
             coords=coords.drop(columns='CellID')
 
             print("DONE\n\tDRAW TYSSERAND NETWORK",end='\t\t\t')
-            draw_tysserand_network(coords, clustering_IF, Q_IF, patient_sample[0], 'IF',sample=patient_sample[1], method=method, min_neighbors=min_neighbors)
-            print("DONE")
+            draw_tysserand_network(coords, clustering_IF, Q_IF, patient_sample[0], type=type,sample=patient_sample[1], method=method, min_neighbors=min_neighbors)
+            del coords, cell_ID_pos, graph_IF, clustering_IF, markers_to_cluter_IF
+            if 'cells' in locals():
+                del cells
+            if 'cells_df' in locals():
+                del cells_df
+            gc.collect()
+            print("\tDONE\n")
+        del unique_list, unique_patient_samples
+        gc.collect()
 
     else:
         unique_patient_samples = IF_sample_cell['patient'].drop_duplicates()
@@ -161,7 +196,8 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                         
             verif = len(markers_to_cluter_IF) 
             markers_to_cluter_IF = markers_to_cluter_IF.set_index('CellID')
-            
+            if normalize:
+                markers_to_cluter_IF = normalize_markers(markers_to_cluter_IF)
             print("\tCLUSTERING BY PHENOGRAPH",end='\t\t\t')
             with open(os.devnull, 'w') as f, contextlib.redirect_stdout(f):
                 clustering_IF, graph_IF, Q_IF = cluster(
@@ -175,10 +211,19 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
             coords=coords.drop(columns='CellID')
 
             print("DONE\n\tDRAW TYSSERAND NETWORK",end='\t\t\t')
-            draw_tysserand_network(coords, clustering_IF, Q_IF, patient, 'IF', method=method, min_neighbors=min_neighbors)
-            print("DONE")
+            draw_tysserand_network(coords, clustering_IF, Q_IF, patient, type=type, method=method, min_neighbors=min_neighbors)
+            del coords, cell_ID_pos, graph_IF, clustering_IF, markers_to_cluter_IF
+            if 'cells' in locals():
+                del cells
+            if 'cells_df' in locals():
+                del cells_df
+            gc.collect()
+            print("\tDONE\n")
+        del unique_list, unique_patient_samples
+        gc.collect()
     
 def main():
+    print('\n')
     config_path = get_arguments()
     config_file = get_config(config_path)
 
@@ -201,13 +246,18 @@ def main():
         IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell = import_data(config_file['standard']['output_dir'],
                                                             config_file['IMC_import']['present_in'],
                                                             config_file['IF_import']['present_in'])
-        tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, True, config_file['tysserand']['k_neighbors_phenograph'],
+        
+        tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, True, 'IF',config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
                           config_file['tysserand']['method_tysserand'],
-                          config_file['tysserand']['min_neighbors'])
-        tysserand_network(IMC_cell_pos, IMC_markers, IMC_sample_cell, True, config_file['tysserand']['k_neighbors_phenograph'],
+                          config_file['tysserand']['min_neighbors'],
+                          config_file['IF_import']['normalize'])
+        
+        tysserand_network(IMC_cell_pos, IMC_markers, IMC_sample_cell, True, 'IMC',config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
                           config_file['tysserand']['method_tysserand'],
-                          config_file['tysserand']['min_neighbors'])
+                          config_file['tysserand']['min_neighbors'],
+                          config_file['IMC_import']['normalize'])
+        
 if __name__ == "__main__":
     main()
