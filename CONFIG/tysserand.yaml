@@ -1,12 +1,12 @@
 standard:
   saving: True
-  output_dir: ../pandas_data
+  output_dir: pandas_data
 
 IMC_import:
   present_in: True
-  directory_path: ../data/processed/Bram_data/acquired_csv_files/*.csv
-  path_encoding_patient: ../data/processed/Bram_data/alphabetical_encoding_patient_ID/IMC_patient_id_encoding.csv
-  path_file_to_patient: ../data/processed/Bram_data/file_to_patient/IMC_file_to_patient.csv
+  directory_path: data/processed/Bram_data/acquired_csv_files/*.csv
+  path_encoding_patient: data/processed/Bram_data/alphabetical_encoding_patient_ID/IMC_patient_id_encoding.csv
+  path_file_to_patient: data/processed/Bram_data/file_to_patient/IMC_file_to_patient.csv
   normalize: True
   re_index: True
   there_is_duplicata: False
@@ -21,9 +21,9 @@ IMC_import:
 
 IF_import:
   present_in: True
-  directory_path: ../data/processed/Bram_data/IF_merged_by_patient/*.csv
+  directory_path: data/processed/Bram_data/IF_merged_by_patient/*.csv
   path_encoding_patient: 
-  path_file_to_patient: ../data/processed/Bram_data/file_to_patient/IF_file_to_patient.csv
+  path_file_to_patient: data/processed/Bram_data/file_to_patient/IF_file_to_patient.csv
   normalize: False
   re_index: False
   there_is_duplicata: True
@@ -39,8 +39,8 @@ IF_import:
 test:
   partial: False
   which_file_if_partial: 
-  directory_to_test: ../pandas_data/*.parquet
-  test_directory: ../pandas_data/test/*.csv
+  directory_to_test: pandas_data/*.parquet
+  test_directory: pandas_data/test/*.csv
 
 tysserand:
   k_neighbors_phenograph: 30

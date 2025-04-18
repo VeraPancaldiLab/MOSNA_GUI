@@ -21,15 +21,8 @@ def get_arguments():
 
     return args.file
 
-def get_config(config_path):
-        
-    base_path = os.path.dirname(os.path.abspath(__file__))
-    full_path = os.path.join(base_path, config_path)
-
-    if not os.path.exists(full_path):
-        raise FileNotFoundError(f"❌ Config file not found : {full_path}")
-    
-    with open(full_path, 'r') as f:
+def get_config(config_path):    
+    with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
     return config
 
