@@ -23,7 +23,7 @@ python SCRIPT/test_parser.py --file CONFIG/cell_encounter.yaml
 printf "TEST --- DONE\n\n"
 
 
-printf '########### Cell Encounter ###########\n'
+printf "########### Cell Encounter ###########\n\n"
 mkdir -p cell_encounter_data
 python SCRIPT/cell_encounter.py --file CONFIG/cell_encounter.yaml
 printf "Cell Encounter --- DONE\n\n"

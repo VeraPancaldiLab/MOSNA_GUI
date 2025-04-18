@@ -37,9 +37,8 @@ def filter_by_patient(filtre, data_pos, data_sample_cell, there_is_duplicata):
         cell_ID_pos = data_pos.loc[filtre, ['CellID','X_position','Y_position']]
     return cell_ID_pos
 
-def cell_encounter(IMC_pos, IF_pos, r_max=10, nb_cell_max=7, sigma_x=10, sigma_y=15, amplitude=1, patient='Unknown'):
+def cell_encounter(IMC_pos, IF_pos, r_max=100, nb_cell_max=7, amplitude=1, patient='Unknown', plot_figure=False):
     result = []
-
     for idx_imc, imc_row in tqdm(IMC_pos.iterrows(), total=len(IMC_pos), desc=f" └─ Processing IMC cells for patient {patient}", position=1):
         x0, y0 = imc_row['X_position'], imc_row['Y_position']
 
@@ -47,16 +46,28 @@ def cell_encounter(IMC_pos, IF_pos, r_max=10, nb_cell_max=7, sigma_x=10, sigma_y
         dx = IF_pos['X_position'] - x0
         dy = IF_pos['Y_position'] - y0
         distances = np.sqrt(dx**2 + dy**2)
-
+        
         # Keep only distances which are in the rad
-        mask = distances <= r_max
+        r=r_max
+        mask = distances <= r
+ 
+        # ajust rad
+        if len(IF_pos[mask]) == 0:
+            while len(IF_pos[mask]) == 0:
+                r+=100
+                mask = distances <= r
         IF_near = IF_pos[mask]
 
-        # ajust rad
-        distances_series = pd.Series(distances, index=IF_pos.index)
-        sorted_distances = distances_series[mask].sort_values(ascending=True)
-        smallest_7_indices = sorted_distances.head(nb_cell_max).index
-        IF_near = IF_pos.loc[smallest_7_indices]
+        # filter IF_near if it's too large
+        if len(IF_near) > nb_cell_max:
+            distances_series = pd.Series(distances, index=IF_pos.index)
+            sorted_distances = distances_series[mask].sort_values(ascending=True)
+            smallest_7_indices = sorted_distances.head(nb_cell_max).index
+            IF_near = IF_pos.loc[smallest_7_indices]
+
+        sigma_x = max(IF_near['X_position'].std(), 1e-2)
+        sigma_y = max(IF_near['Y_position'].std(), 1e-2)
+
 
         for idx_if, if_row in IF_near.iterrows():
             xi, yi = if_row['X_position'], if_row['Y_position']
@@ -69,34 +80,36 @@ def cell_encounter(IMC_pos, IF_pos, r_max=10, nb_cell_max=7, sigma_x=10, sigma_y
                             'IF_Y': yi,
                             'IMC_X': x0,
                             'IMC_Y': y0})
-            
-    fig = plt.figure(figsize=(12, 8))
-    ax = fig.add_subplot(111, projection='3d')
+    if plot_figure:        
+        fig = plt.figure(figsize=(12, 8))
+        ax = fig.add_subplot(111, projection='3d')
 
-    step = 1
-    x = np.arange(x0 - r_max, x0 + r_max + step, step)
-    y = np.arange(y0 - r_max, y0 + r_max + step, step)
-    X, Y = np.meshgrid(x, y)
+        step = 1
+        x = np.arange(x0 - r, x0 + r + step, step)
+        y = np.arange(y0 - r, y0 + r + step, step)
+        X, Y = np.meshgrid(x, y)
 
-    Z = amplitude * np.exp(-(((X - x0) ** 2) / (2 * sigma_x ** 2) + ((Y - y0) ** 2) / (2 * sigma_y ** 2)))
-    distance = np.sqrt((X - x0)**2 + (Y - y0)**2)
-    Z[distance > r_max] = 0
+        Z = amplitude * np.exp(-(((X - x0) ** 2) / (2 * sigma_x ** 2) + ((Y - y0) ** 2) / (2 * sigma_y ** 2)))
+        distance = np.sqrt((X - x0)**2 + (Y - y0)**2)
+        Z[distance > r] = 0
 
-    ax.plot_surface(X, Y, Z, cmap='viridis', alpha=0.7, edgecolor='none')
+        ax.plot_surface(X, Y, Z, cmap='viridis', alpha=0.7, edgecolor='none')
 
-    zi = amplitude * np.exp(-(((IF_near['X_position'] - x0) ** 2) / (2 * sigma_x ** 2) +
-                                  ((IF_near['Y_position'] - y0) ** 2) / (2 * sigma_y ** 2)))
-    ax.scatter(IF_near['X_position'], IF_near['Y_position'], zi, color='red', label='Points IF', s=50)
+        zi = amplitude * np.exp(-(((IF_near['X_position'] - x0) ** 2) / (2 * sigma_x ** 2) +
+                                    ((IF_near['Y_position'] - y0) ** 2) / (2 * sigma_y ** 2)))
+        ax.scatter(IF_near['X_position'], IF_near['Y_position'], zi, color='red', label='Points IF', s=50, alpha=0.5)
 
-    ax.scatter([x0], [y0], [amplitude], color='green', s=100, label='Point IMC')
+        ax.scatter([x0], [y0], [amplitude], color='green', s=100, label='Point IMC', alpha=0.5)
 
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Valeur de la gaussienne')
-    ax.set_title('Surface Gaussienne autour du dernier point IMC')
-    ax.legend()
-    plt.tight_layout()
-    plt.show()
+        ax.set_xlabel('X_position')
+        ax.set_ylabel('Y_position')
+        ax.set_zlabel('Valeur de la gaussienne')
+        ax.set_title('Surface Gaussienne autour du dernier point IMC')
+        ax.legend()
+        plt.tight_layout()
+        plt.savefig(Path(f'cell_encounter_data/exemple_{patient}.png'))
+        plt.close()
+
     return result
 
 def main():
@@ -121,13 +134,13 @@ def main():
     for patient in tqdm(unique_list, total=len(unique_list), desc="Processing Cell Encounter", position=0):
         filtre = IF_sample_cell['patient'] == patient
 
-        IMC_pos = filter_by_patient(filtre, IMC_pos, IMC_sample_cell, config_file["IMC_import"]['there_is_duplicata'])
-        IF_pos = filter_by_patient(filtre, IF_pos, IF_sample_cell, config_file["IF_import"]['there_is_duplicata'])
-        tab = cell_encounter(IMC_pos, IF_pos, r_max=10, nb_cell_max=config_file['cell_encounter']['nb_cell_max_per_gaussian'], patient=patient)
+        IMC_pos_temp = filter_by_patient(filtre, IMC_pos, IMC_sample_cell, config_file["IMC_import"]['there_is_duplicata'])
+        IF_pos_temp = filter_by_patient(filtre, IF_pos, IF_sample_cell, config_file["IF_import"]['there_is_duplicata'])
+        tab = cell_encounter(IMC_pos_temp, IF_pos_temp, r_max=500, nb_cell_max=config_file['cell_encounter']['nb_cell_max_per_gaussian'], patient=patient, plot_figure=True)
         tab = pd.DataFrame(tab)
         tab.to_parquet(Path(f'cell_encounter_data/cell_encounter_for_patient_{patient}.parquet'))
-        del tab
+        del tab, IF_pos_temp, IMC_pos_temp
         gc.collect()
-    
+
 if __name__ == "__main__":
     main()

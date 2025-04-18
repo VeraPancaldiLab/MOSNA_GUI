@@ -3,5 +3,6 @@ data/processed/
 scripts_Bram/
 pandas_data/
 Tysserand_network/
+cell_encounter_data/
 
 test.ipynb
