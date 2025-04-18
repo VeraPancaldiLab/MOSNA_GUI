@@ -126,7 +126,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
         unique_patient_samples = IF_sample_cell[['patient','sample']].drop_duplicates()
         unique_list = list(unique_patient_samples.itertuples(index=False, name=None))
 
-        for patient_sample in unique_list:
+        for patient_sample in tqdm(unique_list):
             print(f"{type} Tysserand for patient {patient_sample[0]} and sample {patient_sample[1]}")
             filtre = ((IF_sample_cell['patient'] == patient_sample[0]) &
                         (IF_sample_cell['sample'] == patient_sample[1]))
@@ -136,6 +136,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                 markers_to_cluter_IF = cells_df.merge(IF_markers.drop_duplicates(subset='CellID'), on='CellID', how='left')
                 cell_ID_pos = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left')
                 coords = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left') 
+                coords=coords.drop(columns='CellID')
                 print(f"\tTysserand networks with : {len(markers_to_cluter_IF)} cells")
 
             else:
@@ -143,6 +144,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                 coords = IF_cell_pos.loc[filtre, ['X_position','Y_position']]
                 markers_to_cluter_IF = IF_markers[IF_markers['CellID'].isin(cells)].drop_duplicates(subset='CellID')
                 cell_ID_pos = IF_cell_pos.loc[filtre, ['CellID','X_position','Y_position']]
+                print(f"\tTysserand networks with : {len(markers_to_cluter_IF)} cells")
                         
             markers_to_cluter_IF = markers_to_cluter_IF.set_index('CellID')
             if normalize:
@@ -158,7 +160,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                     n_jobs=1
                 )
             cell_ID_pos['cluster']=clustering_IF
-            coords=coords.drop(columns='CellID')
+            
 
             print("DONE\n\tDRAW TYSSERAND NETWORK",end='\t\t\t')
             draw_tysserand_network(coords, clustering_IF, Q_IF, patient_sample[0], type=type,sample=patient_sample[1], method=method, min_neighbors=min_neighbors)
@@ -177,7 +179,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
         unique_list = unique_patient_samples.tolist()
 
 
-        for patient in unique_list:
+        for patient in tqdm(unique_list):
             print(f"{type} Tysserand for patient {patient}")
             filtre = IF_sample_cell['patient'] == patient
 
@@ -186,12 +188,14 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                 markers_to_cluter_IF = cells_df.merge(IF_markers.drop_duplicates(subset='CellID'), on='CellID', how='left')
                 cell_ID_pos = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left')
                 coords = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left') 
+                coords=coords.drop(columns='CellID')
                 print(f"\tTysserand networks with : {len(markers_to_cluter_IF)} cells")
             else:
                 cells = IF_sample_cell.loc[filtre, 'CellID'].drop_duplicates()
                 coords = IF_cell_pos.loc[filtre, ['X_position','Y_position']]
                 markers_to_cluter_IF = IF_markers[IF_markers['CellID'].isin(cells)].drop_duplicates(subset='CellID')
                 cell_ID_pos = IF_cell_pos.loc[filtre, ['CellID','X_position','Y_position']]
+                print(f"\tTysserand networks with : {len(markers_to_cluter_IF)} cells")
                         
             markers_to_cluter_IF = markers_to_cluter_IF.set_index('CellID')
             if normalize:
@@ -206,7 +210,6 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                     n_jobs=1
                 )
             cell_ID_pos['cluster']=clustering_IF
-            coords=coords.drop(columns='CellID')
 
             print("DONE\n\tDRAW TYSSERAND NETWORK",end='\t\t\t')
             draw_tysserand_network(coords, clustering_IF, Q_IF, patient, type=type, method=method, min_neighbors=min_neighbors)
@@ -253,14 +256,16 @@ def main():
             IF_cell_pos['CellID'] = IF_cell_pos.index
             IF_markers['CellID'] = IF_markers.index
             IF_sample_cell['CellID'] = IF_sample_cell.index
-        """
-        tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, True, 'IF',config_file['tysserand']['k_neighbors_phenograph'],
+        
+        tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, config_file['IF_import']['there_is_duplicata'], 'IF',
+                          config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
                           config_file['tysserand']['method_tysserand'],
                           config_file['tysserand']['min_neighbors'],
                           config_file['IF_import']['normalize'])
-        """
-        tysserand_network(IMC_cell_pos, IMC_markers, IMC_sample_cell, True, 'IMC',config_file['tysserand']['k_neighbors_phenograph'],
+        
+        tysserand_network(IMC_cell_pos, IMC_markers, IMC_sample_cell, config_file['IMC_import']['there_is_duplicata'], 'IMC',
+                          config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
                           config_file['tysserand']['method_tysserand'],
                           config_file['tysserand']['min_neighbors'],
