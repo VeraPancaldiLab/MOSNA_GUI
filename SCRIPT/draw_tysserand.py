@@ -97,12 +97,12 @@ def draw_tysserand_network(coords, clustering, Q, patient, type, method='delauna
         )
     if sample == None:
         plt.title(f"Draw an {type} Tysserand network for patient {patient} with a clustering qualitie Q = {Q}", fontsize=30)
-        plt.savefig(f"../Tysserand_network/{type}_Tysserand_network_{patient}.png")
+        plt.savefig(f"../Tysserand_network/{type}_Tysserand_network_{patient}.png", bbox_inches="tight")
         plt.close(fig)
     
     else:
         plt.title(f"Draw an {type} Tysserand network for patient {patient} and sample {sample} with a clustering qualitie Q = {Q}", fontsize=30)
-        plt.savefig(f"../Tysserand_network/{type}_Tysserand_network_{patient}_{sample}.png")
+        plt.savefig(f"../Tysserand_network/{type}_Tysserand_network_{patient}_{sample}.png", bbox_inches="tight")
         plt.close(fig)
     del pairs, clusters_cmap, n_colors, celltypes_color_mapper, uniq, fig
     gc.collect()
