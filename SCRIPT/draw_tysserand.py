@@ -120,7 +120,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
         unique_patient_samples = IF_sample_cell[['patient','sample']].drop_duplicates()
         unique_list = list(unique_patient_samples.itertuples(index=False, name=None))
 
-        for patient_sample in tqdm(unique_list):
+        for patient_sample in tqdm(unique_list, desc=f" └─ Processing {type} file", position=1):
             tqdm.write(f"{type} Tysserand for patient {patient_sample[0]} and sample {patient_sample[1]}")
             filtre = ((IF_sample_cell['patient'] == patient_sample[0]) &
                         (IF_sample_cell['sample'] == patient_sample[1]))
@@ -174,7 +174,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
         unique_list = unique_patient_samples.tolist()
 
 
-        for patient in tqdm(unique_list):
+        for patient in tqdm(unique_list, desc=f" └─ Processing {type} file", position=1):
             tqdm.write(f"{type} Tysserand for patient {patient}")
             filtre = IF_sample_cell['patient'] == patient
 
