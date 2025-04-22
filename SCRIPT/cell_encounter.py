@@ -29,6 +29,7 @@ def import_data(dir):
     return IMC_pos, IF_pos, IMC_sample_cell, IF_sample_cell
 
 def filter_by_patient(filtre, data_pos, data_sample_cell, there_is_duplicata):
+    
     if there_is_duplicata:
         cells_df = data_sample_cell.loc[filtre, ['CellID']]
         cell_ID_pos = cells_df.merge(data_pos.drop_duplicates(subset='CellID'), on='CellID', how='left')
@@ -132,10 +133,12 @@ def main():
         unique_list = config_file['cell_encounter']['encoded_patient_wanted']
 
     for patient in tqdm(unique_list, total=len(unique_list), desc="Processing Cell Encounter", position=0):
-        filtre = IF_sample_cell['patient'] == patient
+        filtre_IF = IF_sample_cell['patient'] == patient
+        filtre_IMC = IMC_sample_cell['patient'] == patient
 
-        IMC_pos_temp = filter_by_patient(filtre, IMC_pos, IMC_sample_cell, config_file["IMC_import"]['there_is_duplicata'])
-        IF_pos_temp = filter_by_patient(filtre, IF_pos, IF_sample_cell, config_file["IF_import"]['there_is_duplicata'])
+        IMC_pos_temp = filter_by_patient(filtre_IMC, IMC_pos, IMC_sample_cell, config_file["IMC_import"]['there_is_duplicata'])
+        IF_pos_temp = filter_by_patient(filtre_IF, IF_pos, IF_sample_cell, config_file["IF_import"]['there_is_duplicata'])
+
         tab = cell_encounter(IMC_pos_temp, IF_pos_temp, r_max=500, nb_cell_max=config_file['cell_encounter']['nb_cell_max_per_gaussian'], patient=patient, plot_figure=True)
         tab = pd.DataFrame(tab)
         tab.to_parquet(Path(f'cell_encounter_data/cell_encounter_for_patient_{patient}.parquet'))
