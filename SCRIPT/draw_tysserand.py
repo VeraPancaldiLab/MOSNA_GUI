@@ -91,12 +91,12 @@ def draw_tysserand_network(coords, clustering, Q, patient, type, method='delauna
         )
     if sample == None:
         plt.title(f"Draw an {type} Tysserand network for patient {patient} with a clustering qualitie Q = {Q}", fontsize=30)
-        plt.savefig(f"../Tysserand_network/{type}_Tysserand_network_{patient}.png", bbox_inches="tight")
+        plt.savefig(f"Tysserand_network/{type}_Tysserand_network_{patient}.png", bbox_inches="tight")
         plt.close(fig)
     
     else:
         plt.title(f"Draw an {type} Tysserand network for patient {patient} and sample {sample} with a clustering qualitie Q = {Q}", fontsize=30)
-        plt.savefig(f"../Tysserand_network/{type}_Tysserand_network_{patient}_{sample}.png", bbox_inches="tight")
+        plt.savefig(f"Tysserand_network/{type}_Tysserand_network_{patient}_{sample}.png", bbox_inches="tight")
         plt.close(fig)
     del pairs, clusters_cmap, n_colors, celltypes_color_mapper, uniq, fig
     gc.collect()
@@ -120,7 +120,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
         unique_patient_samples = IF_sample_cell[['patient','sample']].drop_duplicates()
         unique_list = list(unique_patient_samples.itertuples(index=False, name=None))
 
-        for patient_sample in tqdm(unique_list):
+        for patient_sample in tqdm(unique_list, desc=f" └─ Processing {type} file", position=1):
             tqdm.write(f"{type} Tysserand for patient {patient_sample[0]} and sample {patient_sample[1]}")
             filtre = ((IF_sample_cell['patient'] == patient_sample[0]) &
                         (IF_sample_cell['sample'] == patient_sample[1]))
@@ -156,16 +156,18 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                 )
             cell_ID_pos['cluster']=clustering_IF
             
-
             tqdm.write("DONE\n\tDRAW TYSSERAND NETWORK",end='\t\t\t')
-            draw_tysserand_network(coords, clustering_IF, Q_IF, patient_sample[0], type=type,sample=patient_sample[1], method=method, min_neighbors=min_neighbors)
+
+            with open(os.devnull, 'w') as c, contextlib.redirect_stdout(c):
+                draw_tysserand_network(coords, clustering_IF, Q_IF, patient_sample[0], type=type,sample=patient_sample[1], method=method, min_neighbors=min_neighbors)
+    
             del coords, cell_ID_pos, graph_IF, clustering_IF, markers_to_cluter_IF
             if 'cells' in locals():
                 del cells
             if 'cells_df' in locals():
                 del cells_df
             gc.collect()
-            tqdm.write("\tDONE\n")
+            tqdm.write("\t\t\t\tDONE\n")
         del unique_list, unique_patient_samples
         gc.collect()
 
@@ -174,7 +176,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
         unique_list = unique_patient_samples.tolist()
 
 
-        for patient in tqdm(unique_list):
+        for patient in tqdm(unique_list, desc=f" └─ Processing {type} file", position=1):
             tqdm.write(f"{type} Tysserand for patient {patient}")
             filtre = IF_sample_cell['patient'] == patient
 
@@ -206,16 +208,17 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                     n_jobs=1
                 )
             cell_ID_pos['cluster']=clustering_IF
-
             tqdm.write("DONE\n\tDRAW TYSSERAND NETWORK",end='\t\t\t')
-            draw_tysserand_network(coords, clustering_IF, Q_IF, patient, type=type, method=method, min_neighbors=min_neighbors)
+
+            with open(os.devnull, 'w') as c, contextlib.redirect_stdout(c):
+                draw_tysserand_network(coords, clustering_IF, Q_IF, patient, type=type, method=method, min_neighbors=min_neighbors)
             del coords, cell_ID_pos, graph_IF, clustering_IF, markers_to_cluter_IF
             if 'cells' in locals():
                 del cells
             if 'cells_df' in locals():
                 del cells_df
             gc.collect()
-            tqdm.write("\tDONE\n")
+            tqdm.write("\t\t\t\tDONE\n")
         del unique_list, unique_patient_samples
         gc.collect()
     
@@ -252,14 +255,14 @@ def main():
             IF_cell_pos['CellID'] = IF_cell_pos.index
             IF_markers['CellID'] = IF_markers.index
             IF_sample_cell['CellID'] = IF_sample_cell.index
-        
+        """
         tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, config_file['IF_import']['there_is_duplicata'], 'IF',
                           config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
                           config_file['tysserand']['method_tysserand'],
                           config_file['tysserand']['min_neighbors'],
                           config_file['IF_import']['normalize'])
-        
+        """
         tysserand_network(IMC_cell_pos, IMC_markers, IMC_sample_cell, config_file['IMC_import']['there_is_duplicata'], 'IMC',
                           config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
