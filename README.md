@@ -48,6 +48,15 @@ clone my repo and run this scrip :
 
 Mosna use tysserand to build networks to analyse them after. This image is a tysserand network of IMC data from one patient and one sample where each nodes are cells, colored by cluster and the clustering was found by using phenograp on 34 markers.
 
+before to be able to obtain your tysserand network you must complete the associated config file in CONFIG/tysserand.yaml:
+
+![Mon Image](images/config_tysserand.png)
+
+to have all tysserand networks of you're IMC and IF csv files you must run this command:
+
+    chmod u+x draw_tysserand.py
+    ./draw_tysserand.py
+
 ![Mon Image](images/IMC_network_A_01.png)
 
 ![Mon Image](images/IF_network_A.png)
