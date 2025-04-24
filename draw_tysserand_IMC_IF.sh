@@ -4,6 +4,8 @@ conda activate mosna
 
 mkdir -p pandas_data
 mkdir -p pandas_data/test
+mkdir -p pandas_data/edges
+mkdir -p pandas_data/nodes
 
 python SCRIPT/parser_csv_to_pandas.py --file CONFIG/tysserand.yaml
 
