@@ -42,6 +42,6 @@ test:
   test_directory: pandas_data/test/*.csv
 
 cell_encounter:
-  encoded_patient_to_drop: ['B']
+  encoded_patient_to_drop:
   encoded_patient_wanted:
   nb_cell_max_per_gaussian: 3

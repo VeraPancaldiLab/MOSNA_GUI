@@ -71,3 +71,5 @@ to have your cell to cell encounter between your IMC and IF csv files you must r
 
     chmod u+x cell_encounter.sh
     ./cell_encounter.sh
+
+![Mon Image](images/exemple_D.png)

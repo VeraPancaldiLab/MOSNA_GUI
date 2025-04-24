@@ -53,8 +53,8 @@ def cell_encounter(IMC_pos, IF_pos, r_max=100, nb_cell_max=7, amplitude=1, patie
         mask = distances <= r
  
         # ajust rad
-        if len(IF_pos[mask]) == 0:
-            while len(IF_pos[mask]) == 0:
+        if len(IF_pos[mask]) < nb_cell_max:
+            while len(IF_pos[mask]) < nb_cell_max:
                 r+=100
                 mask = distances <= r
         IF_near = IF_pos[mask]
@@ -66,9 +66,11 @@ def cell_encounter(IMC_pos, IF_pos, r_max=100, nb_cell_max=7, amplitude=1, patie
             smallest_7_indices = sorted_distances.head(nb_cell_max).index
             IF_near = IF_pos.loc[smallest_7_indices]
 
-        sigma_x = max(IF_near['X_position'].std(), 1e-2)
-        sigma_y = max(IF_near['Y_position'].std(), 1e-2)
+        sigma_x = max(np.std(IF_near['X_position'], ddof=1) or 0, 30)
+        sigma_y = max(np.std(IF_near['Y_position'], ddof=1) or 0, 30)
 
+        sigma_y = sigma_x = max(sigma_x, sigma_y)*10/np.log(max(sigma_x, sigma_y))
+        
 
         for idx_if, if_row in IF_near.iterrows():
             xi, yi = if_row['X_position'], if_row['Y_position']
