@@ -171,8 +171,8 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
             gc.collect()
             tqdm.write("\t\t\t\tDONE\n")
             edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
-            edges.to_parquet(Path("output_data/edges") / f'edges_patient-{patient_sample[0]}_{patient_sample[1]}.parquet', index=False)
-            nodes.to_parquet(Path("output_data/nodes") / f'nodes_patient-{patient_sample[0]}_{patient_sample[1]}.parquet', index=False)
+            edges.to_parquet(Path("output_data/edges") / f'{type}_edges_patient_{patient_sample[0]}_{patient_sample[1]}.parquet', index=False)
+            nodes.to_parquet(Path("output_data/nodes") / f'{type}_nodes_patient_{patient_sample[0]}_{patient_sample[1]}.parquet', index=False)
         del unique_list, unique_patient_samples, edges, pairs, nodes
         gc.collect()
 
@@ -227,8 +227,8 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
             gc.collect()
             tqdm.write("\t\t\t\tDONE\n")
             edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
-            edges.to_parquet(Path("output_data/edges") / f'edges_patient-{patient}.parquet', index=False)
-            nodes.to_parquet(Path("output_data/nodes") / f'nodes_patient-{patient}.parquet', index=False)
+            edges.to_parquet(Path("output_data/edges") / f'{type}_edges_patient_{patient}.parquet', index=False)
+            nodes.to_parquet(Path("output_data/nodes") / f'{type}_nodes_patient_{patient}.parquet', index=False)
         del unique_list, unique_patient_samples, edges, pairs, nodes
         gc.collect()
 
