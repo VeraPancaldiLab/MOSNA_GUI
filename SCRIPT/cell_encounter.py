@@ -110,7 +110,7 @@ def cell_encounter(IMC_pos, IF_pos, r_max=100, nb_cell_max=7, amplitude=1, patie
         ax.set_title('Surface Gaussienne autour du dernier point IMC')
         ax.legend()
         plt.tight_layout()
-        plt.savefig(Path(f'cell_encounter_data/exemple_{patient}.png'))
+        plt.savefig(Path(f'output_data/cell_encounter_data/exemple_{patient}.png'))
         plt.close()
 
     return result
@@ -143,7 +143,7 @@ def main():
 
         tab = cell_encounter(IMC_pos_temp, IF_pos_temp, r_max=500, nb_cell_max=config_file['cell_encounter']['nb_cell_max_per_gaussian'], patient=patient, plot_figure=True)
         tab = pd.DataFrame(tab)
-        tab.to_parquet(Path(f'cell_encounter_data/cell_encounter_for_patient_{patient}.parquet'))
+        tab.to_parquet(Path(f'output_data/cell_encounter_data/cell_encounter_for_patient_{patient}.parquet'))
         del tab, IF_pos_temp, IMC_pos_temp
         gc.collect()
 

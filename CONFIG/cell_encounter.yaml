@@ -1,6 +1,6 @@
 standard:
   saving: True
-  output_dir: pandas_data
+  output_dir: output_data
 
 IMC_import:
   present_in: True
@@ -38,8 +38,8 @@ IF_import:
 test:
   partial: False
   which_file_if_partial: 
-  directory_to_test: pandas_data/*.parquet
-  test_directory: pandas_data/test/*.csv
+  directory_to_test: output_data/*.parquet
+  test_directory: output_data/test/*.csv
 
 cell_encounter:
   encoded_patient_to_drop:
