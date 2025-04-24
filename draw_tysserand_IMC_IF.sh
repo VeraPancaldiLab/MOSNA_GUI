@@ -26,7 +26,7 @@ python SCRIPT/test_parser.py --file CONFIG/tysserand.yaml
 printf "TEST --- DONE\n\n"
 
 
-mkdir -p Tysserand_network
+mkdir -p output_data/Tysserand_network
 echo '########### Tysserand Plotting ###########'
 python SCRIPT/draw_tysserand.py --file CONFIG/tysserand.yaml
 
