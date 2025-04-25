@@ -38,7 +38,7 @@ def filter_by_patient(filtre, data_pos, data_sample_cell, there_is_duplicata):
         cell_ID_pos = data_pos.loc[filtre, ['CellID','X_position','Y_position']]
     return cell_ID_pos
 
-def cell_encounter(IMC_pos, IF_pos, threshold=0.05, r_max=100, nb_cell_max=7, amplitude=1, patient='Unknown', plot_figure=False):
+def cell_encounter(IMC_pos, IF_pos, threshold=0.05, sigma=1, r_max=100, nb_cell_max=7, amplitude=1, patient='Unknown', plot_figure=False):
     result = []
     for idx_imc, imc_row in tqdm(IMC_pos.iterrows(), total=len(IMC_pos), desc=f" └─ Processing IMC cells for patient {patient}", position=1):
         x0, y0 = imc_row['X_position'], imc_row['Y_position']
@@ -70,7 +70,7 @@ def cell_encounter(IMC_pos, IF_pos, threshold=0.05, r_max=100, nb_cell_max=7, am
         sigma_y = max(np.std(IF_near['Y_position'], ddof=1) or 0, 30)
         sigma_y = sigma_x = max(sigma_x, sigma_y)*10/np.log(max(sigma_x, sigma_y))
         
-        # sigma_x = sigma_y = 1
+        # sigma_x = sigma_y = sigma
 
         for idx_if, if_row in IF_near.iterrows():
             xi, yi = if_row['X_position'], if_row['Y_position']
@@ -142,7 +142,11 @@ def main():
         IMC_pos_temp = filter_by_patient(filtre_IMC, IMC_pos, IMC_sample_cell, config_file["IMC_import"]['there_is_duplicata'])
         IF_pos_temp = filter_by_patient(filtre_IF, IF_pos, IF_sample_cell, config_file["IF_import"]['there_is_duplicata'])
 
-        tab = cell_encounter(IMC_pos_temp, IF_pos_temp, r_max=500, nb_cell_max=config_file['cell_encounter']['nb_cell_max_per_gaussian'], patient=patient, plot_figure=True)
+        tab = cell_encounter(IMC_pos_temp, IF_pos_temp, 
+                             threshold=config_file['cell_encounter']['threshold_filter'],
+                             sigma=config_file['cell_encounter']['gaussian_sigma'],
+                             r_max=500, nb_cell_max=config_file['cell_encounter']['nb_cell_max_per_gaussian'], 
+                             patient=patient, plot_figure=True)
         tab = pd.DataFrame(tab)
         tab.to_parquet(Path(f'output_data/cell_encounter_data/cell_encounter_for_patient_{patient}.parquet'))
         del tab, IF_pos_temp, IMC_pos_temp
