@@ -65,7 +65,7 @@ def import_data(dir, IMC, IF):
     if IMC and IF:
         return IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell
 
-def draw_tysserand_network(coords, clustering, Q, patient, type, method='delaunay', min_neighbors=3, sample=None):
+def draw_tysserand_network(coords, clustering, Q, patient, type, method='delaunay', min_neighbors=3, sample=None, sample_name='sample'):
     if clustering is not None:
         nb_clust = clustering.max()
         uniq = pd.Series(clustering).value_counts().index
@@ -95,8 +95,8 @@ def draw_tysserand_network(coords, clustering, Q, patient, type, method='delauna
         plt.close(fig)
     
     else:
-        plt.title(f"Draw an {type} Tysserand network for patient {patient} and sample {sample} with a clustering qualitie Q = {Q}", fontsize=30)
-        plt.savefig(f"output_data/Tysserand_network/{type}_Tysserand_network_{patient}_{sample}.png", bbox_inches="tight")
+        plt.title(f"Draw an {type} Tysserand network for patient {patient} and {sample_name} {sample} with a clustering qualitie Q = {Q}", fontsize=30)
+        plt.savefig(f"output_data/Tysserand_network/{type}_Tysserand_network_{patient}_{sample_name}_{sample}.png", bbox_inches="tight")
         plt.close(fig)
     del clusters_cmap, n_colors, celltypes_color_mapper, uniq, fig
     gc.collect()
@@ -127,7 +127,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
         for patient_sample in tqdm(unique_list, desc=f" └─ Processing {type} file", position=1):
             tqdm.write(f"{type} Tysserand for patient {patient_sample[0]} and {sample_name} {patient_sample[1]}")
             filtre = ((IF_sample_cell['patient'] == patient_sample[0]) &
-                        (IF_sample_cell['sample'] == patient_sample[1]))
+                        (IF_sample_cell[f'{sample_name}'] == patient_sample[1]))
 
             if there_is_duplicata:
                 cells_df = IF_sample_cell.loc[filtre, ['CellID']]
@@ -136,8 +136,8 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                 coords = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left') 
                 coords = coords.drop(columns='CellID')
                 nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
-                nodes['patient'] = patient[0]
-                nodes[f'{sample_name}'] = patient[1]
+                nodes['patient'] = patient_sample[0]
+                nodes[f'{sample_name}'] = patient_sample[1]
                 tqdm.write(f"\tTysserand networks with : {len(markers_to_cluter_IF)} cells")
 
             else:
@@ -169,7 +169,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
             tqdm.write("DONE\n\tDRAW TYSSERAND NETWORK",end='\t\t\t')
 
             with open(os.devnull, 'w') as c, contextlib.redirect_stdout(c):
-                pairs = draw_tysserand_network(coords, clustering_IF, Q_IF, patient_sample[0], type=type,sample=patient_sample[1], method=method, min_neighbors=min_neighbors)
+                pairs = draw_tysserand_network(coords, clustering_IF, Q_IF, patient_sample[0], type=type,sample=patient_sample[1], method=method, min_neighbors=min_neighbors, sample_name=sample_name)
     
             del coords, cell_ID_pos, graph_IF, clustering_IF, markers_to_cluter_IF
             if 'cells' in locals():
