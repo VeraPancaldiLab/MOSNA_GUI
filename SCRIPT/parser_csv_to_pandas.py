@@ -200,10 +200,19 @@ def main():
             IMC_cell_pos.to_parquet(Path(config_file['standard']['output_dir']) / "IMC_cell_pos.parquet")
             IMC_markers.to_parquet(Path(config_file['standard']['output_dir']) / "IMC_markers.parquet")
             IMC_sample_cell.to_parquet(Path(config_file['standard']['output_dir']) / "IMC_sample_cell.parquet")
+            IMC_markers = IMC_markers.drop('CellID', axis=1)
+            IMC_markers.columns.to_series().to_csv(Path(config_file['standard']['output_dir']) / "description/IMC_markers.csv",
+                                                   index=False,
+                                                   header=False)
+            
         if config_file['IF_import']['present_in']:
             IF_cell_pos.to_parquet(Path(config_file['standard']['output_dir']) / "IF_cell_pos.parquet")
             IF_markers.to_parquet(Path(config_file['standard']['output_dir']) / "IF_markers.parquet")
             IF_sample_cell.to_parquet(Path(config_file['standard']['output_dir']) / "IF_sample_cell.parquet")
+            IF_markers = IF_markers.drop('CellID', axis=1)
+            IF_markers.columns.to_series().to_csv(Path(config_file['standard']['output_dir']) / "description/IF_markers.csv",
+                                                  index=False,
+                                                  header=False)
         print('DONE')
 
 if __name__ == "__main__":

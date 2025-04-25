@@ -2,10 +2,12 @@
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate mosna
 
-mkdir -p output_data
+mkdir -p output_data/description
 mkdir -p output_data/test
-mkdir -p output_data/edges
-mkdir -p output_data/nodes
+mkdir -p output_data/edges/IF
+mkdir -p output_data/edges/IMC
+mkdir -p output_data/nodes/IF
+mkdir -p output_data/nodes/IMC
 
 python SCRIPT/parser_csv_to_pandas.py --file CONFIG/tysserand.yaml
 

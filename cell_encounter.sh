@@ -1,7 +1,7 @@
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate mosna
 
-mkdir -p output_data
+mkdir -p output_data/description
 mkdir -p output_data/test
 
 python SCRIPT/parser_csv_to_pandas.py --file CONFIG/cell_encounter.yaml
