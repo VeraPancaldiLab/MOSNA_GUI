@@ -48,22 +48,34 @@ def get_config(config_path):
         config = yaml.safe_load(f)
     return config   
 
-def nodes_aggregate(nodes_dir, marker_cols):
+def nodes_aggregate(nodes_dir, marker_cols, sample=None):
+    if sample is not None:
+        nodes_dir = mosna.transform_nodes(
+            nodes_dir=nodes_dir,
+            id_level_1='patient',
+            id_level_2=sample, 
+            use_cols=marker_cols,
+            method='clr',
+            save_dir='auto',
+        )
+    else:
+        nodes_dir = mosna.transform_nodes(
+            nodes_dir=nodes_dir,
+            id_level_1='patient',
+            use_cols=marker_cols,
+            method='clr',
+            save_dir='auto',
+        )
 
-    nodes_dir = mosna.transform_nodes(
-        nodes_dir=nodes_dir,
-        id_level_1='patient',
-        #id_level_2='sample', 
-        use_cols=marker_cols,
-        method='clr',
-        save_dir='auto',
-    )
 
 def main():
+    config_path = get_arguments()
+    config_file = get_config(config_path)
     IF_markers = pd.read_csv('../output_data/description/IF_markers.csv', header=None)[0].tolist()
     IMC_markers = pd.read_csv('../output_data/description/IMC_markers.csv', header=None)[0].tolist()
-    nodes_aggregate("../output_data/nodes/IF", IF_markers)
-    nodes_aggregate("../output_data/nodes/IMC", IMC_markers)
+    print(IF_markers,IMC_markers)
+    nodes_aggregate("../output_data/nodes/IF", IF_markers, config_file["IF_import"]["if_sample_take_an_other_name"])
+    nodes_aggregate("../output_data/nodes/IMC", IMC_markers, config_file["IMC_import"]["if_sample_take_an_other_name"])
 
     
 if __name__ == "__main__":

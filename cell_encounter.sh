@@ -4,7 +4,7 @@ conda activate mosna
 mkdir -p output_data/description
 mkdir -p output_data/test
 
-python SCRIPT/parser_csv_to_pandas.py --file CONFIG/cell_encounter.yaml
+python SCRIPT/parser_csv_to_pandas.py --file CONFIG/tysserand.yaml
 
 echo -n 'Concatenation For test --- '
 head -n 1 $(ls data/processed/Bram_data/acquired_csv_files/*.csv | head -n 1) > output_data/test/merged_IMC.csv
@@ -19,13 +19,13 @@ done
 printf 'DONE\n\n'
 
 echo '########### TEST ###########'
-python SCRIPT/test_parser.py --file CONFIG/cell_encounter.yaml
+python SCRIPT/test_parser.py --file CONFIG/tysserand.yaml
 printf "TEST --- DONE\n\n"
 
 
 printf "########### Cell Encounter ###########\n\n"
 mkdir -p output_data/cell_encounter_data
-python SCRIPT/cell_encounter.py --file CONFIG/cell_encounter.yaml
+python SCRIPT/cell_encounter.py --file CONFIG/tysserand.yaml
 printf "Cell Encounter --- DONE\n\n"
 
 conda deactivate

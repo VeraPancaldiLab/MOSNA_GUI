@@ -65,7 +65,7 @@ def import_data(dir, IMC, IF):
     if IMC and IF:
         return IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell
 
-def draw_tysserand_network(coords, clustering, Q, patient, type, method='delaunay', min_neighbors=3, sample=None, sample_name='sample'):
+def draw_tysserand_network(coords, clustering, Q, patient, type, method='delaunay', min_neighbors=3, sample=None, sample_name=None):
     if clustering is not None:
         nb_clust = clustering.max()
         uniq = pd.Series(clustering).value_counts().index
@@ -115,7 +115,7 @@ def normalize_markers(markers_by_patient_sample):
         markers_by_patient_sample[markers] = (markers_by_patient_sample[markers] - markers_by_patient_sample[markers].min()) / (p99_9 - markers_by_patient_sample[markers].min())
     return markers_by_patient_sample
 
-def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicata, type, k_neighbors = 30, primary_metrics_phenograh='minkowski', method='delaunay', min_neighbors=3, normalize = False, sample_take_an_other_name='sample'):
+def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicata, type, k_neighbors = 30, primary_metrics_phenograh='minkowski', method='delaunay', min_neighbors=3, normalize = False, sample_take_an_other_name=None):
     if sample_take_an_other_name is None:  
         sample_name = 'sample'
     else:
@@ -281,7 +281,7 @@ def main():
             IF_cell_pos['CellID'] = IF_cell_pos.index
             IF_markers['CellID'] = IF_markers.index
             IF_sample_cell['CellID'] = IF_sample_cell.index
-
+        
         tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, config_file['IF_import']['there_is_duplicata'], 'IF',
                           config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
@@ -296,7 +296,7 @@ def main():
                           config_file['tysserand']['method_tysserand'],
                           config_file['tysserand']['min_neighbors'],
                           config_file['IMC_import']['normalize'],
-                          config_file['IF_import']['if_sample_take_an_other_name'])
+                          config_file['IMC_import']['if_sample_take_an_other_name'])
         
 if __name__ == "__main__":
     main()
