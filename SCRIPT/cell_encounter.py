@@ -70,7 +70,7 @@ def cell_encounter(IMC_pos, IF_pos, threshold=0.05, r_max=100, nb_cell_max=7, am
         sigma_y = max(np.std(IF_near['Y_position'], ddof=1) or 0, 30)
         sigma_y = sigma_x = max(sigma_x, sigma_y)*10/np.log(max(sigma_x, sigma_y))
         
-        # sigma_x = sigma_y = 5
+        # sigma_x = sigma_y = 1
 
         for idx_if, if_row in IF_near.iterrows():
             xi, yi = if_row['X_position'], if_row['Y_position']
