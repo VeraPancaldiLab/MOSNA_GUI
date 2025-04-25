@@ -132,6 +132,8 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                 coords = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left') 
                 coords = coords.drop(columns='CellID')
                 nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
+                nodes['patient'] = patient[0]
+                nodes['sample'] = patient[1]
                 tqdm.write(f"\tTysserand networks with : {len(markers_to_cluter_IF)} cells")
 
             else:
@@ -140,6 +142,8 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                 markers_to_cluter_IF = IF_markers[IF_markers['CellID'].isin(cells)].drop_duplicates(subset='CellID')
                 cell_ID_pos = IF_cell_pos.loc[filtre, ['CellID','X_position','Y_position']]
                 nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
+                nodes['patient'] = patient_sample[0]
+                nodes['sample'] = patient_sample[1]
                 tqdm.write(f"\tTysserand networks with : {len(markers_to_cluter_IF)} cells")
 
             tqdm.write("\tCLUSTERING BY PHENOGRAPH",end='\t\t\t')       
@@ -192,6 +196,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                 coords = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left') 
                 coords=coords.drop(columns='CellID')
                 nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
+                nodes['patient'] = patient
                 tqdm.write(f"\tTysserand networks with : {len(markers_to_cluter_IF)} cells")
             else:
                 cells = IF_sample_cell.loc[filtre, 'CellID'].drop_duplicates()
@@ -199,6 +204,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                 markers_to_cluter_IF = IF_markers[IF_markers['CellID'].isin(cells)].drop_duplicates(subset='CellID')
                 cell_ID_pos = IF_cell_pos.loc[filtre, ['CellID','X_position','Y_position']]
                 nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
+                nodes['patient'] = patient
                 tqdm.write(f"\tTysserand networks with : {len(markers_to_cluter_IF)} cells")
                         
             markers_to_cluter_IF = markers_to_cluter_IF.set_index('CellID')
