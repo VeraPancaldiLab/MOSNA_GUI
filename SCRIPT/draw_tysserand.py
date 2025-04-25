@@ -115,13 +115,17 @@ def normalize_markers(markers_by_patient_sample):
         markers_by_patient_sample[markers] = (markers_by_patient_sample[markers] - markers_by_patient_sample[markers].min()) / (p99_9 - markers_by_patient_sample[markers].min())
     return markers_by_patient_sample
 
-def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicata, type, k_neighbors = 30, primary_metrics_phenograh='minkowski', method='delaunay', min_neighbors=3, normalize = False):
-    if 'sample' in IF_sample_cell.columns:
-        unique_patient_samples = IF_sample_cell[['patient','sample']].drop_duplicates()
+def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicata, type, k_neighbors = 30, primary_metrics_phenograh='minkowski', method='delaunay', min_neighbors=3, normalize = False, sample_take_an_other_name='sample'):
+    if sample_take_an_other_name is None:  
+        sample_name = 'sample'
+    else:
+        sample_name = sample_take_an_other_name
+    if sample_name in IF_sample_cell.columns:
+        unique_patient_samples = IF_sample_cell[['patient',sample_name]].drop_duplicates()
         unique_list = list(unique_patient_samples.itertuples(index=False, name=None))
 
         for patient_sample in tqdm(unique_list, desc=f" └─ Processing {type} file", position=1):
-            tqdm.write(f"{type} Tysserand for patient {patient_sample[0]} and sample {patient_sample[1]}")
+            tqdm.write(f"{type} Tysserand for patient {patient_sample[0]} and {sample_name} {patient_sample[1]}")
             filtre = ((IF_sample_cell['patient'] == patient_sample[0]) &
                         (IF_sample_cell['sample'] == patient_sample[1]))
 
@@ -133,7 +137,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                 coords = coords.drop(columns='CellID')
                 nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
                 nodes['patient'] = patient[0]
-                nodes['sample'] = patient[1]
+                nodes[f'{sample_name}'] = patient[1]
                 tqdm.write(f"\tTysserand networks with : {len(markers_to_cluter_IF)} cells")
 
             else:
@@ -143,7 +147,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
                 cell_ID_pos = IF_cell_pos.loc[filtre, ['CellID','X_position','Y_position']]
                 nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
                 nodes['patient'] = patient_sample[0]
-                nodes['sample'] = patient_sample[1]
+                nodes[f'{sample_name}'] = patient_sample[1]
                 tqdm.write(f"\tTysserand networks with : {len(markers_to_cluter_IF)} cells")
 
             tqdm.write("\tCLUSTERING BY PHENOGRAPH",end='\t\t\t')       
@@ -175,8 +179,8 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, there_is_duplicat
             gc.collect()
             tqdm.write("\t\t\t\tDONE\n")
             edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
-            edges.to_parquet(Path(f"output_data/edges/{type}") / f'edges_patient_{patient_sample[0]}_{patient_sample[1]}.parquet', index=False)
-            nodes.to_parquet(Path(f"output_data/nodes/{type}") / f'nodes_patient_{patient_sample[0]}_{patient_sample[1]}.parquet', index=False)
+            edges.to_parquet(Path(f"output_data/edges/{type}") / f'edges_patient_{patient_sample[0]}_{sample_name}_{patient_sample[1]}.parquet', index=False)
+            nodes.to_parquet(Path(f"output_data/nodes/{type}") / f'nodes_patient_{patient_sample[0]}_{sample_name}_{patient_sample[1]}.parquet', index=False)
         del unique_list, unique_patient_samples, edges, pairs, nodes
         gc.collect()
 
@@ -283,14 +287,16 @@ def main():
                           config_file['tysserand']['primary_metric_phenograph'],
                           config_file['tysserand']['method_tysserand'],
                           config_file['tysserand']['min_neighbors'],
-                          config_file['IF_import']['normalize'])
+                          config_file['IF_import']['normalize'],
+                          config_file['IF_import']['if_sample_take_an_other_name'])
         
         tysserand_network(IMC_cell_pos, IMC_markers, IMC_sample_cell, config_file['IMC_import']['there_is_duplicata'], 'IMC',
                           config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
                           config_file['tysserand']['method_tysserand'],
                           config_file['tysserand']['min_neighbors'],
-                          config_file['IMC_import']['normalize'])
+                          config_file['IMC_import']['normalize'],
+                          config_file['IF_import']['if_sample_take_an_other_name'])
         
 if __name__ == "__main__":
     main()

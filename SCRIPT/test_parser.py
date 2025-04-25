@@ -44,6 +44,7 @@ def value_compt(df1, df2):
         return len(df1),len(df2),inclusion
     else: 
         return 'columns have not same name or there are different'
+
 def merge(df1, df2, df3, df_to_compare):
     df1['dup_index'] = df1.groupby('CellID').cumcount()
     df2['dup_index'] = df2.groupby('CellID').cumcount()

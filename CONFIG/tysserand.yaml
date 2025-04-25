@@ -16,7 +16,8 @@ IMC_import:
   cell_id_columns: 20
   spatial_columns: "34:35"
   other_columns: 
-  other_columns_name: 
+  other_columns_name:
+  if_sample_take_an_other_name: 
 
 IF_import:
   present_in: True
@@ -33,6 +34,7 @@ IF_import:
   spatial_columns: "1:2"
   other_columns: 8
   other_columns_name: ['ROI_ID']
+  if_sample_take_an_other_name: 'ROI_ID'
 
 test:
   partial: False

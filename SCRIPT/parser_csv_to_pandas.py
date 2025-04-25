@@ -204,6 +204,10 @@ def main():
             IMC_markers.columns.to_series().to_csv(Path(config_file['standard']['output_dir']) / "description/IMC_markers.csv",
                                                    index=False,
                                                    header=False)
+            IMC_sample_cell = IMC_sample_cell.drop('CellID', axis=1).drop_duplicates()
+            IMC_sample_cell.to_csv(Path(config_file['standard']['output_dir']) / "description/IMC_file_description.csv",
+                                  index=False,
+                                  header=False)
             
         if config_file['IF_import']['present_in']:
             IF_cell_pos.to_parquet(Path(config_file['standard']['output_dir']) / "IF_cell_pos.parquet")
@@ -213,6 +217,10 @@ def main():
             IF_markers.columns.to_series().to_csv(Path(config_file['standard']['output_dir']) / "description/IF_markers.csv",
                                                   index=False,
                                                   header=False)
+            IF_sample_cell = IF_sample_cell.drop('CellID', axis=1).drop_duplicates()
+            IF_sample_cell.to_csv(Path(config_file['standard']['output_dir']) / "description/IF_file_description.csv",
+                                  index=False,
+                                  header=False)
         print('DONE')
 
 if __name__ == "__main__":
