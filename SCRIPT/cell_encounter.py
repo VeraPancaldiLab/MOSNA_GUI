@@ -38,7 +38,7 @@ def filter_by_patient(filtre, data_pos, data_sample_cell, there_is_duplicata):
         cell_ID_pos = data_pos.loc[filtre, ['CellID','X_position','Y_position']]
     return cell_ID_pos
 
-def cell_encounter(IMC_pos, IF_pos, r_max=100, nb_cell_max=7, amplitude=1, patient='Unknown', plot_figure=False):
+def cell_encounter(IMC_pos, IF_pos, threshold=0.05, r_max=100, nb_cell_max=7, amplitude=1, patient='Unknown', plot_figure=False):
     result = []
     for idx_imc, imc_row in tqdm(IMC_pos.iterrows(), total=len(IMC_pos), desc=f" └─ Processing IMC cells for patient {patient}", position=1):
         x0, y0 = imc_row['X_position'], imc_row['Y_position']
@@ -68,21 +68,22 @@ def cell_encounter(IMC_pos, IF_pos, r_max=100, nb_cell_max=7, amplitude=1, patie
 
         sigma_x = max(np.std(IF_near['X_position'], ddof=1) or 0, 30)
         sigma_y = max(np.std(IF_near['Y_position'], ddof=1) or 0, 30)
-
         sigma_y = sigma_x = max(sigma_x, sigma_y)*10/np.log(max(sigma_x, sigma_y))
         
+        # sigma_x = sigma_y = 5
 
         for idx_if, if_row in IF_near.iterrows():
             xi, yi = if_row['X_position'], if_row['Y_position']
             # Poids selon la gaussienne 2D (version point à point)
             weight = amplitude * np.exp(-(((xi - x0) ** 2) / (2 * sigma_x ** 2) + ((yi - y0) ** 2) / (2 * sigma_y ** 2)))
-            result.append({'IMC_cell_ID': imc_row['CellID'],
-                            'IF_cell_ID': if_row['CellID'],
-                            'weight': weight,
-                            'IF_X': xi,
-                            'IF_Y': yi,
-                            'IMC_X': x0,
-                            'IMC_Y': y0})
+            if weight >= threshold:
+                result.append({'IMC_cell_ID': imc_row['CellID'],
+                                'IF_cell_ID': if_row['CellID'],
+                                'weight': weight,
+                                'IF_X': xi,
+                                'IF_Y': yi,
+                                'IMC_X': x0,
+                                'IMC_Y': y0})
     if plot_figure:        
         fig = plt.figure(figsize=(12, 8))
         ax = fig.add_subplot(111, projection='3d')
