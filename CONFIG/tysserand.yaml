@@ -1,5 +1,6 @@
 save_file: True
 pheno_dir: data/processed/Bram_data/phenotypes
+test: True
 
 IMC_import:
   present_in: True
@@ -34,9 +35,6 @@ IF_import:
   other_columns: 8
   other_columns_name: ['ROI_ID']
   if_sample_take_an_other_name: 'ROI_ID'
-
-test:
-  process: False
 
 tysserand:
   k_neighbors_phenograph: 30

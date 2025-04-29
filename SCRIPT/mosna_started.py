@@ -49,8 +49,10 @@ def get_config(config_path):
         config = yaml.safe_load(f)
     return config   
 
-def sample_are_present_in_data(data):
-    if 'sample' in data.columns:
+def sample_are_present_in_data(data, name):
+    if name is None:
+        name = 'sample'
+    if name in data.columns:
         return True
     else:
         return False
@@ -115,19 +117,16 @@ def main_IF_IMC():
     config_file = get_config(config_path)
     IF_markers_col = pd.read_csv('../output_data/description/IF_markers.csv', header=None)[0].tolist()
     IMC_markers_col = pd.read_csv('../output_data/description/IMC_markers.csv', header=None)[0].tolist()
-    '''
-    IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell = import_data('./output_data',
+    
+    IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell = import_data('../output_data',
                                                             config_file['IMC_import']['present_in'],
                                                             config_file['IF_import']['present_in'])
-    '''
-    IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell = import_data("../output_data",
-                                                            True,
-                                                            True)
+
     
-    sample = sample_are_present_in_data(IMC_sample_cell)
+    sample = sample_are_present_in_data(IMC_sample_cell, config_file["IMC_import"]["if_sample_take_an_other_name"])
     nodes_transfo("../output_data/nodes/IMC", IMC_markers_col, config_file["IMC_import"]["if_sample_take_an_other_name"], sample_present=sample)
     
-    sample = sample_are_present_in_data(IF_sample_cell)
+    sample = sample_are_present_in_data(IF_sample_cell, config_file["IF_import"]["if_sample_take_an_other_name"])
     nodes_transfo("../output_data/nodes/IF", IF_markers_col, config_file["IF_import"]["if_sample_take_an_other_name"], sample_present=sample)
 
 def main_IF():
