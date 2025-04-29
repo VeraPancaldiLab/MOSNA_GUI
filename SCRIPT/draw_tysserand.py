@@ -206,7 +206,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
             edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
             sample_name_for_file = sample_name.replace('_', '-')
             edges.to_parquet(Path(f"output_data/{type}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
-            nodes.to_parquet(Path(f"output_data/{type}_networks_sample/nodes") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+            nodes.to_parquet(Path(f"output_data/{type}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
         del unique_list, unique_patient_samples, edges, pairs, nodes
         gc.collect()
 
@@ -263,7 +263,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
             tqdm.write("\t\t\t\tDONE\n")
             edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
             edges.to_parquet(Path(f"output_data/{type}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
-            nodes.to_parquet(Path(f"output_data/nodes/{type}_networks_sample/nodes") / f'nodes_patient-{patient}.parquet', index=False)
+            nodes.to_parquet(Path(f"output_data/nodes/{type}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
         del unique_list, unique_patient_samples, edges, pairs, nodes
         gc.collect()
 
