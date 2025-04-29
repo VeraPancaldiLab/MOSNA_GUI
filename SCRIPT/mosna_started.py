@@ -1,36 +1,44 @@
-import warnings
-from sklearn.exceptions import ConvergenceWarning, FitFailedWarning
-warnings.simplefilter('ignore', FitFailedWarning)
-warnings.simplefilter('ignore', ConvergenceWarning)
-warnings.simplefilter('ignore', FutureWarning)
-warnings.simplefilter('ignore', DeprecationWarning)
-warnings.simplefilter('ignore', UserWarning)
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
-import argparse
-import yaml
-from time import time
+import sys
 import warnings
-import joblib
-from pathlib import Path
-from time import time
-from tqdm import tqdm
-import copy
-import matplotlib as mpl
-import napari
-import colorcet as cc
-import composition_stats as cs
-from sklearn.impute import KNNImputer
-from lifelines import KaplanMeierFitter, CoxPHFitter
+import contextlib
+import gc
 
-from tysserand import tysserand as ty
-from mosna import mosna
+warnings.filterwarnings('ignore')
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+with open(os.devnull, 'w') as fnull:
+    with contextlib.redirect_stderr(fnull):
 
-from draw_tysserand import import_data
-import matplotlib as mpl
+        from sklearn.exceptions import ConvergenceWarning, FitFailedWarning
+        warnings.simplefilter('ignore', FitFailedWarning)
+        warnings.simplefilter('ignore', ConvergenceWarning)
+        warnings.simplefilter('ignore', FutureWarning)
+        warnings.simplefilter('ignore', DeprecationWarning)
+        warnings.simplefilter('ignore', UserWarning)
+        import numpy as np
+        import pandas as pd
+        import matplotlib.pyplot as plt
+        import seaborn as sns
+        import argparse
+        import yaml
+        from time import time
+        import warnings
+        import joblib
+        from pathlib import Path
+        from time import time
+        from tqdm import tqdm
+        import copy
+        import matplotlib as mpl
+        import napari
+        import colorcet as cc
+        import composition_stats as cs
+        from sklearn.impute import KNNImputer
+        from lifelines import KaplanMeierFitter, CoxPHFitter
+
+        from tysserand import tysserand as ty
+        from mosna import mosna
+        import matplotlib as mpl
+
 mpl.rcParams["figure.facecolor"] = 'white'
 mpl.rcParams["axes.facecolor"] = 'white'
 mpl.rcParams["savefig.facecolor"] = 'white'
@@ -49,6 +57,29 @@ def get_config(config_path):
         config = yaml.safe_load(f)
     return config   
 
+def import_data(dir, IMC, IF):
+    if IMC:
+        IMC_sample_cell = pd.read_parquet(Path(dir) / "IMC_sample_cell.parquet")
+        IMC_markers = pd.read_parquet(Path(dir) / "IMC_markers.parquet")
+        if (Path(dir) / "IMC_cell_pos_pheno.parquet").exists():
+            IMC_cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos_pheno.parquet")
+        else:
+            IMC_cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos.parquet")
+    if IF:
+        IF_sample_cell = pd.read_parquet(Path(dir) / "IF_sample_cell.parquet")
+        IF_markers = pd.read_parquet(Path(dir) / "IF_markers.parquet")
+        if (Path(dir) / "IF_cell_pos_pheno.parquet").exists():
+            IF_cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos_pheno.parquet")
+        else:
+            IF_cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos.parquet")
+
+    if IF and not IMC:
+        return IF_cell_pos, IF_markers, IF_sample_cell
+    if IMC and not IF:
+        return IMC_cell_pos, IMC_markers, IMC_sample_cell
+    if IMC and IF:
+        return IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell
+    
 def sample_are_present_in_data(data, name):
     if name is None:
         name = 'sample'
@@ -117,17 +148,24 @@ def main_IF_IMC():
     config_file = get_config(config_path)
     IF_markers_col = pd.read_csv('../output_data/description/IF_markers.csv', header=None)[0].tolist()
     IMC_markers_col = pd.read_csv('../output_data/description/IMC_markers.csv', header=None)[0].tolist()
-    
+    IMC_pheno = pd.read_csv('../output_data/description/IMC_phenotypes.csv', header=None)[0].tolist()
+    IF_pheno = pd.read_csv('../output_data/description/IF_phenotypes.csv', header=None)[0].tolist()
+
+
+
     IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell = import_data('../output_data',
                                                             config_file['IMC_import']['present_in'],
                                                             config_file['IF_import']['present_in'])
 
     
     sample = sample_are_present_in_data(IMC_sample_cell, config_file["IMC_import"]["if_sample_take_an_other_name"])
-    nodes_transfo("../output_data/nodes/IMC", IMC_markers_col, config_file["IMC_import"]["if_sample_take_an_other_name"], sample_present=sample)
+    nodes_transfo("../output_data/IMC_networks_sample/nodes", IMC_markers_col, config_file["IMC_import"]["if_sample_take_an_other_name"], sample_present=sample)
     
     sample = sample_are_present_in_data(IF_sample_cell, config_file["IF_import"]["if_sample_take_an_other_name"])
-    nodes_transfo("../output_data/nodes/IF", IF_markers_col, config_file["IF_import"]["if_sample_take_an_other_name"], sample_present=sample)
+    nodes_transfo("../output_data/IF_networks_sample/nodes", IF_markers_col, config_file["IF_import"]["if_sample_take_an_other_name"], sample_present=sample)
+
+    net_stat = mix_mat_assortativity("../output_data/IMC_networks_sample", "Phenotypes")
+    print(net_stat)
 
 def main_IF():
     config_path = get_arguments()

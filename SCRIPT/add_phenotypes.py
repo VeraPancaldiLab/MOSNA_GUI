@@ -75,9 +75,17 @@ def main():
 
         IMC_cell_pos_pheno = IMC_cell_pos_pheno.rename(columns={'Cluster':'Phenotypes'})
         IF_cell_pos_pheno = IF_cell_pos_pheno.rename(columns={'Cluster':'Phenotypes'})
-
         IMC_cell_pos_pheno.to_parquet('./output_data/IMC_cell_pos_pheno.parquet')
         IF_cell_pos_pheno.to_parquet('./output_data/IF_cell_pos_pheno.parquet')
+
+        IMC_phenotypes_list = IMC_phenotypes['Cluster'].dropna().drop_duplicates()
+        IF_phenotypes_list = IF_phenotypes['Cluster'].dropna().drop_duplicates()
+
+        IMC_phenotypes_list.to_csv("./output_data/description/IMC_phenotypes.csv", index=False, header=False)
+        IF_phenotypes_list.to_csv("./output_data/description/IF_phenotypes.csv", index=False, header=False)
+
+
+
 
         
 if __name__ == "__main__":
