@@ -29,6 +29,7 @@ from lifelines import KaplanMeierFitter, CoxPHFitter
 from tysserand import tysserand as ty
 from mosna import mosna
 
+from draw_tysserand import import_data
 import matplotlib as mpl
 mpl.rcParams["figure.facecolor"] = 'white'
 mpl.rcParams["axes.facecolor"] = 'white'
@@ -48,12 +49,37 @@ def get_config(config_path):
         config = yaml.safe_load(f)
     return config   
 
-def nodes_aggregate(nodes_dir, marker_cols, sample=None):
-    if sample is not None:
+def sample_are_present_in_data(data):
+    if 'sample' in data.columns:
+        return True
+    else:
+        return False
+
+def open_markers(file):
+    with open(file, 'r') as f:
+        markers = [line.strip() for line in f if line.strip()]
+    print(markers)
+    return markers
+
+def replace_sample_name(sample_name):
+    return sample_name.replace('_', '-')
+
+def nodes_transfo(nodes_dir, marker_cols, sample_name=None, sample_present=True):
+    if sample_name is not None:
+        sample_name = replace_sample_name(sample_name)
         nodes_dir = mosna.transform_nodes(
             nodes_dir=nodes_dir,
             id_level_1='patient',
-            id_level_2=sample, 
+            id_level_2=sample_name, 
+            use_cols=marker_cols,
+            method='clr',
+            save_dir='auto',
+        )
+    elif sample_present:
+        nodes_dir = mosna.transform_nodes(
+            nodes_dir=nodes_dir,
+            id_level_1='patient',
+            id_level_2='sample', 
             use_cols=marker_cols,
             method='clr',
             save_dir='auto',
@@ -67,16 +93,72 @@ def nodes_aggregate(nodes_dir, marker_cols, sample=None):
             save_dir='auto',
         )
 
+def mix_mat_assortativity(nodes_dir, pheno_col, n_shuffle = 500):
+    net_stats = mosna.groups_assort_mixmat(
+        net_dir=nodes_dir, 
+        attributes_col=pheno_col, 
+        make_onehot=True,
+        id_level_1='patient',
+        id_level_2='sample', 
+        extension='parquet',
+        n_shuffle=n_shuffle,
+        parallel_groups='max',  # or False
+        save_intermediate_results=True)
+    net_stats.index = net_stats['id']
+    net_stats.drop(columns=['id'], inplace=True)
+    return net_stats
 
-def main():
+########################################## Main #######################################
+
+def main_IF_IMC():
     config_path = get_arguments()
     config_file = get_config(config_path)
-    IF_markers = pd.read_csv('../output_data/description/IF_markers.csv', header=None)[0].tolist()
-    IMC_markers = pd.read_csv('../output_data/description/IMC_markers.csv', header=None)[0].tolist()
-    print(IF_markers,IMC_markers)
-    nodes_aggregate("../output_data/nodes/IF", IF_markers, config_file["IF_import"]["if_sample_take_an_other_name"])
-    nodes_aggregate("../output_data/nodes/IMC", IMC_markers, config_file["IMC_import"]["if_sample_take_an_other_name"])
+    IF_markers_col = pd.read_csv('../output_data/description/IF_markers.csv', header=None)[0].tolist()
+    IMC_markers_col = pd.read_csv('../output_data/description/IMC_markers.csv', header=None)[0].tolist()
+    '''
+    IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell = import_data('./output_data',
+                                                            config_file['IMC_import']['present_in'],
+                                                            config_file['IF_import']['present_in'])
+    '''
+    IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell = import_data("../output_data",
+                                                            True,
+                                                            True)
+    
+    sample = sample_are_present_in_data(IMC_sample_cell)
+    nodes_transfo("../output_data/nodes/IMC", IMC_markers_col, config_file["IMC_import"]["if_sample_take_an_other_name"], sample_present=sample)
+    
+    sample = sample_are_present_in_data(IF_sample_cell)
+    nodes_transfo("../output_data/nodes/IF", IF_markers_col, config_file["IF_import"]["if_sample_take_an_other_name"], sample_present=sample)
 
+def main_IF():
+    config_path = get_arguments()
+    config_file = get_config(config_path)
+    IF_markers_col = pd.read_csv('../output_data/description/IF_markers.csv', header=None)[0].tolist()
+    
+    IF_cell_pos, IF_markers, IF_sample_cell = import_data('./output_data',
+                                                            config_file['IMC_import']['present_in'],
+                                                            config_file['IF_import']['present_in'])
+    sample = sample_are_present_in_data(IF_sample_cell)
+    nodes_transfo("../output_data/nodes/IF", IF_markers_col, config_file["IF_import"]["if_sample_take_an_other_name"], sample_present=sample)
+
+def main_IMC():
+    config_path = get_arguments()
+    config_file = get_config(config_path)
+    IMC_markers_col = pd.read_csv('../output_data/description/IMC_markers.csv', header=None)[0].tolist()
+
+    IMC_cell_pos, IMC_markers, IMC_sample_cell = import_data('./output_data',
+                                                            config_file['IMC_import']['present_in'],
+                                                            config_file['IF_import']['present_in'])
+    sample = sample_are_present_in_data(IMC_sample_cell)
+    nodes_transfo("../output_data/nodes/IMC", IMC_markers_col, config_file["IMC_import"]["if_sample_take_an_other_name"], sample_present=sample)
     
 if __name__ == "__main__":
-    main()
+    config_path = get_arguments()
+    config_file = get_config(config_path)
+
+    if config_file['IF_import']['present_in'] and config_file['IMC_import']['present_in']:
+        main_IF_IMC()
+    if config_file['IF_import']['present_in'] and not config_file['IMC_import']['present_in']:
+        main_IF()
+    if not config_file['IF_import']['present_in'] and config_file['IMC_import']['present_in']:
+        main_IMC()

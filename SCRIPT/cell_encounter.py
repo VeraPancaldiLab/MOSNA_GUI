@@ -119,7 +119,7 @@ def cell_encounter(IMC_pos, IF_pos, threshold=0.05, sigma=1, r_max=100, nb_cell_
 def main():
     config_path = get_arguments()
     config_file = get_config(config_path)
-    IMC_pos, IF_pos, IMC_sample_cell, IF_sample_cell = import_data(config_file['standard']['output_dir'])
+    IMC_pos, IF_pos, IMC_sample_cell, IF_sample_cell = import_data('./output_data')
     if config_file['IMC_import']['re_index']:
         IMC_pos['CellID'] = IMC_pos.index
         IMC_sample_cell['CellID'] = IMC_sample_cell.index

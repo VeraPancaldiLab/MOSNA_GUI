@@ -1,6 +1,5 @@
-standard:
-  saving: True
-  output_dir: output_data
+save_file: True
+pheno_dir: data/processed/Bram_data/phenotypes
 
 IMC_import:
   present_in: True
@@ -17,7 +16,7 @@ IMC_import:
   spatial_columns: "34:35"
   other_columns: 
   other_columns_name:
-  if_sample_take_an_other_name: 
+  if_sample_take_an_other_name: 'ROI_ID'
 
 IF_import:
   present_in: True
@@ -37,10 +36,7 @@ IF_import:
   if_sample_take_an_other_name: 'ROI_ID'
 
 test:
-  partial: False
-  which_file_if_partial: 
-  directory_to_test: output_data/*.parquet
-  test_directory: output_data/test/*.csv
+  process: False
 
 tysserand:
   k_neighbors_phenograph: 30

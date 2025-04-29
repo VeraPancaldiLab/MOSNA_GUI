@@ -27,6 +27,9 @@ echo '########### TEST ###########'
 python SCRIPT/test_parser.py --file CONFIG/tysserand.yaml
 printf "TEST --- DONE\n\n"
 
+printf 'Add phenotypes ---'
+python SCRIPT/add_phenotypes.py --file CONFIG/tysserand.yaml
+echo -e 'DONE\n'
 
 mkdir -p output_data/Tysserand_network
 echo '########### Tysserand Plotting ###########'

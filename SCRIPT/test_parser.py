@@ -56,12 +56,11 @@ def merge(df1, df2, df3, df_to_compare):
 def main():
     config_path = get_arguments()
     config_file = get_config(config_path)
-    if not config_file['test']['partial']:
-        directory_to_test = import_data(config_file['test']['directory_to_test'])
-        test_directory = import_data(config_file['test']['test_directory'])
-        if config_file['IF_import']['present_in']:
-            print(f"IF data (pandas length, originals concatenated csv length, same row between them)\t-->\t{merge(directory_to_test['IF_markers'],directory_to_test['IF_cell_pos'],directory_to_test['IF_sample_cell'],test_directory['merged_IF'])}")
-        if config_file['IMC_import']['present_in']:
-            print(f"IMC data (pandas length, originals concatenated csv length, same row between them)\t-->\t{merge(directory_to_test['IMC_markers'],directory_to_test['IMC_cell_pos'],directory_to_test['IMC_sample_cell'],test_directory['merged_IMC'])}")
+    directory_to_test = import_data('output_data/*.parquet')
+    test_directory = import_data('output_data/test/*.csv')
+    if config_file['IF_import']['present_in']:
+        print(f"IF data (pandas length, originals concatenated csv length, same row between them)\t-->\t{merge(directory_to_test['IF_markers'],directory_to_test['IF_cell_pos'],directory_to_test['IF_sample_cell'],test_directory['merged_IF'])}")
+    if config_file['IMC_import']['present_in']:
+        print(f"IMC data (pandas length, originals concatenated csv length, same row between them)\t-->\t{merge(directory_to_test['IMC_markers'],directory_to_test['IMC_cell_pos'],directory_to_test['IMC_sample_cell'],test_directory['merged_IMC'])}")
 if __name__ == "__main__":
     main()
