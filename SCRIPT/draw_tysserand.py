@@ -147,7 +147,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
 
     if 'Phenotypes' not in IF_cell_pos:
         IF_cell_pos['Phenotypes'] = ''
-
+    print(sample_name)
     if sample_name in IF_sample_cell.columns:
         unique_patient_samples = IF_sample_cell[['patient',sample_name]].drop_duplicates()
         unique_list = list(unique_patient_samples.itertuples(index=False, name=None))
