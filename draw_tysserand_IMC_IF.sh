@@ -7,8 +7,8 @@ echo "$TEST"
 
 mkdir -p output_data/description
 mkdir -p output_data/test
-mkdir -p output_data/IF_networks_sample/nodes
-mkdir -p output_data/IMC_networks_sample/nodes
+mkdir -p output_data/IF_networks_sample
+mkdir -p output_data/IMC_networks_sample
 
 python SCRIPT/parser_csv_to_pandas.py --file CONFIG/tysserand.yaml
 
