@@ -37,7 +37,6 @@ mpl.rcParams["figure.facecolor"] = 'white'
 mpl.rcParams["axes.facecolor"] = 'white'
 mpl.rcParams["savefig.facecolor"] = 'white'
 
-
 def get_arguments():
 
     parser = argparse.ArgumentParser(description = "Draw tysserand for IMC / IF")
@@ -56,12 +55,13 @@ def replace_sample_name(sample_name):
     return sample_name.replace('_', '-')
 
 def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, stat_funcs, stat_names, sample_name, file_type):
+    if sample_name is None:
+        sample_name = 'sample'
+
     if (output_dir / f'{file_type}_aggregation_stats.parquet').exists():
         print(f'Load aggregation statistics from {file_type}')
         var_aggreg = pd.read_parquet(output_dir / f'{file_type}_aggregation_stats.parquet')
     else:
-        if sample_name is None:
-            sample_name = 'sample'
         print(f'Compute aggregation statistics from {file_type}')
         var_aggreg = mosna.compute_spatial_omic_features_all_networks(
             method=method,
@@ -81,7 +81,85 @@ def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, s
             verbose=1,
             )
         var_aggreg.to_parquet(output_dir / f'{file_type}_aggregation_stats.parquet', index=False)
-    return var_aggregate
+    return var_aggreg.drop(columns=['patient', replace_sample_name(sample_name)], inplace=True)
+
+def get_param_for_niches():
+    hyperparams = {
+    'n_neighbors': 15,
+    'metric': 'euclidean',
+    'clusterer_type': 'hdbscan',
+    'dim_clust': 10,
+    'clust_size_param': 5,
+    }
+
+    clust_size_param_name = 'min_cluster_size'  # par ex. pour HDBSCAN
+
+    cluster_params = {
+        'reducer_type': 'none', 
+        'n_neighbors': hyperparams['n_neighbors'], 
+        'k_cluster': hyperparams['n_neighbors'],
+        'metric': hyperparams['metric'],
+        'min_dist': 0.0,
+        'clusterer_type': hyperparams['clusterer_type'], 
+        'dim_clust': hyperparams['dim_clust'], 
+        'force_recompute': True,
+        clust_size_param_name: int(hyperparams['clust_size_param']),
+    }
+    return cluster_params
+
+def load_niches(var_aggreg, sof_dir, cluster_params=None):
+    if cluster_params == None:
+        cluster_labels, cluster_dir, nb_clust, _ = mosna.get_clusterer(var_aggreg, sof_dir)
+    else:
+        cluster_labels, cluster_dir, nb_clust, _ = mosna.get_clusterer(var_aggreg, sof_dir, **cluster_params)
+    niches = cluster_labels
+    str_params = '_'.join([str(key) + '-' + str(val) for key, val in cluster_params.items()])
+    #str_params = str_params + f'_normalize-{normalize}'
+    return niches, str_params
+
+def plot_niches(niches, cell_types, str_params, save_dir, save_fig=True):
+    # Niches total counts
+    ax = mosna.plot_niches_histogram(niches)
+    plt.title('Niches histogram')
+    if save_fig:
+        figname = f"{str_params}_niches_total_count.jpg"
+        plt.savefig(save_dir / figname, bbox_inches='tight', facecolor='white', dpi=150)
+    plt.show()
+
+
+    # Niches composition
+
+    mosna.plot_niches_composition(var=cell_types, niches=niches, var_label='cell-types')
+    title = "niche cell-types composition, normalized by total # cells"
+    plt.title(title)
+    if save_fig:
+        figname = f"{str_params}_{title}.jpg"
+        plt.savefig(save_dir / figname, bbox_inches='tight', facecolor='white', dpi=150)
+    plt.show()
+
+    mosna.plot_niches_composition(var=cell_types, niches=niches, var_label='cell-types', normalize='niche')
+    title = "niche cell-types composition, normalized by niche"
+    plt.title(title)
+    if save_fig:
+        figname = f"{str_params}_{title}.jpg"
+        plt.savefig(save_dir / figname, bbox_inches='tight', facecolor='white', dpi=150)
+    plt.show()
+
+    mosna.plot_niches_composition(var=cell_types, niches=niches, var_label='cell-types', normalize='obs')
+    title = "niche cell-types composition, normalized by cell-type"
+    plt.title(title)
+    if save_fig:
+        figname = f"{str_params}_{title}.jpg"
+        plt.savefig(save_dir / figname, bbox_inches='tight', facecolor='white', dpi=150)
+    plt.show()
+
+    mosna.plot_niches_composition(var=cell_types, niches=niches, var_label='cell-types', normalize='niche&obs')
+    title = "niche cell-types composition, normalized by niche & cell-type"
+    plt.title(title)
+    if save_fig:
+        figname = f"{str_params}_{title}.jpg"
+        plt.savefig(save_dir / figname, bbox_inches='tight', facecolor='white', dpi=150)
+    plt.show()
 
 ##################################### Main #########################################
 
@@ -103,10 +181,12 @@ def main_IMC_IF():
     uniq_phenotypes_IMC = pd.read_csv(output_dir / "description/IMC_phenotypes.csv").iloc[:, 0].to_numpy()
     uniq_phenotypes_IF = pd.read_csv(output_dir / "description/IF_phenotypes.csv").iloc[:, 0].to_numpy()
     
+    cell_types_IMC = pd.read_parquet(output_dir / "IMC_cell_pos_pheno.parquet")[pheno_col]
+    cell_types_IF = pd.read_parquet(output_dir / "IF_cell_pos_pheno.parquet")[pheno_col]
+
     stat_funcs = np.mean
     stat_names = 'mean'
 
-    
     if method == 'NAS':
         sof_dir = output_dir / f"NAS"    
         sof_dir.mkdir(parents=True, exist_ok=True)
@@ -114,6 +194,8 @@ def main_IMC_IF():
         sof_dir = output_dir / f"SCAN-IT"    
         sof_dir.mkdir(parents=True, exist_ok=True)
 
+    save_dir=Path('./output_data/niches')
+    save_dir.mkdir(parents=True, exist_ok=True)
     
     network_dir_IF = Path('./output_data/IF_networks_sample')
     network_dir_IMC = Path('./output_data/IMC_networks_sample')
@@ -126,6 +208,10 @@ def main_IMC_IF():
                                method, pheno_col, uniq_phenotypes_IF, stat_funcs, stat_names,
                                config_file['IF_import']['if_sample_take_an_other_name'], 'IF')
     
+    cluster_param = get_param_for_niches()
+    print(cluster_param)
+    niches, str_param = load_niches(var_agg_IMC, sof_dir, cluster_param)
+    plot_niches(niches, cell_types_IMC, str_param, save_dir)
 
 if __name__ == "__main__":
     config_path = get_arguments()
