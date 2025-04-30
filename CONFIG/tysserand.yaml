@@ -36,6 +36,8 @@ IF_import:
   other_columns_name: ['ROI_ID']
   if_sample_take_an_other_name: 'ROI_ID'
 
+phenograph:
+
 tysserand:
   k_neighbors_phenograph: 30
   primary_metric_phenograph: 'minkowski'
