@@ -9,6 +9,7 @@ warnings.simplefilter('ignore', ConvergenceWarning)
 warnings.simplefilter('ignore', FutureWarning)
 warnings.simplefilter('ignore', DeprecationWarning)
 warnings.simplefilter('ignore', UserWarning)
+warnings.simplefilter('ignore', RuntimeWarning)
 import numpy as np
 import pandas as pd  
 import matplotlib.pyplot as plt
@@ -147,7 +148,6 @@ def plot_mix_mat(save_dir, net_stats, sample_id):
     sns.set_context("notebook")
     figsize = (9, 8)
     title = "Z-scored assortativity for {} by cell types: {:.2f}".format(sample_id,assort_z)
-    print(title)
     f, ax = plt.subplots(figsize=figsize)
     sns.heatmap(mixmat_z, center=0, cmap="vlag", annot=False, linewidths=.5, ax=ax)
     ax.set_title(title)
@@ -196,7 +196,7 @@ def main_IF_IMC():
     list_id = net_stat_IMC.index.to_list()
     save_dir_IMC = save_dir / "figures/IMC"
     save_dir_IMC.mkdir(parents=True, exist_ok=True)
-    for id in list_id:
+    for id in tqdm(list_id, desc=" └─ Processing assortativity for IMC"):
         plot_mix_mat(save_dir_IMC, net_stat_IMC, id)
 
     if not (save_dir / "IF_net_stat.parquet").exists():
@@ -213,7 +213,7 @@ def main_IF_IMC():
     list_id = net_stat_IF.index.to_list()
     save_dir_IF = save_dir / "figures/IF"
     save_dir_IF.mkdir(parents=True, exist_ok=True)
-    for id in list_id:
+    for id in tqdm(list_id, desc=" └─ Processing assortativity for IMC"):
         plot_mix_mat(save_dir_IF, net_stat_IF, id)
     
 def main_IF():

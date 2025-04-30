@@ -1,34 +1,33 @@
 import os
 import sys
 import warnings
-import contextlib
 import gc
 
-warnings.filterwarnings('ignore')
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
-with open(os.devnull, 'w') as fnull:
-    with contextlib.redirect_stderr(fnull):
-
-        import numpy as np
-        import pandas as pd
-        import yaml
-        import argparse
-        import matplotlib.pyplot as plt
-        import seaborn as sns
-        from time import time
-        from pathlib import Path
-        from time import time
-        from tqdm import tqdm
-        import copy
-        import matplotlib as mpl
-        import colorcet as cc
-        import composition_stats as cs
-        from phenograph.cluster import cluster
+warnings.simplefilter('ignore', FitFailedWarning)
+warnings.simplefilter('ignore', ConvergenceWarning)
+warnings.simplefilter('ignore', FutureWarning)
+warnings.simplefilter('ignore', DeprecationWarning)
+warnings.simplefilter('ignore', UserWarning)
+import numpy as np
+import pandas as pd
+import yaml
+import argparse
+import matplotlib.pyplot as plt
+import seaborn as sns
+from time import time
+from pathlib import Path
+from time import time
+from tqdm import tqdm
+import copy
+import matplotlib as mpl
+import colorcet as cc
+import composition_stats as cs
+from phenograph.cluster import cluster
     
-        from tysserand import tysserand as ty
-        from mosna import mosna
+from tysserand import tysserand as ty
+from mosna import mosna
 
-        import matplotlib as mpl
+import matplotlib as mpl
 
 mpl.rcParams["figure.facecolor"] = 'white'
 mpl.rcParams["axes.facecolor"] = 'white'
