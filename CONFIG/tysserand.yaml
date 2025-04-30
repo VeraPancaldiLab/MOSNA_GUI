@@ -36,7 +36,7 @@ IF_import:
   other_columns_name: ['ROI_ID']
   if_sample_take_an_other_name: 'ROI_ID'
 
-phenograph:
+phenograph: False
 
 tysserand:
   k_neighbors_phenograph: 30

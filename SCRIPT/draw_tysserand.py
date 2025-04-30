@@ -307,7 +307,7 @@ def main():
             IF_sample_cell['CellID'] = IF_sample_cell.index
         
         tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, config_file['IF_import']['there_is_duplicata'], 'IF',
-                          False,
+                          config_file['phenograph'],
                           config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
                           config_file['IF_import']['normalize'],
@@ -316,7 +316,7 @@ def main():
                           config_file['IF_import']['if_sample_take_an_other_name'])
         
         tysserand_network(IMC_cell_pos, IMC_markers, IMC_sample_cell, config_file['IMC_import']['there_is_duplicata'], 'IMC',
-                          False,
+                          config_file['phenograph'],
                           config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
                           config_file['IMC_import']['normalize'],

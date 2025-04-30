@@ -3,6 +3,7 @@ source ~/miniconda3/etc/profile.d/conda.sh
 conda activate mosna
 
 TEST=$(yq '.test' CONFIG/tysserand.yaml)
+phenotypes_not_defined=$(yq '.phenograph' CONFIG/tysserand.yaml)
 echo "$TEST"
 
 mkdir -p output_data/description
@@ -30,9 +31,11 @@ if [ "$TEST" == "true" ]; then
     printf "TEST --- DONE\n\n"
 fi
 
-printf 'Add phenotypes --- '
-python SCRIPT/add_phenotypes.py --file CONFIG/tysserand.yaml
-echo -e 'DONE\n'
+if [ "$phenotypes_not_defined" == false ]; then
+    printf 'Add phenotypes --- '
+    python SCRIPT/add_phenotypes.py --file CONFIG/tysserand.yaml
+    echo -e 'DONE\n'
+fi
 
 mkdir -p output_data/Tysserand_network
 echo '########### Tysserand Plotting ###########'
