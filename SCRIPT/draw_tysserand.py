@@ -2,7 +2,7 @@ import os
 import sys
 import warnings
 import gc
-
+import contextlib
 warnings.simplefilter('ignore', FitFailedWarning)
 warnings.simplefilter('ignore', ConvergenceWarning)
 warnings.simplefilter('ignore', FutureWarning)
@@ -192,8 +192,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
                 clustering_IF=cell_ID_pos['Phenotypes']
                 
             tqdm.write("\tDRAW TYSSERAND NETWORK",end='\t\t\t')
-            with open(os.devnull, 'w') as c, contextlib.redirect_stdout(c):
-                pairs = draw_tysserand_network(coords, clustering_IF, patient_sample[0], type=type,sample=patient_sample[1], method=method, min_neighbors=min_neighbors, sample_name=sample_name)
+            pairs = draw_tysserand_network(coords, clustering_IF, patient_sample[0], type=type,sample=patient_sample[1], method=method, min_neighbors=min_neighbors, sample_name=sample_name)
     
             del coords, cell_ID_pos, clustering_IF, markers_to_cluter_IF
             if 'cells' in locals():
@@ -251,8 +250,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
                 clustering_IF=cell_ID_pos['Phenotypes']
 
             tqdm.write("\tDRAW TYSSERAND NETWORK",end='\t\t\t')
-            with open(os.devnull, 'w') as c, contextlib.redirect_stdout(c):
-                pairs = draw_tysserand_network(coords, clustering_IF, patient, type=type, method=method, min_neighbors=min_neighbors)
+            pairs = draw_tysserand_network(coords, clustering_IF, patient, type=type, method=method, min_neighbors=min_neighbors)
             del coords, cell_ID_pos, clustering_IF, markers_to_cluter_IF
             if 'cells' in locals():
                 del cells

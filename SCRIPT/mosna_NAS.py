@@ -32,6 +32,7 @@ from lifelines import KaplanMeierFitter, CoxPHFitter
 from tysserand import tysserand as ty
 from mosna import mosna
 import matplotlib as mpl
+import shutil
 
 mpl.rcParams["figure.facecolor"] = 'white'
 mpl.rcParams["axes.facecolor"] = 'white'
@@ -83,85 +84,79 @@ def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, s
         var_aggreg.to_parquet(output_dir / f'{file_type}_aggregation_stats.parquet', index=False)
     return var_aggreg.drop(columns=['patient', replace_sample_name(sample_name)], inplace=True)
 
-def get_param_for_niches():
-    hyperparams = {
-    'n_neighbors': 15,
-    'metric': 'euclidean',
-    'clusterer_type': 'hdbscan',
-    'dim_clust': 10,
-    'clust_size_param': 5,
-    }
+def get_param_for_niches(nodes_df, edges_df, node_features_list, stat_funcs, stat_names, save_dir, patient, sample):
+    features_nas = mosna.make_features_NAS(
+        X=nodes_df[node_features_list].values,
+        pairs=edges_df.values,
+        order=2,
+        var_names = node_features_list,
+        stat_funcs=stat_funcs,
+        stat_names=stat_names,
+        var_sep='_'
+    )
 
-    clust_size_param_name = 'min_cluster_size'  # par ex. pour HDBSCAN
+    dir=save_dir / f'clustering-{patient}-{sample}'
+    dir.mkdir(parents=True, exist_ok=True)
+    cluster_labels, cluster_dir, nb_clust, clusterer = mosna.get_clusterer(
+        data=features_nas.values,
+        data_dir=dir,     # dossier pour sauvegarder modèles + embeddings
+        reducer_type='umap',
+        clusterer_type='leiden',
+        n_neighbors=15,
+        metric='euclidean',
+        min_dist=0.0,
+        dim_clust=2,
+        min_cluster_size=10,
+        use_gpu=False,
+        verbose=1,
+    )
+    shutil.rmtree(dir)
+    return cluster_labels
 
-    cluster_params = {
-        'reducer_type': 'none', 
-        'n_neighbors': hyperparams['n_neighbors'], 
-        'k_cluster': hyperparams['n_neighbors'],
-        'metric': hyperparams['metric'],
-        'min_dist': 0.0,
-        'clusterer_type': hyperparams['clusterer_type'], 
-        'dim_clust': hyperparams['dim_clust'], 
-        'force_recompute': True,
-        clust_size_param_name: int(hyperparams['clust_size_param']),
-    }
-    return cluster_params
+def load_niches(nodes, cluster_labels, save_dir, patient, sample, image_type, normalize='niche'):
+    counts = mosna.make_niches_composition(
+        var=nodes['Phenotypes'],       # ou un autre label
+        niches=cluster_labels,        # résultat du clustering
+        var_label='Phenotypes',
+        normalize=normalize
+    )
+    axes = mosna.plot_niches_composition(counts=counts)
+    fig = axes.figure
+    plt.title(f"{image_type}_niches composition for {patient}, sample {sample}_{normalize}_normalization")
+    fig.savefig(save_dir / f'{patient}-{sample}_niche_composition_{normalize}.png', dpi=300, bbox_inches='tight')
+    plt.close(fig)
 
-def load_niches(var_aggreg, sof_dir, cluster_params=None):
-    if cluster_params == None:
-        cluster_labels, cluster_dir, nb_clust, _ = mosna.get_clusterer(var_aggreg, sof_dir)
-    else:
-        cluster_labels, cluster_dir, nb_clust, _ = mosna.get_clusterer(var_aggreg, sof_dir, **cluster_params)
-    niches = cluster_labels
-    str_params = '_'.join([str(key) + '-' + str(val) for key, val in cluster_params.items()])
-    #str_params = str_params + f'_normalize-{normalize}'
-    return niches, str_params
+def tysserand(coords, pairs, clustering,
+              type, patient, sample, sample_name,
+              save_dir, normalize):
+    
+    fig, ax = ty.plot_network(
+        np.array(coords.values.tolist()), pairs,
+        labels=clustering,
+        color_mapper=color_map(clustering),
+        legend_opt={'loc': 'center left', 'bbox_to_anchor': (1.05, 0.5), 'fontsize': 30, 'markerscale': 5},
+        size_nodes=5,
+        figsize=(30,30)
+        )
+    plt.title(f"Draw an {type} Tysserand network niches normalized by {normalize} for patient {patient} and {sample_name} {sample}", fontsize=30)
+    plt.savefig(save_dir / f"{type}_Tysserand_network_niches_normalized_{normalize}_{patient}_{sample_name}_{sample}.png", bbox_inches="tight")
+    plt.close(fig)
 
-def plot_niches(niches, cell_types, str_params, save_dir, save_fig=True):
-    # Niches total counts
-    ax = mosna.plot_niches_histogram(niches)
-    plt.title('Niches histogram')
-    if save_fig:
-        figname = f"{str_params}_niches_total_count.jpg"
-        plt.savefig(save_dir / figname, bbox_inches='tight', facecolor='white', dpi=150)
-    plt.show()
+def color_map(clustering):
+    if clustering is not None:
+        nb_clust = clustering.max()
+        uniq = pd.Series(clustering).value_counts().index
 
+        # choose colormap
+        clusters_cmap = mosna.make_cluster_cmap(uniq)
+        # make color mapper
+        # series to sort by decreasing order
+        n_colors = len(clusters_cmap)
+        celltypes_color_mapper = {x: clusters_cmap[i % n_colors] for i, x in enumerate(uniq)}
+    return celltypes_color_mapper
+ ##################################### Main #########################################
 
-    # Niches composition
-
-    mosna.plot_niches_composition(var=cell_types, niches=niches, var_label='cell-types')
-    title = "niche cell-types composition, normalized by total # cells"
-    plt.title(title)
-    if save_fig:
-        figname = f"{str_params}_{title}.jpg"
-        plt.savefig(save_dir / figname, bbox_inches='tight', facecolor='white', dpi=150)
-    plt.show()
-
-    mosna.plot_niches_composition(var=cell_types, niches=niches, var_label='cell-types', normalize='niche')
-    title = "niche cell-types composition, normalized by niche"
-    plt.title(title)
-    if save_fig:
-        figname = f"{str_params}_{title}.jpg"
-        plt.savefig(save_dir / figname, bbox_inches='tight', facecolor='white', dpi=150)
-    plt.show()
-
-    mosna.plot_niches_composition(var=cell_types, niches=niches, var_label='cell-types', normalize='obs')
-    title = "niche cell-types composition, normalized by cell-type"
-    plt.title(title)
-    if save_fig:
-        figname = f"{str_params}_{title}.jpg"
-        plt.savefig(save_dir / figname, bbox_inches='tight', facecolor='white', dpi=150)
-    plt.show()
-
-    mosna.plot_niches_composition(var=cell_types, niches=niches, var_label='cell-types', normalize='niche&obs')
-    title = "niche cell-types composition, normalized by niche & cell-type"
-    plt.title(title)
-    if save_fig:
-        figname = f"{str_params}_{title}.jpg"
-        plt.savefig(save_dir / figname, bbox_inches='tight', facecolor='white', dpi=150)
-    plt.show()
-
-##################################### Main #########################################
+####################################################### Main #######################################################
 
 def main_IF():
     return 0
@@ -173,16 +168,21 @@ def main_IMC_IF():
     config_path = get_arguments()
     config_file = get_config(config_path)
 
-
     method = config_file['NAS']['method']
 
     pheno_col = 'Phenotypes'
     output_dir = Path('./output_data')
+
     uniq_phenotypes_IMC = pd.read_csv(output_dir / "description/IMC_phenotypes.csv").iloc[:, 0].to_numpy()
     uniq_phenotypes_IF = pd.read_csv(output_dir / "description/IF_phenotypes.csv").iloc[:, 0].to_numpy()
     
     cell_types_IMC = pd.read_parquet(output_dir / "IMC_cell_pos_pheno.parquet")[pheno_col]
     cell_types_IF = pd.read_parquet(output_dir / "IF_cell_pos_pheno.parquet")[pheno_col]
+
+    IF_markers = pd.read_csv(output_dir / "description/IF_markers.csv").iloc[:, 0].to_list()
+    IMC_markers = pd.read_csv(output_dir / "description/IMC_markers.csv").iloc[:, 0].to_list()
+    IF_sample = pd.read_csv(output_dir / "description/IF_file_description.csv", header=None).values.tolist()
+    IMC_sample = pd.read_csv(output_dir / "description/IMC_file_description.csv", header=None).values.tolist()
 
     stat_funcs = np.mean
     stat_names = 'mean'
@@ -194,7 +194,7 @@ def main_IMC_IF():
         sof_dir = output_dir / f"SCAN-IT"    
         sof_dir.mkdir(parents=True, exist_ok=True)
 
-    save_dir=Path('./output_data/niches')
+    save_dir = sof_dir / 'niches_figure'
     save_dir.mkdir(parents=True, exist_ok=True)
     
     network_dir_IF = Path('./output_data/IF_networks_sample')
@@ -208,11 +208,47 @@ def main_IMC_IF():
                                method, pheno_col, uniq_phenotypes_IF, stat_funcs, stat_names,
                                config_file['IF_import']['if_sample_take_an_other_name'], 'IF')
     
-    cluster_param = get_param_for_niches()
-    print(cluster_param)
-    niches, str_param = load_niches(var_agg_IMC, sof_dir, cluster_param)
-    plot_niches(niches, cell_types_IMC, str_param, save_dir)
+    for patient, sample in tqdm(IMC_sample, desc= f'IMC niches'):
+        if config_file["IMC_import"]["if_sample_take_an_other_name"] is not None:
+            sample_name = config_file["IMC_import"]["if_sample_take_an_other_name"]
+        else:
+            sample_name = 'sample'
+        save_dir_IMC = save_dir / 'IMC'
+        save_dir_IMC.mkdir(parents=True, exist_ok=True)
 
+        nodes = pd.read_parquet(network_dir_IMC / f'nodes_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
+        edges = pd.read_parquet(network_dir_IMC / f'edges_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
+        
+        normalize = 'niche & cell-types' #niche or #cell-types
+
+        save_directory = save_dir_IMC / f'normalization_{normalize}'
+        save_directory.mkdir(parents=True, exist_ok=True)
+
+        cluster_labels = get_param_for_niches(nodes, edges, IMC_markers, [np.mean, np.std], ['mean', 'std'], save_dir_IMC, patient, sample)
+
+        load_niches(nodes, cluster_labels, save_directory, patient, sample, 'IMC', normalize=normalize)
+        nodes[f'niches_{normalize}'] = cluster_labels
+        pairs = edges[['source', 'target']].values
+
+        #nodes.to_parquet(network_dir_IMC / f'nodes_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
+        tysserand(nodes[['X_position','Y_position']], pairs, cluster_labels, 'IMC', patient, sample, sample_name, save_directory, normalize)
+
+        
+    """
+    for patient, sample in tqdm(IF_sample, desc='IF niches'):
+        if config_file["IF_import"]["if_sample_take_an_other_name"] is not None:
+            sample_name = config_file["IF_import"]["if_sample_take_an_other_name"]
+        else:
+            sample_name = 'sample'
+        save_dir_IF = save_dir / 'IF'
+        save_dir_IF.mkdir(parents=True, exist_ok=True)  
+
+        nodes = pd.read_parquet(network_dir_IF / f'nodes_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
+        edges = pd.read_parquet(network_dir_IF / f'edges_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
+
+        cluster_labels = get_param_for_niches(nodes, edges, IF_markers, [np.mean, np.std], ['mean', 'std'], save_dir_IF, patient, sample)
+        load_niches(nodes, cluster_labels, save_dir_IF, patient, sample, 'IF', normalize='niche')
+    """
 if __name__ == "__main__":
     config_path = get_arguments()
     config_file = get_config(config_path)

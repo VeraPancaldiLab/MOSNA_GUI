@@ -11,3 +11,4 @@ if [[ "$1" == "--silent" ]]; then
 else
     python SCRIPT/mosna_NAS.py --file CONFIG/tysserand.yaml
 fi
+
