@@ -38,7 +38,7 @@ def filter_by_patient(filtre, data_pos, data_sample_cell, there_is_duplicata):
         cell_ID_pos = data_pos.loc[filtre, ['CellID','X_position','Y_position']]
     return cell_ID_pos
 
-def cell_encounter(IMC_pos, IF_pos, r_max=100, nb_cell_max=7, amplitude=1, patient='Unknown', plot_figure=False):
+def cell_encounter(IMC_pos, IF_pos, threshold=0.05, sigma=1, r_max=100, nb_cell_max=7, amplitude=1, patient='Unknown', plot_figure=False):
     result = []
     for idx_imc, imc_row in tqdm(IMC_pos.iterrows(), total=len(IMC_pos), desc=f" └─ Processing IMC cells for patient {patient}", position=1):
         x0, y0 = imc_row['X_position'], imc_row['Y_position']
@@ -53,8 +53,8 @@ def cell_encounter(IMC_pos, IF_pos, r_max=100, nb_cell_max=7, amplitude=1, patie
         mask = distances <= r
  
         # ajust rad
-        if len(IF_pos[mask]) == 0:
-            while len(IF_pos[mask]) == 0:
+        if len(IF_pos[mask]) < nb_cell_max:
+            while len(IF_pos[mask]) < nb_cell_max:
                 r+=100
                 mask = distances <= r
         IF_near = IF_pos[mask]
@@ -66,21 +66,24 @@ def cell_encounter(IMC_pos, IF_pos, r_max=100, nb_cell_max=7, amplitude=1, patie
             smallest_7_indices = sorted_distances.head(nb_cell_max).index
             IF_near = IF_pos.loc[smallest_7_indices]
 
-        sigma_x = max(IF_near['X_position'].std(), 1e-2)
-        sigma_y = max(IF_near['Y_position'].std(), 1e-2)
-
+        sigma_x = max(np.std(IF_near['X_position'], ddof=1) or 0, 30)
+        sigma_y = max(np.std(IF_near['Y_position'], ddof=1) or 0, 30)
+        sigma_y = sigma_x = max(sigma_x, sigma_y)*10/np.log(max(sigma_x, sigma_y))
+        
+        # sigma_x = sigma_y = sigma
 
         for idx_if, if_row in IF_near.iterrows():
             xi, yi = if_row['X_position'], if_row['Y_position']
             # Poids selon la gaussienne 2D (version point à point)
             weight = amplitude * np.exp(-(((xi - x0) ** 2) / (2 * sigma_x ** 2) + ((yi - y0) ** 2) / (2 * sigma_y ** 2)))
-            result.append({'IMC_cell_ID': imc_row['CellID'],
-                            'IF_cell_ID': if_row['CellID'],
-                            'weight': weight,
-                            'IF_X': xi,
-                            'IF_Y': yi,
-                            'IMC_X': x0,
-                            'IMC_Y': y0})
+            if weight >= threshold:
+                result.append({'IMC_cell_ID': imc_row['CellID'],
+                                'IF_cell_ID': if_row['CellID'],
+                                'weight': weight,
+                                'IF_X': xi,
+                                'IF_Y': yi,
+                                'IMC_X': x0,
+                                'IMC_Y': y0})
     if plot_figure:        
         fig = plt.figure(figsize=(12, 8))
         ax = fig.add_subplot(111, projection='3d')
@@ -108,7 +111,7 @@ def cell_encounter(IMC_pos, IF_pos, r_max=100, nb_cell_max=7, amplitude=1, patie
         ax.set_title('Surface Gaussienne autour du dernier point IMC')
         ax.legend()
         plt.tight_layout()
-        plt.savefig(Path(f'cell_encounter_data/exemple_{patient}.png'))
+        plt.savefig(Path(f'output_data/cell_encounter_data/exemple_{patient}.png'))
         plt.close()
 
     return result
@@ -116,7 +119,7 @@ def cell_encounter(IMC_pos, IF_pos, r_max=100, nb_cell_max=7, amplitude=1, patie
 def main():
     config_path = get_arguments()
     config_file = get_config(config_path)
-    IMC_pos, IF_pos, IMC_sample_cell, IF_sample_cell = import_data(config_file['standard']['output_dir'])
+    IMC_pos, IF_pos, IMC_sample_cell, IF_sample_cell = import_data('./output_data')
     if config_file['IMC_import']['re_index']:
         IMC_pos['CellID'] = IMC_pos.index
         IMC_sample_cell['CellID'] = IMC_sample_cell.index
@@ -139,9 +142,13 @@ def main():
         IMC_pos_temp = filter_by_patient(filtre_IMC, IMC_pos, IMC_sample_cell, config_file["IMC_import"]['there_is_duplicata'])
         IF_pos_temp = filter_by_patient(filtre_IF, IF_pos, IF_sample_cell, config_file["IF_import"]['there_is_duplicata'])
 
-        tab = cell_encounter(IMC_pos_temp, IF_pos_temp, r_max=500, nb_cell_max=config_file['cell_encounter']['nb_cell_max_per_gaussian'], patient=patient, plot_figure=True)
+        tab = cell_encounter(IMC_pos_temp, IF_pos_temp, 
+                             threshold=config_file['cell_encounter']['threshold_filter'],
+                             sigma=config_file['cell_encounter']['gaussian_sigma'],
+                             r_max=500, nb_cell_max=config_file['cell_encounter']['nb_cell_max_per_gaussian'], 
+                             patient=patient, plot_figure=True)
         tab = pd.DataFrame(tab)
-        tab.to_parquet(Path(f'cell_encounter_data/cell_encounter_for_patient_{patient}.parquet'))
+        tab.to_parquet(Path(f'output_data/cell_encounter_data/cell_encounter_for_patient_{patient}.parquet'))
         del tab, IF_pos_temp, IMC_pos_temp
         gc.collect()
 

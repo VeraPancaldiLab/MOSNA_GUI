@@ -1,0 +1,261 @@
+import os
+import sys
+import warnings
+import gc
+from time import time
+from sklearn.exceptions import ConvergenceWarning, FitFailedWarning
+warnings.simplefilter('ignore', FitFailedWarning)
+warnings.simplefilter('ignore', ConvergenceWarning)
+warnings.simplefilter('ignore', FutureWarning)
+warnings.simplefilter('ignore', DeprecationWarning)
+warnings.simplefilter('ignore', UserWarning)
+import numpy as np
+import pandas as pd  
+import matplotlib.pyplot as plt
+import seaborn as sns
+import argparse
+import yaml
+from time import time
+import warnings
+import joblib
+from pathlib import Path
+from time import time
+from tqdm import tqdm
+import copy
+import matplotlib as mpl
+import napari
+import colorcet as cc
+import composition_stats as cs
+from sklearn.impute import KNNImputer
+from lifelines import KaplanMeierFitter, CoxPHFitter
+
+from tysserand import tysserand as ty
+from mosna import mosna
+import matplotlib as mpl
+import shutil
+
+mpl.rcParams["figure.facecolor"] = 'white'
+mpl.rcParams["axes.facecolor"] = 'white'
+mpl.rcParams["savefig.facecolor"] = 'white'
+
+def get_arguments():
+
+    parser = argparse.ArgumentParser(description = "Draw tysserand for IMC / IF")
+    parser.add_argument('--file', type = str, required=True, help = "config file")
+    args = parser.parse_args()
+
+    return args.file
+
+def get_config(config_path):
+        
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+    return config   
+
+def replace_sample_name(sample_name):
+    return sample_name.replace('_', '-')
+
+def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, stat_funcs, stat_names, sample_name, file_type):
+    if sample_name is None:
+        sample_name = 'sample'
+
+    if (output_dir / f'{file_type}_aggregation_stats.parquet').exists():
+        print(f'Load aggregation statistics from {file_type}')
+        var_aggreg = pd.read_parquet(output_dir / f'{file_type}_aggregation_stats.parquet')
+    else:
+        print(f'Compute aggregation statistics from {file_type}')
+        var_aggreg = mosna.compute_spatial_omic_features_all_networks(
+            method=method,
+            nodes_dir=network_dir,
+            edges_dir=network_dir, 
+            attributes_col=pheno_col,
+            use_attributes=uniq_phenotypes, 
+            make_onehot=True,
+            stat_funcs=stat_funcs,
+            stat_names=stat_names,
+            id_level_1='patient',
+            id_level_2=replace_sample_name(sample_name), 
+            parallel_groups=False,
+            memory_limit='max',
+            save_intermediate_results=False, 
+            dir_save_interm=None,
+            verbose=1,
+            )
+        var_aggreg.to_parquet(output_dir / f'{file_type}_aggregation_stats.parquet', index=False)
+    return var_aggreg.drop(columns=['patient', replace_sample_name(sample_name)], inplace=True)
+
+def get_param_for_niches(nodes_df, edges_df, node_features_list, stat_funcs, stat_names, save_dir, patient, sample):
+    features_nas = mosna.make_features_NAS(
+        X=nodes_df[node_features_list].values,
+        pairs=edges_df.values,
+        order=2,
+        var_names = node_features_list,
+        stat_funcs=stat_funcs,
+        stat_names=stat_names,
+        var_sep='_'
+    )
+
+    dir=save_dir / f'clustering-{patient}-{sample}'
+    dir.mkdir(parents=True, exist_ok=True)
+    cluster_labels, cluster_dir, nb_clust, clusterer = mosna.get_clusterer(
+        data=features_nas.values,
+        data_dir=dir,     # dossier pour sauvegarder modèles + embeddings
+        reducer_type='umap',
+        clusterer_type='leiden',
+        n_neighbors=15,
+        metric='euclidean',
+        min_dist=0.0,
+        dim_clust=2,
+        min_cluster_size=10,
+        use_gpu=False,
+        verbose=1,
+    )
+    shutil.rmtree(dir)
+    return cluster_labels
+
+def load_niches(nodes, cluster_labels, save_dir, patient, sample, image_type, normalize='niche'):
+    counts = mosna.make_niches_composition(
+        var=nodes['Phenotypes'],       # ou un autre label
+        niches=cluster_labels,        # résultat du clustering
+        var_label='Phenotypes',
+        normalize=normalize
+    )
+    axes = mosna.plot_niches_composition(counts=counts)
+    fig = axes.figure
+    plt.title(f"{image_type}_niches composition for {patient}, sample {sample}_{normalize}_normalization")
+    fig.savefig(save_dir / f'{patient}-{sample}_niche_composition_{normalize}.png', dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+def tysserand(coords, pairs, clustering,
+              type, patient, sample, sample_name,
+              save_dir, normalize):
+    
+    fig, ax = ty.plot_network(
+        np.array(coords.values.tolist()), pairs,
+        labels=clustering,
+        color_mapper=color_map(clustering),
+        legend_opt={'loc': 'center left', 'bbox_to_anchor': (1.05, 0.5), 'fontsize': 30, 'markerscale': 5},
+        size_nodes=5,
+        figsize=(30,30)
+        )
+    plt.title(f"Draw an {type} Tysserand network niches normalized by {normalize} for patient {patient} and {sample_name} {sample}", fontsize=30)
+    plt.savefig(save_dir / f"{type}_Tysserand_network_niches_normalized_{normalize}_{patient}_{sample_name}_{sample}.png", bbox_inches="tight")
+    plt.close(fig)
+
+def color_map(clustering):
+    if clustering is not None:
+        nb_clust = clustering.max()
+        uniq = pd.Series(clustering).value_counts().index
+
+        # choose colormap
+        clusters_cmap = mosna.make_cluster_cmap(uniq)
+        # make color mapper
+        # series to sort by decreasing order
+        n_colors = len(clusters_cmap)
+        celltypes_color_mapper = {x: clusters_cmap[i % n_colors] for i, x in enumerate(uniq)}
+    return celltypes_color_mapper
+ ##################################### Main #########################################
+
+####################################################### Main #######################################################
+
+def main_IF():
+    return 0
+
+def main_IMC():
+    return 0
+
+def main_IMC_IF():
+    config_path = get_arguments()
+    config_file = get_config(config_path)
+
+    method = config_file['NAS']['method']
+
+    pheno_col = 'Phenotypes'
+    output_dir = Path('./output_data')
+
+    uniq_phenotypes_IMC = pd.read_csv(output_dir / "description/IMC_phenotypes.csv").iloc[:, 0].to_numpy()
+    uniq_phenotypes_IF = pd.read_csv(output_dir / "description/IF_phenotypes.csv").iloc[:, 0].to_numpy()
+    
+    cell_types_IMC = pd.read_parquet(output_dir / "IMC_cell_pos_pheno.parquet")[pheno_col]
+    cell_types_IF = pd.read_parquet(output_dir / "IF_cell_pos_pheno.parquet")[pheno_col]
+
+    IF_markers = pd.read_csv(output_dir / "description/IF_markers.csv").iloc[:, 0].to_list()
+    IMC_markers = pd.read_csv(output_dir / "description/IMC_markers.csv").iloc[:, 0].to_list()
+    IF_sample = pd.read_csv(output_dir / "description/IF_file_description.csv", header=None).values.tolist()
+    IMC_sample = pd.read_csv(output_dir / "description/IMC_file_description.csv", header=None).values.tolist()
+
+    stat_funcs = np.mean
+    stat_names = 'mean'
+
+    if method == 'NAS':
+        sof_dir = output_dir / f"NAS"    
+        sof_dir.mkdir(parents=True, exist_ok=True)
+    elif method == 'SCAN-IT':
+        sof_dir = output_dir / f"SCAN-IT"    
+        sof_dir.mkdir(parents=True, exist_ok=True)
+
+    save_dir = sof_dir / 'niches_figure'
+    save_dir.mkdir(parents=True, exist_ok=True)
+    
+    network_dir_IF = Path('./output_data/IF_networks_sample')
+    network_dir_IMC = Path('./output_data/IMC_networks_sample')
+
+    var_agg_IMC = var_aggregate(network_dir_IMC, sof_dir, 
+                                method, pheno_col, uniq_phenotypes_IMC, stat_funcs, stat_names,
+                                config_file['IMC_import']['if_sample_take_an_other_name'], 'IMC')
+    
+    var_agg_IF = var_aggregate(network_dir_IF, sof_dir, 
+                               method, pheno_col, uniq_phenotypes_IF, stat_funcs, stat_names,
+                               config_file['IF_import']['if_sample_take_an_other_name'], 'IF')
+    
+    for patient, sample in tqdm(IMC_sample, desc= f'IMC niches'):
+        if config_file["IMC_import"]["if_sample_take_an_other_name"] is not None:
+            sample_name = config_file["IMC_import"]["if_sample_take_an_other_name"]
+        else:
+            sample_name = 'sample'
+        save_dir_IMC = save_dir / 'IMC'
+        save_dir_IMC.mkdir(parents=True, exist_ok=True)
+
+        nodes = pd.read_parquet(network_dir_IMC / f'nodes_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
+        edges = pd.read_parquet(network_dir_IMC / f'edges_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
+        
+        normalize = 'niche & cell-types' #niche or #cell-types
+
+        save_directory = save_dir_IMC / f'normalization_{normalize}'
+        save_directory.mkdir(parents=True, exist_ok=True)
+
+        cluster_labels = get_param_for_niches(nodes, edges, IMC_markers, [np.mean, np.std], ['mean', 'std'], save_dir_IMC, patient, sample)
+
+        load_niches(nodes, cluster_labels, save_directory, patient, sample, 'IMC', normalize=normalize)
+        nodes[f'niches_{normalize}'] = cluster_labels
+        pairs = edges[['source', 'target']].values
+
+        #nodes.to_parquet(network_dir_IMC / f'nodes_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
+        tysserand(nodes[['X_position','Y_position']], pairs, cluster_labels, 'IMC', patient, sample, sample_name, save_directory, normalize)
+
+        
+    """
+    for patient, sample in tqdm(IF_sample, desc='IF niches'):
+        if config_file["IF_import"]["if_sample_take_an_other_name"] is not None:
+            sample_name = config_file["IF_import"]["if_sample_take_an_other_name"]
+        else:
+            sample_name = 'sample'
+        save_dir_IF = save_dir / 'IF'
+        save_dir_IF.mkdir(parents=True, exist_ok=True)  
+
+        nodes = pd.read_parquet(network_dir_IF / f'nodes_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
+        edges = pd.read_parquet(network_dir_IF / f'edges_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
+
+        cluster_labels = get_param_for_niches(nodes, edges, IF_markers, [np.mean, np.std], ['mean', 'std'], save_dir_IF, patient, sample)
+        load_niches(nodes, cluster_labels, save_dir_IF, patient, sample, 'IF', normalize='niche')
+    """
+if __name__ == "__main__":
+    config_path = get_arguments()
+    config_file = get_config(config_path)
+
+    if config_file['IF_import']['present_in'] and config_file['IMC_import']['present_in']:
+        main_IMC_IF()
+    if config_file['IF_import']['present_in'] and not config_file['IMC_import']['present_in']:
+        main_IF()
+    if not config_file['IF_import']['present_in'] and config_file['IMC_import']['present_in']:
+        main_IMC()

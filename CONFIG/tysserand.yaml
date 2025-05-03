@@ -1,6 +1,6 @@
-standard:
-  saving: True
-  output_dir: pandas_data
+save_file: True
+pheno_dir: data/processed/Bram_data/phenotypes
+test: True
 
 IMC_import:
   present_in: True
@@ -16,8 +16,8 @@ IMC_import:
   cell_id_columns: 20
   spatial_columns: "34:35"
   other_columns: 
-  other_columns_name: 
-
+  other_columns_name:
+  if_sample_take_an_other_name:
 
 IF_import:
   present_in: True
@@ -34,16 +34,33 @@ IF_import:
   spatial_columns: "1:2"
   other_columns: 8
   other_columns_name: ['ROI_ID']
+  if_sample_take_an_other_name: 'ROI_ID'
 
-
-test:
-  partial: False
-  which_file_if_partial: 
-  directory_to_test: pandas_data/*.parquet
-  test_directory: pandas_data/test/*.csv
+phenograph: False
 
 tysserand:
   k_neighbors_phenograph: 30
   primary_metric_phenograph: 'minkowski'
   method_tysserand: 'delaunay'
   min_neighbors: 3
+
+cell_encounter:
+  encoded_patient_to_drop:
+  encoded_patient_wanted:
+  nb_cell_max_per_gaussian: 3
+  gaussian_sigma: 1
+  threshold_filter: 0.05
+
+NAS:
+  method: 'NAS'
+  stat_funcs: 
+  stat_names: 
+  niches:
+    normalize: niches
+    clusterer_type: leiden
+    reducer_type: umap
+    metric: euclidean
+    n_neighbors: 15
+    min_dist: 0.0
+    dim_clust: 2
+    min_cluster_size: 10
