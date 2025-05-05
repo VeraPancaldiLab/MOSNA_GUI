@@ -227,7 +227,7 @@ def main_IMC_IF():
 
         save_dir_IMC = save_dir / 'IMC'
         if config_file['NAS']['output_id'] is not None:
-            save_directory = save_dir_IMC / f'normalization_{normalize}_{str(config_file['NAS']['output_id'])}'
+            save_directory = save_dir_IMC / f"normalization_{normalize}_{str(config_file['NAS']['output_id'])}"
         else:
             save_directory = save_dir_IMC / f'normalization_{normalize}'
 
