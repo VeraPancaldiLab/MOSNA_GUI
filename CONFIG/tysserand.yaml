@@ -52,15 +52,16 @@ cell_encounter:
   threshold_filter: 0.05
 
 NAS:
+  output_id: '1'
   method: 'NAS'
-  stat_funcs: 
-  stat_names: 
-  niches:
-    normalize: niches
-    clusterer_type: leiden
-    reducer_type: umap
-    metric: euclidean
-    n_neighbors: 15
-    min_dist: 0.0
-    dim_clust: 2
-    min_cluster_size: 10
+  order: 2
+  stat_funcs: [np.mean, np.std]
+  stat_names: ['mean', 'std']
+  clusterer_type: leiden
+  reducer_type: umap
+  metric: euclidean
+  n_neighbors: 15
+  min_dist: 0.0
+  dim_clust: 2
+  min_cluster_size: 10
+  normalize: niche

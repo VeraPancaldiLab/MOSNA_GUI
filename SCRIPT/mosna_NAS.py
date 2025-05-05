@@ -3,6 +3,8 @@ import sys
 import warnings
 import gc
 from time import time
+import copy
+import json
 from sklearn.exceptions import ConvergenceWarning, FitFailedWarning
 warnings.simplefilter('ignore', FitFailedWarning)
 warnings.simplefilter('ignore', ConvergenceWarning)
@@ -84,11 +86,13 @@ def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, s
         var_aggreg.to_parquet(output_dir / f'{file_type}_aggregation_stats.parquet', index=False)
     return var_aggreg.drop(columns=['patient', replace_sample_name(sample_name)], inplace=True)
 
-def get_param_for_niches(nodes_df, edges_df, node_features_list, stat_funcs, stat_names, save_dir, patient, sample):
+def get_param_for_niches(nodes_df, edges_df, node_features_list, 
+                        stat_funcs, stat_names, order, reducer_type, clusterer_type, n_neighbors, metric, min_dist, dim_clust, min_cluster_size,
+                        save_dir, patient, sample,):
     features_nas = mosna.make_features_NAS(
         X=nodes_df[node_features_list].values,
         pairs=edges_df.values,
-        order=2,
+        order=order,
         var_names = node_features_list,
         stat_funcs=stat_funcs,
         stat_names=stat_names,
@@ -100,13 +104,13 @@ def get_param_for_niches(nodes_df, edges_df, node_features_list, stat_funcs, sta
     cluster_labels, cluster_dir, nb_clust, clusterer = mosna.get_clusterer(
         data=features_nas.values,
         data_dir=dir,     # dossier pour sauvegarder modèles + embeddings
-        reducer_type='umap',
-        clusterer_type='leiden',
-        n_neighbors=15,
-        metric='euclidean',
-        min_dist=0.0,
-        dim_clust=2,
-        min_cluster_size=10,
+        reducer_type=reducer_type,
+        clusterer_type=clusterer_type,
+        n_neighbors=n_neighbors,
+        metric=metric,
+        min_dist=min_dist,
+        dim_clust=dim_clust,
+        min_cluster_size=min_cluster_size,
         use_gpu=False,
         verbose=1,
     )
@@ -168,10 +172,17 @@ def main_IMC_IF():
     config_path = get_arguments()
     config_file = get_config(config_path)
 
-    method = config_file['NAS']['method']
+    FUNC_MAP = {
+    'np.mean': np.mean,
+    'np.std': np.std,
+    }   
 
+    stat_funcs = [FUNC_MAP[name] for name in config_file['NAS']['stat_funcs']]
+    stat_names = config_file['NAS']['stat_funcs']
+    method = config_file['NAS']['method']
     pheno_col = 'Phenotypes'
     output_dir = Path('./output_data')
+    normalize = config_file['NAS']['normalize']
 
     uniq_phenotypes_IMC = pd.read_csv(output_dir / "description/IMC_phenotypes.csv").iloc[:, 0].to_numpy()
     uniq_phenotypes_IF = pd.read_csv(output_dir / "description/IF_phenotypes.csv").iloc[:, 0].to_numpy()
@@ -183,9 +194,6 @@ def main_IMC_IF():
     IMC_markers = pd.read_csv(output_dir / "description/IMC_markers.csv").iloc[:, 0].to_list()
     IF_sample = pd.read_csv(output_dir / "description/IF_file_description.csv", header=None).values.tolist()
     IMC_sample = pd.read_csv(output_dir / "description/IMC_file_description.csv", header=None).values.tolist()
-
-    stat_funcs = np.mean
-    stat_names = 'mean'
 
     if method == 'NAS':
         sof_dir = output_dir / f"NAS"    
@@ -200,6 +208,7 @@ def main_IMC_IF():
     network_dir_IF = Path('./output_data/IF_networks_sample')
     network_dir_IMC = Path('./output_data/IMC_networks_sample')
 
+    """
     var_agg_IMC = var_aggregate(network_dir_IMC, sof_dir, 
                                 method, pheno_col, uniq_phenotypes_IMC, stat_funcs, stat_names,
                                 config_file['IMC_import']['if_sample_take_an_other_name'], 'IMC')
@@ -207,32 +216,44 @@ def main_IMC_IF():
     var_agg_IF = var_aggregate(network_dir_IF, sof_dir, 
                                method, pheno_col, uniq_phenotypes_IF, stat_funcs, stat_names,
                                config_file['IF_import']['if_sample_take_an_other_name'], 'IF')
-    
+    """
+
     for patient, sample in tqdm(IMC_sample, desc= f'IMC niches'):
+
         if config_file["IMC_import"]["if_sample_take_an_other_name"] is not None:
             sample_name = config_file["IMC_import"]["if_sample_take_an_other_name"]
         else:
             sample_name = 'sample'
+
         save_dir_IMC = save_dir / 'IMC'
-        save_dir_IMC.mkdir(parents=True, exist_ok=True)
+        if config_file['NAS']['output_id'] is not None:
+            save_directory = save_dir_IMC / f'normalization_{normalize}_{str(config_file['NAS']['output_id'])}'
+        else:
+            save_directory = save_dir_IMC / f'normalization_{normalize}'
+
+        save_directory.mkdir(parents=True, exist_ok=True)
 
         nodes = pd.read_parquet(network_dir_IMC / f'nodes_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
         edges = pd.read_parquet(network_dir_IMC / f'edges_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
-        
-        normalize = 'niche & cell-types' #niche or #cell-types
 
-        save_directory = save_dir_IMC / f'normalization_{normalize}'
-        save_directory.mkdir(parents=True, exist_ok=True)
+        cluster_labels = get_param_for_niches(nodes, edges, IMC_markers, 
+                                              stat_funcs, stat_names, config_file['NAS']['order'], config_file['NAS']['reducer_type'], 
+                                              config_file['NAS']['clusterer_type'], config_file['NAS']['n_neighbors'], config_file['NAS']['metric'], 
+                                              config_file['NAS']['min_dist'], config_file['NAS']['dim_clust'], config_file['NAS']['min_cluster_size'],
+                                              save_dir_IMC, patient, sample)
 
-        cluster_labels = get_param_for_niches(nodes, edges, IMC_markers, [np.mean, np.std], ['mean', 'std'], save_dir_IMC, patient, sample)
+        load_niches(nodes, cluster_labels, save_directory, patient, sample, 'IMC', normalize=config_file['NAS']['normalize'])
 
-        load_niches(nodes, cluster_labels, save_directory, patient, sample, 'IMC', normalize=normalize)
         nodes[f'niches_{normalize}'] = cluster_labels
         pairs = edges[['source', 'target']].values
-
         #nodes.to_parquet(network_dir_IMC / f'nodes_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
-        tysserand(nodes[['X_position','Y_position']], pairs, cluster_labels, 'IMC', patient, sample, sample_name, save_directory, normalize)
-
+        tysserand(nodes[['X_position','Y_position']], pairs, cluster_labels, 'IMC', patient, sample, sample_name, save_directory, normalize=config_file['NAS']['normalize'])
+    
+    yaml_file = config_file['NAS'].copy()
+    yaml_file['stat_funcs'] = str(yaml_file['stat_funcs'])
+    yaml_file['stat_names'] = str(yaml_file['stat_names'])
+    with open(save_directory / "NAS_parameters.json", "w") as f:
+        json.dump(yaml_file, f, indent=2)
         
     """
     for patient, sample in tqdm(IF_sample, desc='IF niches'):
