@@ -52,28 +52,23 @@ def get_config(config_path):
         config = yaml.safe_load(f)
     return config   
 
-def import_data(dir, IMC, IF):
-    if IMC:
-        IMC_sample_cell = pd.read_parquet(Path(dir) / "IMC_sample_cell.parquet")
-        IMC_markers = pd.read_parquet(Path(dir) / "IMC_markers.parquet")
+def import_data(dir, type):
+    if type == 'IMC':
+        sample_cell = pd.read_parquet(Path(dir) / "IMC_sample_cell.parquet")
+        markers = pd.read_parquet(Path(dir) / "IMC_markers.parquet")
         if (Path(dir) / "IMC_cell_pos_pheno.parquet").exists():
-            IMC_cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos_pheno.parquet")
+            cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos_pheno.parquet")
         else:
-            IMC_cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos.parquet")
-    if IF:
-        IF_sample_cell = pd.read_parquet(Path(dir) / "IF_sample_cell.parquet")
-        IF_markers = pd.read_parquet(Path(dir) / "IF_markers.parquet")
+            cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos.parquet")
+    if type == 'IF':
+        sample_cell = pd.read_parquet(Path(dir) / "IF_sample_cell.parquet")
+        markers = pd.read_parquet(Path(dir) / "IF_markers.parquet")
         if (Path(dir) / "IF_cell_pos_pheno.parquet").exists():
-            IF_cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos_pheno.parquet")
+            cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos_pheno.parquet")
         else:
-            IF_cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos.parquet")
+            cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos.parquet")
 
-    if IF and not IMC:
-        return IF_cell_pos, IF_markers, IF_sample_cell
-    if IMC and not IF:
-        return IMC_cell_pos, IMC_markers, IMC_sample_cell
-    if IMC and IF:
-        return IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell
+    return cell_pos, markers, sample_cell
     
 def sample_are_present_in_data(data, name):
     if name is None:
@@ -156,95 +151,49 @@ def plot_mix_mat(save_dir, net_stats, sample_id):
 
 ########################################## Main #######################################
 
-def main_IF_IMC():
-    config_path = get_arguments()
-    config_file = get_config(config_path)
-    IF_markers_col = pd.read_csv('./output_data/description/IF_markers.csv', header=None)[0].tolist()
-    IMC_markers_col = pd.read_csv('./output_data/description/IMC_markers.csv', header=None)[0].tolist()
-    IMC_pheno = pd.read_csv('./output_data/description/IMC_phenotypes.csv', header=None)[0].tolist()
-    IF_pheno = pd.read_csv('./output_data/description/IF_phenotypes.csv', header=None)[0].tolist()
+def main(IF, IMC, config_file):
 
-
-
-    IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell = import_data('./output_data',
-                                                            config_file['IMC_import']['present_in'],
-                                                            config_file['IF_import']['present_in'])
-
-    
-    sample = sample_are_present_in_data(IMC_sample_cell, config_file["IMC_import"]["if_sample_take_an_other_name"])
-    nodes_transfo("./output_data/IMC_networks_sample", IMC_markers_col, config_file["IMC_import"]["if_sample_take_an_other_name"], sample_present=sample)
-    
-    sample = sample_are_present_in_data(IF_sample_cell, config_file["IF_import"]["if_sample_take_an_other_name"])
-    nodes_transfo("./output_data/IF_networks_sample", IF_markers_col, config_file["IF_import"]["if_sample_take_an_other_name"], sample_present=sample)
-    
-    gc.collect()
-    
     save_dir = Path("./output_data/assortativity")
     save_dir.mkdir(parents=True, exist_ok=True)
 
-    if not (save_dir / "IMC_net_stat.parquet").exists():
-        t = time()
-        net_stat_IMC = mix_mat_assortativity("./output_data/IMC_networks_sample", 
-                                             "Phenotypes", 
-                                             sample_name=config_file["IMC_import"]["if_sample_take_an_other_name"])
-        net_stat_IMC.to_parquet(save_dir / 'IMC_net_stat.parquet')
-        print(f"Assortativity for IMC took {time()-t} s")
-        del net_stat_IMC, t
-        gc.collect()
-    
-    net_stat_IMC = pd.read_parquet(save_dir / 'IMC_net_stat.parquet')
-    list_id = net_stat_IMC.index.to_list()
-    save_dir_IMC = save_dir / "figures/IMC"
-    save_dir_IMC.mkdir(parents=True, exist_ok=True)
-    for id in tqdm(list_id, desc=" └─ Processing assortativity for IMC"):
-        plot_mix_mat(save_dir_IMC, net_stat_IMC, id)
+    def process(type, config_file):
 
-    if not (save_dir / "IF_net_stat.parquet").exists():
-        t = time()
-        net_stat_IF = mix_mat_assortativity("./output_data/IF_networks_sample", 
-                                            "Phenotypes", 
-                                            sample_name=config_file["IF_import"]["if_sample_take_an_other_name"])
-        net_stat_IF.to_parquet(save_dir / 'IF_net_stat.parquet')
-        print(f"Assortativity for IF took {time()-t} s")
-        del net_stat_IF, t
-        gc.collect()
+        markers_col = pd.read_csv(f'./output_data/description/{type}_markers.csv', header=None)[0].tolist()
+        pheno = pd.read_csv(f'./output_data/description/{type}_phenotypes.csv', header=None)[0].tolist()
 
-    net_stat_IF = pd.read_parquet(save_dir / 'IF_net_stat.parquet')
-    list_id = net_stat_IF.index.to_list()
-    save_dir_IF = save_dir / "figures/IF"
-    save_dir_IF.mkdir(parents=True, exist_ok=True)
-    for id in tqdm(list_id, desc=" └─ Processing assortativity for IMC"):
-        plot_mix_mat(save_dir_IF, net_stat_IF, id)
+        cell_pos, markers, sample_cell = import_data('./output_data',type)
+        
+        sample = sample_are_present_in_data(sample_cell, config_file[f"{type}_import"]["if_sample_take_an_other_name"])
+        nodes_transfo(f"./output_data/{type}_networks_sample", markers_col, config_file[f"{type}_import"]["if_sample_take_an_other_name"], sample_present=sample)
     
-def main_IF():
-    config_path = get_arguments()
-    config_file = get_config(config_path)
-    IF_markers_col = pd.read_csv('./output_data/description/IF_markers.csv', header=None)[0].tolist()
+        if not (save_dir / f"{type}_net_stat.parquet").exists():
+            t = time()
+            print(f"Processing Assortativity for {type} data --- ", end='')
+            net_stat = mix_mat_assortativity(f"./output_data/{type}_networks_sample", 
+                                                "Phenotypes", 
+                                                sample_name=config_file[f"{type}_import"]["if_sample_take_an_other_name"])
+            net_stat.to_parquet(save_dir / f'{type}_net_stat.parquet')
+            print(f"Done\nAssortativity for IMC took {time()-t} s")
+            del net_stat, t
+            gc.collect()
+        
+        net_stat = pd.read_parquet(save_dir / f'{type}_net_stat.parquet')
+        list_id = net_stat.index.to_list()
+        save_dir_type = save_dir / f"figures/{type}"
+        save_dir_type.mkdir(parents=True, exist_ok=True)
+        
+        for id in tqdm(list_id, desc=f" └─ Processing assortativity for {type}"):
+            plot_mix_mat(save_dir_type, net_stat, id)
     
-    IF_cell_pos, IF_markers, IF_sample_cell = import_data('./output_data',
-                                                            config_file['IMC_import']['present_in'],
-                                                            config_file['IF_import']['present_in'])
-    sample = sample_are_present_in_data(IF_sample_cell)
-    nodes_transfo("./output_data/nodes/IF", IF_markers_col, config_file["IF_import"]["if_sample_take_an_other_name"], sample_present=sample)
-
-def main_IMC():
-    config_path = get_arguments()
-    config_file = get_config(config_path)
-    IMC_markers_col = pd.read_csv('./output_data/description/IMC_markers.csv', header=None)[0].tolist()
-
-    IMC_cell_pos, IMC_markers, IMC_sample_cell = import_data('./output_data',
-                                                            config_file['IMC_import']['present_in'],
-                                                            config_file['IF_import']['present_in'])
-    sample = sample_are_present_in_data(IMC_sample_cell)
-    nodes_transfo("./output_data/nodes/IMC", IMC_markers_col, config_file["IMC_import"]["if_sample_take_an_other_name"], sample_present=sample)
-    
+    if IF:
+        process('IF', config_file)
+    if IMC: 
+        process('IMC', config_file)
+  
 if __name__ == "__main__":
     config_path = get_arguments()
     config_file = get_config(config_path)
+    main(config_file['IMC_import']['present_in'],
+         config_file['IF_import']['present_in'],
+         config_file)
 
-    if config_file['IF_import']['present_in'] and config_file['IMC_import']['present_in']:
-        main_IF_IMC()
-    if config_file['IF_import']['present_in'] and not config_file['IMC_import']['present_in']:
-        main_IF()
-    if not config_file['IF_import']['present_in'] and config_file['IMC_import']['present_in']:
-        main_IMC()
