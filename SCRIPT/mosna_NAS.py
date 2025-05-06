@@ -186,9 +186,8 @@ def color_map(clustering):
 
 ####################################################### Main #######################################################
 
-def main(IMC, IF):
-    config_path = get_arguments()
-    config_file = get_config(config_path)
+def main(IMC, IF, config_file):
+
 
     FUNC_MAP = {
     'np.mean': np.mean,
@@ -265,4 +264,6 @@ def main(IMC, IF):
         process('IF')
 
 if __name__ == "__main__":
-    main(True, False)
+    config_path = get_arguments()
+    config_file = get_config(config_path)
+    main(config_file['IMC_import']['present_in'], config_file['IF_import']['present_in'])
