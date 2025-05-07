@@ -1,6 +1,6 @@
 ################################################# Import ###################################################
 print("\n############### Welcome in parser CSV to pandas ###############")
-print("\nImport Package\t\t\t\t",end="")
+
 import yaml
 import argparse
 import numpy as np
@@ -9,9 +9,9 @@ import os
 import glob
 from pathlib import Path
 import copy
-print("DONE")
 
-################################################# Main Function ###################################################
+
+################################################# Main Function ############################################
 
 def get_arguments():
 
@@ -162,11 +162,11 @@ def import_data(path_data, marker_columns, spatial_columns, cell_id_columns,
     
     return IMC_markers, IMC_sample_cell, IMC_cell_pos
 
+################################################# Main #####################################################
+
 def main():
-    print('Import Config\t\t\t\t',end='')
     config_path = get_arguments()
     config_file = get_config(config_path)
-    print("DONE")
 
     if config_file['IMC_import']['present_in']:
         print("Import IMC data\t\t\t\t",end="")

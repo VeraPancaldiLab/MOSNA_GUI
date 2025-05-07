@@ -47,29 +47,24 @@ def get_config(config_path):
         config = yaml.safe_load(f)
     return config
 
-def import_data(dir, IMC, IF):
-    if IMC:
-        IMC_sample_cell = pd.read_parquet(Path(dir) / "IMC_sample_cell.parquet")
-        IMC_markers = pd.read_parquet(Path(dir) / "IMC_markers.parquet")
+def import_data(dir, type):
+    if type == 'IMC':
+        sample_cell = pd.read_parquet(Path(dir) / "IMC_sample_cell.parquet")
+        markers = pd.read_parquet(Path(dir) / "IMC_markers.parquet")
         if (Path(dir) / "IMC_cell_pos_pheno.parquet").exists():
-            IMC_cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos_pheno.parquet")
+            cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos_pheno.parquet")
         else:
-            IMC_cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos.parquet")
-    if IF:
-        IF_sample_cell = pd.read_parquet(Path(dir) / "IF_sample_cell.parquet")
-        IF_markers = pd.read_parquet(Path(dir) / "IF_markers.parquet")
+            cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos.parquet")
+    if type == 'IF':
+        sample_cell = pd.read_parquet(Path(dir) / "IF_sample_cell.parquet")
+        markers = pd.read_parquet(Path(dir) / "IF_markers.parquet")
         if (Path(dir) / "IF_cell_pos_pheno.parquet").exists():
-            IF_cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos_pheno.parquet")
+            cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos_pheno.parquet")
         else:
-            IF_cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos.parquet")
+            cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos.parquet")
 
-    if IF and not IMC:
-        return IF_cell_pos, IF_markers, IF_sample_cell
-    if IMC and not IF:
-        return IMC_cell_pos, IMC_markers, IMC_sample_cell
-    if IMC and IF:
-        return IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell
-
+    return cell_pos, markers, sample_cell
+    
 def draw_tysserand_network(coords, clustering, patient, type, method='delaunay', min_neighbors=3, sample=None, sample_name=None):
     if clustering is not None:
         nb_clust = clustering.max()
@@ -264,62 +259,34 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
         del unique_list, unique_patient_samples, edges, pairs, nodes
         gc.collect()
 
-def main():
-    print('\n')
+def main(IMC, IF, config_file):
     config_path = get_arguments()
     config_file = get_config(config_path)
 
-    if config_file['IF_import']['present_in'] and not config_file['IMC_import']['present_in']:
-        IF_cell_pos, IF_markers, IF_sample_cell = import_data('./output_data',
-                                                            config_file['IMC_import']['present_in'],
-                                                            config_file['IF_import']['present_in'])
-        if config_file['IF_import']['re_index']:
-            IF_cell_pos['CellID'] = IF_cell_pos.index
-            IF_markers['CellID'] = IF_markers.index
-            IF_sample_cell['CellID'] = IF_sample_cell.index
+    def process(type):
+        tab_import = config_file[f'{type}_import']
 
+        cell_pos, markers, sample_cell = import_data('./output_data', type)
+        
+        if tab_import['re_index']:
+            cell_pos['CellID'] = cell_pos.index
+            markers['CellID'] = markers.index
+            sample_cell['CellID'] = sample_cell.index
 
-    if config_file['IMC_import']['present_in'] and not config_file['IF_import']['present_in']:
-        IMC_cell_pos, IMC_markers, IMC_sample_cell = import_data('./output_data',
-                                                            config_file['IMC_import']['present_in'],
-                                                            config_file['IF_import']['present_in'])
-        if config_file['IF_import']['re_index']:
-            IF_cell_pos['CellID'] = IF_cell_pos.index
-            IF_markers['CellID'] = IF_markers.index
-            IF_sample_cell['CellID'] = IF_sample_cell.index
-
-
-    if config_file['IMC_import']['present_in'] and config_file['IF_import']['present_in']:
-        IMC_cell_pos, IMC_markers, IMC_sample_cell, IF_cell_pos, IF_markers, IF_sample_cell = import_data('./output_data',
-                                                            config_file['IMC_import']['present_in'],
-                                                            config_file['IF_import']['present_in'])
-
-        if config_file['IMC_import']['re_index']:
-            IMC_cell_pos['CellID'] = IMC_cell_pos.index
-            IMC_markers['CellID'] = IMC_markers.index
-            IMC_sample_cell['CellID'] = IMC_sample_cell.index
-        if config_file['IF_import']['re_index']:
-            IF_cell_pos['CellID'] = IF_cell_pos.index
-            IF_markers['CellID'] = IF_markers.index
-            IF_sample_cell['CellID'] = IF_sample_cell.index
-        """
-        tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, config_file['IF_import']['there_is_duplicata'], 'IF',
+        tysserand_network(cell_pos, markers, sample_cell, tab_import['there_is_duplicata'], 'IMC',
                           config_file['phenograph'],
                           config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
-                          config_file['IF_import']['normalize'],
+                          tab_import['normalize'],
                           config_file['tysserand']['method_tysserand'],
                           config_file['tysserand']['min_neighbors'],
-                          config_file['IF_import']['normalize'])
-        """
-        tysserand_network(IMC_cell_pos, IMC_markers, IMC_sample_cell, config_file['IMC_import']['there_is_duplicata'], 'IMC',
-                          config_file['phenograph'],
-                          config_file['tysserand']['k_neighbors_phenograph'],
-                          config_file['tysserand']['primary_metric_phenograph'],
-                          config_file['IMC_import']['normalize'],
-                          config_file['tysserand']['method_tysserand'],
-                          config_file['tysserand']['min_neighbors'],
-                          config_file['IMC_import']['if_sample_take_an_other_name'])
+                          tab_import['if_sample_take_an_other_name'])
+    if IMC:
+        process('IMC')
+    if IF:
+        process('IF')
         
 if __name__ == "__main__":
-    main()
+    config_path = get_arguments()
+    config_file = get_config(config_path)
+    main(config_file['IMC_import']['present_in'], config_file['IF_import']['present_in'])
