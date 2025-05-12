@@ -1,4 +1,5 @@
 import os
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
 import sys
 import warnings
 import gc
@@ -125,9 +126,9 @@ def nodes_transfo(nodes_dir, marker_cols, sample_name=None, sample_present=True)
             save_dir='auto',
         )
 
-def mix_mat_assortativity(nodes_dir, pheno_col, n_shuffle = 50, sample_name='sample'):
-    if sample_name is None:
-        sample_name = 'sample'
+def mix_mat_assortativity(nodes_dir, pheno_col, n_shuffle = 50, type=None):
+
+    sample_name = define_sample_name(type)
 
     net_stats = mosna.groups_assort_mixmat(
         net_dir=nodes_dir, 
@@ -182,7 +183,7 @@ def main(IF, IMC, config_file):
             print(f"Processing Assortativity for {type} data --- ", end='')
             net_stat = mix_mat_assortativity(f"./output_data/{type}_networks_sample", 
                                                 "Phenotypes", 
-                                                sample_name=sample_name[type])
+                                                type=type)
             net_stat.to_parquet(save_dir / f'{type}_net_stat.parquet')
             print(f"Done\nAssortativity for IMC took {time()-t} s")
             del net_stat, t
