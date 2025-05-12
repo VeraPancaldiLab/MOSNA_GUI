@@ -22,6 +22,7 @@ IMC_import:
 IF_import:
   present_in: True
   directory_path: data/processed/Bram_data/IF_merged_by_patient/*.csv
+  panel: 
   path_encoding_patient: 
   path_file_to_patient: data/processed/Bram_data/file_to_patient/IF_file_to_patient.csv
   normalize: False
