@@ -8,6 +8,7 @@ import pandas as pd
 import yaml
 import argparse
 from pathlib import Path
+from tqdm import tqdm
 
 def get_arguments():
 
@@ -36,11 +37,11 @@ def import_data(dir, IMC, IF):
     if IMC and IF:
         return IMC_cell_pos, IF_cell_pos
 
-def import_phenotypes(dir, IMC, IF):
+def import_phenotypes(dir, IMC, IF, panel):
     if IMC:
-        IMC_phenotypes = pd.read_csv(Path(dir) / "IMC_with_phenotypes_all.csv")
+        IMC_phenotypes = pd.read_csv(Path(dir) / "IMC_with_phenotypes.csv")
     if IF:
-        IF_phenotypes = pd.read_csv(Path(dir) / "IF_with_phenotypes_all.csv")
+        IF_phenotypes = pd.read_csv(Path(dir) / f"IF_{panel}_with_phenotypes.csv")
 
     if IF and not IMC:
         return IF_phenotypes
@@ -49,11 +50,25 @@ def import_phenotypes(dir, IMC, IF):
     if IMC and IF:
         return IMC_phenotypes, IF_phenotypes
 
-def add_pheno(data, phenotypes):
-    phenotypes_unique = phenotypes.drop_duplicates(subset=['X_position', 'Y_position'])
+def tab_sample_name_type(type):
+    sample_name={'IMC':'ROI', 'IF':'layer'}
+    return sample_name[type]
+
+def define_sample_name(type):
+    sample_name_dict={'IMC':'ROI', 'IF':'layer'}
+    return sample_name_dict[type]
+
+def add_pheno(data, phenotypes, type):
+    data['patient'] = data['patient'].astype(str)
+    phenotypes['patient'] = phenotypes['patient'].astype(str)
+
+    data[tab_sample_name_type(type)] = data[tab_sample_name_type(type)].astype(str)
+    phenotypes[tab_sample_name_type(type)] = phenotypes[tab_sample_name_type(type)].astype(str)
+
+    phenotypes_unique = phenotypes.drop_duplicates(subset=['X_position', 'Y_position','patient',tab_sample_name_type(type)])
     data_merged = data.merge(
-        phenotypes_unique[['X_position', 'Y_position', 'Cluster']],  # on ne garde que les colonnes nécessaires de df2
-        on=['X_position', 'Y_position'],              # on fusionne sur ces deux colonnes
+        phenotypes_unique[['X_position', 'Y_position', 'Cluster', 'patient',tab_sample_name_type(type)]],  # on ne garde que les colonnes nécessaires de df2
+        on=['X_position', 'Y_position','patient',tab_sample_name_type(type)],              # on fusionne sur ces deux colonnes
         how='left'                                    # 'left' garde toutes les lignes de df1
         )
     return data_merged
@@ -68,10 +83,10 @@ def main():
                                                 config_file['IF_import']['present_in'])
         IMC_phenotypes, IF_phenotypes = import_phenotypes(config_file['pheno_dir'],                           
                                                 config_file['IMC_import']['present_in'],
-                                                config_file['IF_import']['present_in'])
-        
-        IMC_cell_pos_pheno = add_pheno(IMC_cell_pos, IMC_phenotypes)
-        IF_cell_pos_pheno = add_pheno(IF_cell_pos, IF_phenotypes)
+                                                config_file['IF_import']['present_in'], config_file['IF_import']['panel'])
+    
+        IMC_cell_pos_pheno = add_pheno(IMC_cell_pos, IMC_phenotypes, 'IMC')
+        IF_cell_pos_pheno = add_pheno(IF_cell_pos, IF_phenotypes, 'IF')
 
         IMC_cell_pos_pheno = IMC_cell_pos_pheno.rename(columns={'Cluster':'Phenotypes'})
         IF_cell_pos_pheno = IF_cell_pos_pheno.rename(columns={'Cluster':'Phenotypes'})
@@ -84,10 +99,6 @@ def main():
         IMC_phenotypes_list.to_csv("./output_data/description/IMC_phenotypes.csv", index=False, header=False)
         IF_phenotypes_list.to_csv("./output_data/description/IF_phenotypes.csv", index=False, header=False)
 
-
-
-
-        
 if __name__ == "__main__":
     main()
 

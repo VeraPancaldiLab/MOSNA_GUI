@@ -26,9 +26,13 @@ def get_config(config_path):
         config = yaml.safe_load(f)
     return config
 
+def define_sample_name(type):
+    sample_name_dict={'IMC':'ROI', 'IF':'layer'}
+    return sample_name_dict[type]
+
 def import_data(path_data, marker_columns, spatial_columns, cell_id_columns, 
                 path_encoding_patient = None, path_file_to_patient = None, columns_to_drop = None, 
-                other_columns = None, other_columns_name = None):
+                layer_columns=None, layer_name=None, type=None):
     
     objects_path = glob.glob(path_data)
     files=dict()
@@ -103,15 +107,15 @@ def import_data(path_data, marker_columns, spatial_columns, cell_id_columns,
         IMC_sample_cell = pd.concat([IMC_sample_cell,IMC_markers['patient']],axis=1)
     else:
         IMC_sample_cell = pd.concat([IMC_sample_cell,IMC_markers[['patient','sample']]],axis=1)
+        IMC_sample_cell.rename(columns={'sample':define_sample_name(type)}, inplace=True)
 
-    if other_columns is not None:
-        if ':' in str(other_columns):
-            ind_min_max = str(other_columns).split(':')
+    if layer_columns is not None:
+        if ':' in str(layer_columns):
+            ind_min_max = str(layer_columns).split(':')
             ind_columns = [i for i in range(int(ind_min_max[0]), int(ind_min_max[1]+1))]
-            for i, indice in enumerate(ind_columns):
-                IMC_sample_cell[other_columns_name[i]] = IMC_markers.iloc[:, indice]
+            IMC_sample_cell[layer_name] = IMC_markers.iloc[:, ind_columns]
         else:
-            IMC_sample_cell[other_columns_name[0]] = IMC_markers.iloc[:, other_columns]
+            IMC_sample_cell[layer_name] = IMC_markers.iloc[:, layer_columns]
         
 
     if path_encoding_patient is not None:
@@ -121,23 +125,62 @@ def import_data(path_data, marker_columns, spatial_columns, cell_id_columns,
         
     temp = pd.DataFrame({})
     temp[IMC_markers.columns[cell_id_columns]] = IMC_markers.iloc[:, cell_id_columns]
+
     if ' ' in spatial_columns:
         spatial_columns = spatial_columns.split(' ')
         for column in spatial_columns:
             if ':' in column:
                 ind_min_max = column.split(':')
-                temp = pd.concat([temp,IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
+                if 'sample' in IMC_markers.columns:
+                    temp = pd.concat([temp,IMC_markers[['patient','sample']],IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
+                    temp.rename(columns={'sample':define_sample_name(type)}, inplace=True)
+                elif layer_columns is not None:
+                    current_layer_name = IMC_markers.columns[int(layer_columns)]
+                    temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:, int(layer_columns)],IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
+                    temp.rename(columns={current_layer_name:define_sample_name(type)}, inplace=True)
+                else:
+                    temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
             else:
-                temp = pd.concat([temp,IMC_markers.iloc[:, [int(column)]]], axis=1)
+                if 'sample' in IMC_markers.columns:
+                    temp = pd.concat([temp,IMC_markers[['patient','sample']],IMC_markers.iloc[:, [int(column)]]], axis=1)
+                    temp.rename(columns={'sample':define_sample_name(type)}, inplace=True)
+                elif layer_columns is not None:
+                    current_layer_name = IMC_markers.columns[int(layer_columns)]
+                    temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:, int(layer_columns)],IMC_markers.iloc[:, [int(column)]]], axis=1)
+                    temp.rename(columns={current_layer_name:define_sample_name(type)}, inplace=True)
+                else:
+                    temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:,[int(column)]]], axis=1)
+
+
         IMC_cell_pos = temp
     else:
         if ':' in spatial_columns:
             ind_min_max = spatial_columns.split(':')
-            temp = pd.concat([temp,IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
+            if 'sample' in IMC_markers.columns:
+                temp = pd.concat([temp,IMC_markers[['patient','sample']],IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
+                temp.rename(columns={'sample':define_sample_name(type)}, inplace=True)
+            elif layer_columns is not None:
+                current_layer_name = IMC_markers.columns[int(layer_columns)]
+                temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:, int(layer_columns)],IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
+                temp.rename(columns={current_layer_name:define_sample_name(type)}, inplace=True)
+            else:
+                temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
+
         else:
-            temp = pd.concat([temp,IMC_markers.iloc[:, [int(spatial_columns)]]], axis=1)
+            if 'sample' in IMC_markers.columns:
+                temp = pd.concat([temp,IMC_markers[['patient','sample']],IMC_markers.iloc[:, [int(spatial_columns)]]], axis=1)
+                temp.rename(columns={'sample':define_sample_name(type)}, inplace=True)
+            elif layer_columns is not None:
+                current_layer_name = IMC_markers.columns[int(layer_columns)]
+                temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:, int(layer_columns)],IMC_markers.iloc[:, [int(spatial_columns)]]], axis=1)
+                temp.rename(columns={current_layer_name:define_sample_name(type)}, inplace=True)
+            else:
+                temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:,[int(spatial_columns)]]], axis=1)
+
         IMC_cell_pos = temp
 
+    if path_encoding_patient is not None:
+        IMC_cell_pos['patient'] = IMC_cell_pos['patient'].map(ID_patient_to_alphabet)
 
     ### markers
 
@@ -174,12 +217,11 @@ def main():
                                                             marker_columns=config_file['IMC_import']['marker_columns'],
                                                             spatial_columns=config_file['IMC_import']['spatial_columns'],
                                                             cell_id_columns=config_file['IMC_import']['cell_id_columns'],
-                                                            other_columns=config_file['IMC_import']['other_columns'],
+                                                            layer_columns=config_file['IMC_import']['layer_columns'],
                                                             path_encoding_patient=config_file['IMC_import']['path_encoding_patient'],
                                                             path_file_to_patient=config_file['IMC_import']['path_file_to_patient'],
                                                             columns_to_drop=config_file['IMC_import']['columns_to_drop'],
-                                                            other_columns_name=config_file['IMC_import']['other_columns_name']
-                                                            )
+                                                            layer_name = 'ROI', type='IMC')
         print("DONE")
     if config_file['IF_import']['present_in']:
         print("Import IF data\t\t\t\t",end="")
@@ -187,12 +229,12 @@ def main():
                                                         marker_columns=config_file['IF_import']['marker_columns'],
                                                         spatial_columns=config_file['IF_import']['spatial_columns'],
                                                         cell_id_columns=config_file['IF_import']['cell_id_columns'],
-                                                        other_columns=config_file['IF_import']['other_columns'],
+                                                        layer_columns=config_file['IF_import']['layer_columns'],
                                                         path_encoding_patient=config_file['IF_import']['path_encoding_patient'],
                                                         path_file_to_patient=config_file['IF_import']['path_file_to_patient'],
                                                         columns_to_drop=config_file['IF_import']['columns_to_drop'],
-                                                        other_columns_name=config_file['IF_import']['other_columns_name']
-                                                        )
+                                                        layer_name = 'layer', type='IF')
+        
         print("DONE")
     if config_file['save_file']:
         print("Saving pandas in parquet\t\t",end='')

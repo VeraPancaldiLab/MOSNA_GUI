@@ -52,6 +52,10 @@ def get_config(config_path):
         config = yaml.safe_load(f)
     return config   
 
+def define_sample_name(type):
+    sample_name_dict={'IMC':'ROI', 'IF':'layer'}
+    return sample_name_dict[type]
+
 def import_data(dir, type):
     if type == 'IMC':
         sample_cell = pd.read_parquet(Path(dir) / "IMC_sample_cell.parquet")
@@ -60,6 +64,9 @@ def import_data(dir, type):
             cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos_pheno.parquet")
         else:
             cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos.parquet")
+        cell_pos.drop(columns='patient', inplace=True)
+        cell_pos.drop(columns=define_sample_name(type), inplace=True)
+
     if type == 'IF':
         sample_cell = pd.read_parquet(Path(dir) / "IF_sample_cell.parquet")
         markers = pd.read_parquet(Path(dir) / "IF_markers.parquet")
@@ -67,7 +74,9 @@ def import_data(dir, type):
             cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos_pheno.parquet")
         else:
             cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos.parquet")
-
+        cell_pos.drop(columns='patient', inplace=True)
+        cell_pos.drop(columns=define_sample_name(type), inplace=True)
+        
     return cell_pos, markers, sample_cell
     
 def sample_are_present_in_data(data, name):
@@ -162,17 +171,18 @@ def main(IF, IMC, config_file):
         markers_col = pd.read_csv(f'./output_data/description/{type}_markers.csv', header=None)[0].tolist()
         pheno = pd.read_csv(f'./output_data/description/{type}_phenotypes.csv', header=None)[0].tolist()
 
+        sample_name={'IMC':'ROI', 'IF':'layer'}
         cell_pos, markers, sample_cell = import_data('./output_data',type)
         
-        sample = sample_are_present_in_data(sample_cell, config_file[f"{type}_import"]["if_sample_take_an_other_name"])
-        nodes_transfo(f"./output_data/{type}_networks_sample", markers_col, config_file[f"{type}_import"]["if_sample_take_an_other_name"], sample_present=sample)
+        sample = sample_are_present_in_data(sample_cell, sample_name[type])
+        nodes_transfo(f"./output_data/{type}_networks_sample", markers_col, sample_name[type], sample_present=sample)
     
         if not (save_dir / f"{type}_net_stat.parquet").exists():
             t = time()
             print(f"Processing Assortativity for {type} data --- ", end='')
             net_stat = mix_mat_assortativity(f"./output_data/{type}_networks_sample", 
                                                 "Phenotypes", 
-                                                sample_name=config_file[f"{type}_import"]["if_sample_take_an_other_name"])
+                                                sample_name=sample_name[type])
             net_stat.to_parquet(save_dir / f'{type}_net_stat.parquet')
             print(f"Done\nAssortativity for IMC took {time()-t} s")
             del net_stat, t

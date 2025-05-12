@@ -1,6 +1,6 @@
 save_file: True
 pheno_dir: data/processed/Bram_data/phenotypes
-test: True
+test: False
 
 IMC_import:
   present_in: True
@@ -15,14 +15,12 @@ IMC_import:
   marker_columns: "0:19 21:33"
   cell_id_columns: 20
   spatial_columns: "34:35"
-  other_columns: 
-  other_columns_name:
-  if_sample_take_an_other_name:
+  layer_columns: 
 
 IF_import:
   present_in: True
   directory_path: data/processed/Bram_data/IF_merged_by_patient/*.csv
-  panel: 
+  panel: 'C1'
   path_encoding_patient: 
   path_file_to_patient: data/processed/Bram_data/file_to_patient/IF_file_to_patient.csv
   normalize: False
@@ -33,9 +31,7 @@ IF_import:
   marker_columns: "3:6"
   cell_id_columns: 0
   spatial_columns: "1:2"
-  other_columns: 8
-  other_columns_name: ['ROI_ID']
-  if_sample_take_an_other_name: 'ROI_ID'
+  layer_columns: 8
 
 phenograph: False
 

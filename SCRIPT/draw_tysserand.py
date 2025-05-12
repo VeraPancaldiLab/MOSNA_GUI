@@ -1,8 +1,10 @@
 import os
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
 import sys
 import warnings
 import gc
 import contextlib
+from sklearn.exceptions import ConvergenceWarning, FitFailedWarning
 warnings.simplefilter('ignore', FitFailedWarning)
 warnings.simplefilter('ignore', ConvergenceWarning)
 warnings.simplefilter('ignore', FutureWarning)
@@ -47,6 +49,10 @@ def get_config(config_path):
         config = yaml.safe_load(f)
     return config
 
+def define_sample_name(type):
+    sample_name_dict={'IMC':'ROI', 'IF':'layer'}
+    return sample_name_dict[type]
+
 def import_data(dir, type):
     if type == 'IMC':
         sample_cell = pd.read_parquet(Path(dir) / "IMC_sample_cell.parquet")
@@ -55,6 +61,9 @@ def import_data(dir, type):
             cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos_pheno.parquet")
         else:
             cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos.parquet")
+        cell_pos.drop(columns='patient', inplace=True)
+        cell_pos.drop(columns=define_sample_name(type), inplace=True)
+        
     if type == 'IF':
         sample_cell = pd.read_parquet(Path(dir) / "IF_sample_cell.parquet")
         markers = pd.read_parquet(Path(dir) / "IF_markers.parquet")
@@ -62,6 +71,8 @@ def import_data(dir, type):
             cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos_pheno.parquet")
         else:
             cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos.parquet")
+        cell_pos.drop(columns='patient', inplace=True)
+        cell_pos.drop(columns=define_sample_name(type), inplace=True)
 
     return cell_pos, markers, sample_cell
     
@@ -131,17 +142,16 @@ def phenograph_clustering(markers_to_cluster, k_neighbors, primary_metrics_pheno
 def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, 
                       there_is_duplicata, type, 
                       make_phenograph=False, k_neighbors = 30, primary_metrics_phenograh='minkowski', normalize = False, 
-                      method='delaunay', min_neighbors=3, 
-                      sample_take_an_other_name=None):
+                      method='delaunay', min_neighbors=3):
     
-    if sample_take_an_other_name is None:  
-        sample_name = 'sample'
+    if type == 'IMC':  
+        sample_name = 'ROI'
     else:
-        sample_name = sample_take_an_other_name
+        sample_name = 'layer'
 
     if 'Phenotypes' not in IF_cell_pos:
         IF_cell_pos['Phenotypes'] = ''
-    print(sample_name)
+
     if sample_name in IF_sample_cell.columns:
         unique_patient_samples = IF_sample_cell[['patient',sample_name]].drop_duplicates()
         unique_list = list(unique_patient_samples.itertuples(index=False, name=None))
@@ -260,8 +270,6 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
         gc.collect()
 
 def main(IMC, IF, config_file):
-    config_path = get_arguments()
-    config_file = get_config(config_path)
 
     def process(type):
         tab_import = config_file[f'{type}_import']
@@ -273,20 +281,20 @@ def main(IMC, IF, config_file):
             markers['CellID'] = markers.index
             sample_cell['CellID'] = sample_cell.index
 
-        tysserand_network(cell_pos, markers, sample_cell, tab_import['there_is_duplicata'], 'IMC',
+        tysserand_network(cell_pos, markers, sample_cell, tab_import['there_is_duplicata'], type,
                           config_file['phenograph'],
                           config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
                           tab_import['normalize'],
                           config_file['tysserand']['method_tysserand'],
-                          config_file['tysserand']['min_neighbors'],
-                          tab_import['if_sample_take_an_other_name'])
-    if IMC:
-        process('IMC')
+                          config_file['tysserand']['min_neighbors'])
+    
     if IF:
         process('IF')
+    if IMC:
+        process('IMC')
         
 if __name__ == "__main__":
     config_path = get_arguments()
     config_file = get_config(config_path)
-    main(config_file['IMC_import']['present_in'], config_file['IF_import']['present_in'])
+    main(config_file['IMC_import']['present_in'], config_file['IF_import']['present_in'], config_file)

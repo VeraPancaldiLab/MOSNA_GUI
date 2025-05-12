@@ -4,7 +4,6 @@ conda activate mosna
 
 TEST=$(yq '.test' CONFIG/configuration.yaml)
 phenotypes_not_defined=$(yq '.phenograph' CONFIG/configuration.yaml)
-echo "$TEST"
 
 mkdir -p output_data/description
 mkdir -p output_data/test
@@ -48,6 +47,6 @@ else
     mkdir -p output_data/Tysserand_network
     echo '########### Tysserand Plotting ###########'
     python SCRIPT/draw_tysserand.py --file CONFIG/configuration.yaml
-
+fi
 
 conda deactivate

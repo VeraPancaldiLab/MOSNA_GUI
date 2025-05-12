@@ -65,18 +65,9 @@ def import_params(output_dir, pheno_col):
     IMC_sample = pd.read_csv(output_dir / "description/IMC_file_description.csv", header=None).values.tolist()
     return uniq_phenotypes_IF, uniq_phenotypes_IMC, cell_types_IF, cell_types_IMC, IF_markers, IMC_markers, IF_sample, IMC_sample
 
-def define_sample_name(config_file, type):
-    if type == 'IMC':
-        if config_file["IMC_import"]["if_sample_take_an_other_name"] is not None:
-            sample_name = config_file["IMC_import"]["if_sample_take_an_other_name"]
-        else:
-            sample_name = 'sample'
-    elif type == 'IF':
-        if config_file["IF_import"]["if_sample_take_an_other_name"] is not None:
-            sample_name = config_file["IF_import"]["if_sample_take_an_other_name"]
-        else:
-            sample_name = 'sample'
-    return sample_name
+def define_sample_name(type):
+    sample_name_dict={'IMC':'ROI', 'IF':'layer'}
+    return sample_name_dict[type]
 
 def replace_sample_name(sample_name):
     return sample_name.replace('_', '-')
@@ -217,7 +208,7 @@ def main(IMC, IF, config_file):
     network_dir_IMC = Path('./output_data/IMC_networks_sample')
     def process(type):
         for patient, sample in tqdm(IMC_sample, desc= f'{type} niches'):
-            sample_name = define_sample_name(config_file, type)
+            sample_name = define_sample_name(type)
             save_dir_IMC = save_dir / f'{type}'
             if config_file['NAS']['output_id'] is not None:
                 save_directory = save_dir_IMC / f"normalization_{normalize}_{str(config_file['NAS']['output_id'])}"
