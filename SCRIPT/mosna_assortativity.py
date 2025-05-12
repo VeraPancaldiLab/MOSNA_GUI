@@ -119,9 +119,10 @@ def nodes_transfo(nodes_dir, marker_cols, sample_name=None, sample_present=True)
 def mix_mat_assortativity(nodes_dir, pheno_col, n_shuffle = 50, sample_name='sample'):
     if sample_name is None:
         sample_name = 'sample'
+
     net_stats = mosna.groups_assort_mixmat(
         net_dir=nodes_dir, 
-        attributes_col=pheno_col, 
+        attributes_col=pheno_col,
         make_onehot=True,
         id_level_1='patient',
         id_level_2=replace_sample_name(sample_name), 

@@ -2,12 +2,12 @@
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate mosna
 
-TEST=$(yq '.test' CONFIG/tysserand.yaml)
+TEST=$(yq '.test' CONFIG/configuration.yaml)
 
 mkdir -p output_data/description
 mkdir -p output_data/test
 
-python SCRIPT/parser_csv_to_pandas.py --file CONFIG/tysserand.yaml
+python SCRIPT/parser_csv_to_pandas.py --file CONFIG/configuration.yaml
 
 if [ "$TEST" == "true" ]; then
     echo -n 'Concatenation For test --- '
@@ -24,13 +24,13 @@ if [ "$TEST" == "true" ]; then
 fi
 
 echo '########### TEST ###########'
-python SCRIPT/test_parser.py --file CONFIG/tysserand.yaml
+python SCRIPT/test_parser.py --file CONFIG/configuration.yaml
 printf "TEST --- DONE\n\n"
 
 
 printf "########### Cell Encounter ###########\n\n"
 mkdir -p output_data/cell_encounter_data
-python SCRIPT/cell_encounter.py --file CONFIG/tysserand.yaml
+python SCRIPT/cell_encounter.py --file CONFIG/configuration.yaml
 printf "Cell Encounter --- DONE\n\n"
 
 conda deactivate
