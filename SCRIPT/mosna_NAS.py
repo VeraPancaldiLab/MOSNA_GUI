@@ -57,12 +57,12 @@ def get_config(config_path):
 
 def import_params(output_dir, pheno_col):
     uniq_phenotypes_IMC = pd.read_csv(output_dir / "description/IMC_phenotypes.csv").iloc[:, 0].to_numpy()
-    uniq_phenotypes_IF = pd.read_csv(output_dir / "description/IF_phenotypes.csv").iloc[:, 0].to_numpy()
+    uniq_phenotypes_IF = pd.read_csv(output_dir / f"description/IF_{config_file['IF_import']['panel']}_phenotypes.csv").iloc[:, 0].to_numpy()
     cell_types_IMC = pd.read_parquet(output_dir / "IMC_cell_pos_pheno.parquet")[pheno_col]
-    cell_types_IF = pd.read_parquet(output_dir / "IF_cell_pos_pheno.parquet")[pheno_col]
-    IF_markers = pd.read_csv(output_dir / "description/IF_markers.csv").iloc[:, 0].to_list()
+    cell_types_IF = pd.read_parquet(output_dir / f"IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet")[pheno_col]
+    IF_markers = pd.read_csv(output_dir / f"description/IF_{config_file['IF_import']['panel']}_markers.csv").iloc[:, 0].to_list()
     IMC_markers = pd.read_csv(output_dir / "description/IMC_markers.csv").iloc[:, 0].to_list()
-    IF_sample = pd.read_csv(output_dir / "description/IF_file_description.csv", header=None).values.tolist()
+    IF_sample = pd.read_csv(output_dir / f"description/IF_{config_file['IF_import']['panel']}_file_description.csv", header=None).values.tolist()
     IMC_sample = pd.read_csv(output_dir / "description/IMC_file_description.csv", header=None).values.tolist()
     return uniq_phenotypes_IF, uniq_phenotypes_IMC, cell_types_IF, cell_types_IMC, IF_markers, IMC_markers, IF_sample, IMC_sample
 
@@ -180,7 +180,6 @@ def color_map(clustering):
 
 def main(IMC, IF, config_file):
 
-
     FUNC_MAP = {
     'np.mean': np.mean,
     'np.std': np.std,
@@ -205,12 +204,19 @@ def main(IMC, IF, config_file):
     save_dir = sof_dir / 'niches_figure'
     save_dir.mkdir(parents=True, exist_ok=True)
     
-    network_dir_IF = Path('./output_data/IF_networks_sample')
+    network_dir_IF = Path(f"./output_data/IF_{config_file['IF_import']['panel']}_networks_sample")
     network_dir_IMC = Path('./output_data/IMC_networks_sample')
+
     def process(type):
+        if type == 'IMC':
+            panel = ''
+        if type == 'IF':
+            panel = config_file['IF_import']['panel']
+            panel = '_' + panel
+        
         for patient, sample in tqdm(IMC_sample, desc= f'{type} niches'):
             sample_name = define_sample_name(type)
-            save_dir_IMC = save_dir / f'{type}'
+            save_dir_IMC = save_dir / f'{type}{panel}'
             if config_file['NAS']['output_id'] is not None:
                 save_directory = save_dir_IMC / f"normalization_{normalize}_{str(config_file['NAS']['output_id'])}"
             else:

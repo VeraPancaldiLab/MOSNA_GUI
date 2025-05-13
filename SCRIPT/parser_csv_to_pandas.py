@@ -252,15 +252,15 @@ def main():
                                   header=False)
             
         if config_file['IF_import']['present_in']:
-            IF_cell_pos.to_parquet(Path('./output_data') / "IF_cell_pos.parquet")
-            IF_markers.to_parquet(Path('./output_data') / "IF_markers.parquet")
-            IF_sample_cell.to_parquet(Path('./output_data') / "IF_sample_cell.parquet")
+            IF_cell_pos.to_parquet(Path('./output_data') / f"IF_{config_file['IF_import']['panel']}_cell_pos.parquet")
+            IF_markers.to_parquet(Path('./output_data') / f"IF_{config_file['IF_import']['panel']}_markers.parquet")
+            IF_sample_cell.to_parquet(Path('./output_data') / f"IF_{config_file['IF_import']['panel']}_sample_cell.parquet")
             IF_markers = IF_markers.drop('CellID', axis=1)
-            IF_markers.columns.to_series().to_csv(Path('./output_data') / "description/IF_markers.csv",
+            IF_markers.columns.to_series().to_csv(Path('./output_data') / f"description/IF_{config_file['IF_import']['panel']}_markers.csv",
                                                   index=False,
                                                   header=False)
             IF_sample_cell = IF_sample_cell.drop('CellID', axis=1).drop_duplicates()
-            IF_sample_cell.to_csv(Path('./output_data') / "description/IF_file_description.csv",
+            IF_sample_cell.to_csv(Path('./output_data') / f"description/IF_{config_file['IF_import']['panel']}_file_description.csv",
                                   index=False,
                                   header=False)
         print('DONE')

@@ -53,7 +53,7 @@ def define_sample_name(type):
     sample_name_dict={'IMC':'ROI', 'IF':'layer'}
     return sample_name_dict[type]
 
-def import_data(dir, type):
+def import_data(dir, type, panel=None):
     if type == 'IMC':
         sample_cell = pd.read_parquet(Path(dir) / "IMC_sample_cell.parquet")
         markers = pd.read_parquet(Path(dir) / "IMC_markers.parquet")
@@ -65,12 +65,12 @@ def import_data(dir, type):
         cell_pos.drop(columns=define_sample_name(type), inplace=True)
         
     if type == 'IF':
-        sample_cell = pd.read_parquet(Path(dir) / "IF_sample_cell.parquet")
-        markers = pd.read_parquet(Path(dir) / "IF_markers.parquet")
-        if (Path(dir) / "IF_cell_pos_pheno.parquet").exists():
-            cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos_pheno.parquet")
+        sample_cell = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_sample_cell.parquet")
+        markers = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_markers.parquet")
+        if (Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet").exists():
+            cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet")
         else:
-            cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos.parquet")
+            cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos.parquet")
         cell_pos.drop(columns='patient', inplace=True)
         cell_pos.drop(columns=define_sample_name(type), inplace=True)
 
@@ -101,14 +101,24 @@ def draw_tysserand_network(coords, clustering, patient, type, method='delaunay',
         figsize=(30,30)
         )
     if sample == None:
-        plt.title(f"Draw an {type} Tysserand network for patient {patient}", fontsize=30)
-        plt.savefig(f"output_data/Tysserand_network/{type}_Tysserand_network_{patient}.png", bbox_inches="tight")
-        plt.close(fig)
-    
+        if type == 'IMC':
+            plt.title(f"Draw an {type} Tysserand network for patient {patient}", fontsize=30)
+            plt.savefig(f"output_data/Tysserand_network/{type}_Tysserand_network_{patient}.png", bbox_inches="tight")
+            plt.close(fig)
+        if type == 'IF':
+            plt.title(f"Draw an {type} Tysserand network for panel {config_file['IF_import']['panel']} and patient {patient}", fontsize=30)
+            plt.savefig(f"output_data/Tysserand_network/{type}_{config_file['IF_import']['panel']}_Tysserand_network_{patient}.png", bbox_inches="tight")
+            plt.close(fig)
     else:
-        plt.title(f"Draw an {type} Tysserand network for patient {patient} and {sample_name} {sample}", fontsize=30)
-        plt.savefig(f"output_data/Tysserand_network/{type}_Tysserand_network_{patient}_{sample_name}_{sample}.png", bbox_inches="tight")
-        plt.close(fig)
+        if type == 'IMC':
+            plt.title(f"Draw an {type} Tysserand network for patient {patient} and {sample_name} {sample}", fontsize=30)
+            plt.savefig(f"output_data/Tysserand_network/{type}_Tysserand_network_{patient}_{sample_name}_{sample}.png", bbox_inches="tight")
+            plt.close(fig)
+        if type == 'IF':
+            plt.title(f"Draw an {type} Tysserand network for panel {config_file['IF_import']['panel']} and patient {patient} and {sample_name} {sample}", fontsize=30)
+            plt.savefig(f"output_data/Tysserand_network/{type}_{config_file['IF_import']['panel']}_Tysserand_network_{patient}_{sample_name}_{sample}.png", bbox_inches="tight")
+            plt.close(fig)
+
     del clusters_cmap, n_colors, celltypes_color_mapper, uniq, fig
     gc.collect()
     return pairs
@@ -208,8 +218,13 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
             tqdm.write("\t\t\t\tDONE\n")
             edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
             sample_name_for_file = sample_name.replace('_', '-')
-            edges.to_parquet(Path(f"output_data/{type}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
-            nodes.to_parquet(Path(f"output_data/{type}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+            if type == 'IMC':
+                edges.to_parquet(Path(f"output_data/{type}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+                nodes.to_parquet(Path(f"output_data/{type}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+            if type == 'IF':
+                edges.to_parquet(Path(f"output_data/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+                nodes.to_parquet(Path(f"output_data/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+
         del unique_list, unique_patient_samples, edges, pairs, nodes
         gc.collect()
 
@@ -264,8 +279,13 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
             gc.collect()
             tqdm.write("\t\t\t\tDONE\n")
             edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
-            edges.to_parquet(Path(f"output_data/{type}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
-            nodes.to_parquet(Path(f"output_data/nodes/{type}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
+            if type == 'IMC':
+                edges.to_parquet(Path(f"output_data/{type}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
+                nodes.to_parquet(Path(f"output_data/nodes/{type}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
+            if type == 'IF':
+                edges.to_parquet(Path(f"output_data/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
+                nodes.to_parquet(Path(f"output_data/nodes/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
+
         del unique_list, unique_patient_samples, edges, pairs, nodes
         gc.collect()
 
@@ -280,7 +300,7 @@ def main(IMC, IF, config_file):
             cell_pos['CellID'] = cell_pos.index
             markers['CellID'] = markers.index
             sample_cell['CellID'] = sample_cell.index
-
+        
         tysserand_network(cell_pos, markers, sample_cell, tab_import['there_is_duplicata'], type,
                           config_file['phenograph'],
                           config_file['tysserand']['k_neighbors_phenograph'],
@@ -288,7 +308,7 @@ def main(IMC, IF, config_file):
                           tab_import['normalize'],
                           config_file['tysserand']['method_tysserand'],
                           config_file['tysserand']['min_neighbors'])
-    
+        
     if IF:
         process('IF')
     if IMC:

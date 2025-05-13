@@ -4,10 +4,11 @@ conda activate mosna
 
 TEST=$(yq '.test' CONFIG/configuration.yaml)
 phenotypes_not_defined=$(yq '.phenograph' CONFIG/configuration.yaml)
+panel=$(yq -r '.IF_import.panel' CONFIG/configuration.yaml)
 
 mkdir -p output_data/description
 mkdir -p output_data/test
-mkdir -p output_data/IF_networks_sample
+mkdir -p output_data/IF_${panel}_networks_sample
 mkdir -p output_data/IMC_networks_sample
 
 python SCRIPT/parser_csv_to_pandas.py --file CONFIG/configuration.yaml

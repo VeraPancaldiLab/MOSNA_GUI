@@ -69,12 +69,12 @@ def import_data(dir, type):
         cell_pos.drop(columns=define_sample_name(type), inplace=True)
 
     if type == 'IF':
-        sample_cell = pd.read_parquet(Path(dir) / "IF_sample_cell.parquet")
-        markers = pd.read_parquet(Path(dir) / "IF_markers.parquet")
-        if (Path(dir) / "IF_cell_pos_pheno.parquet").exists():
-            cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos_pheno.parquet")
+        sample_cell = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_sample_cell.parquet")
+        markers = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_markers.parquet")
+        if (Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet").exists():
+            cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet")
         else:
-            cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos.parquet")
+            cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos.parquet")
         cell_pos.drop(columns='patient', inplace=True)
         cell_pos.drop(columns=define_sample_name(type), inplace=True)
         
@@ -145,7 +145,7 @@ def mix_mat_assortativity(nodes_dir, pheno_col, n_shuffle = 50, type=None):
     net_stats.drop(columns=['id'], inplace=True)
     return net_stats
 
-def plot_mix_mat(save_dir, net_stats, sample_id):
+def plot_mix_mat(save_dir, net_stats, sample_id, type, panel):
     z_cols = [x for x in net_stats.columns if x.endswith('Z') and not x.startswith('assort')]
 
     mixmat_z = mosna.series_to_mixmat(net_stats.loc[sample_id, z_cols], discard=' Z').astype(float)
@@ -153,12 +153,40 @@ def plot_mix_mat(save_dir, net_stats, sample_id):
     
     sns.set_context("notebook")
     figsize = (9, 8)
-    title = "Z-scored assortativity for {} by cell types: {:.2f}".format(sample_id,assort_z)
+    title = "Z-scored assortativity for {} on panel{} for {} by cell types: {:.2f}".format(type,panel,sample_id,assort_z)
     f, ax = plt.subplots(figsize=figsize)
     sns.heatmap(mixmat_z, center=0, cmap="vlag", annot=False, linewidths=.5, ax=ax)
     ax.set_title(title)
     plt.xticks(rotation=45, ha='right')
     plt.savefig(save_dir / f"assortativity_z-scored_{sample_id}", bbox_inches='tight', facecolor='white')
+    return z_cols
+
+def clean_net_stat(z_net_stats):
+    z_net_stats_cleaned, select_finite = mosna.clean_data(
+        z_net_stats, 
+        method='mixed',
+        thresh=0.8,
+        )
+    return z_net_stats_cleaned
+
+def group_assort(net_stat, z_cols, save_dir, type, panel):
+
+    z_net_stats = net_stat[z_cols].astype(float)
+    z_net_stats = clean_net_stat(z_net_stats)
+    z_net_stats = z_net_stats.mean()
+
+    mixmat_z = mosna.series_to_mixmat(z_net_stats.loc[z_cols], discard=' Z').astype(float)
+    sns.set_context("notebook")
+    figsize = (9, 8)
+    if type == 'IF':
+        title = f"mean Z-scored assortativity for {type} with {config_file['IF_import']['panel']} panel dataset by cell types"
+    if type == 'IMC':
+        title = f"mean Z-scored assortativity for {type} dataset by cell types"
+    f, ax = plt.subplots(figsize=figsize)
+    sns.heatmap(mixmat_z, center=0, cmap="vlag", annot=False, linewidths=.5, ax=ax)
+    ax.set_title(title)
+    plt.xticks(rotation=45, ha='right')
+    plt.savefig(save_dir / f"assortativity_z-scored_{type}{panel}", bbox_inches='tight', facecolor='white')
 
 ########################################## Main #######################################
 
@@ -168,35 +196,43 @@ def main(IF, IMC, config_file):
     save_dir.mkdir(parents=True, exist_ok=True)
 
     def process(type, config_file):
+        if type == 'IMC':
+            panel = ''
+        if type == 'IF':
+            panel = config_file['IF_import']['panel']
+            panel = '_' + panel
 
-        markers_col = pd.read_csv(f'./output_data/description/{type}_markers.csv', header=None)[0].tolist()
-        pheno = pd.read_csv(f'./output_data/description/{type}_phenotypes.csv', header=None)[0].tolist()
+        markers_col = pd.read_csv(f'./output_data/description/{type}{panel}_markers.csv', header=None)[0].tolist()
+        pheno = pd.read_csv(f'./output_data/description/{type}{panel}_phenotypes.csv', header=None)[0].tolist()
 
         sample_name={'IMC':'ROI', 'IF':'layer'}
         cell_pos, markers, sample_cell = import_data('./output_data',type)
         
         sample = sample_are_present_in_data(sample_cell, sample_name[type])
-        nodes_transfo(f"./output_data/{type}_networks_sample", markers_col, sample_name[type], sample_present=sample)
+        nodes_transfo(f"./output_data/{type}{panel}_networks_sample", markers_col, sample_name[type], sample_present=sample)
     
-        if not (save_dir / f"{type}_net_stat.parquet").exists():
+        if not (save_dir / f"{type}{panel}_net_stat.parquet").exists():
             t = time()
             print(f"Processing Assortativity for {type} data --- ", end='')
-            net_stat = mix_mat_assortativity(f"./output_data/{type}_networks_sample", 
+            net_stat = mix_mat_assortativity(f"./output_data/{type}{panel}_networks_sample", 
                                                 "Phenotypes", 
                                                 type=type)
-            net_stat.to_parquet(save_dir / f'{type}_net_stat.parquet')
+            net_stat.to_parquet(save_dir / f"{type}{panel}_net_stat.parquet")
             print(f"Done\nAssortativity for IMC took {time()-t} s")
             del net_stat, t
             gc.collect()
         
-        net_stat = pd.read_parquet(save_dir / f'{type}_net_stat.parquet')
+        net_stat = pd.read_parquet(save_dir / f'{type}{panel}_net_stat.parquet')
         list_id = net_stat.index.to_list()
-        save_dir_type = save_dir / f"figures/{type}"
+        save_dir_type = save_dir / f"figures/{type}{panel}"
         save_dir_type.mkdir(parents=True, exist_ok=True)
         
         for id in tqdm(list_id, desc=f" └─ Processing assortativity for {type}"):
-            plot_mix_mat(save_dir_type, net_stat, id)
+            z_cols = plot_mix_mat(save_dir_type, clean_net_stat(net_stat), id, type, panel)
+        
+        z_net_stat = group_assort(net_stat, z_cols, save_dir, type, panel)
     
+
     if IF:
         process('IF', config_file)
     if IMC: 

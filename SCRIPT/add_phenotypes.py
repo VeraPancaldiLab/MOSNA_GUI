@@ -28,7 +28,7 @@ def import_data(dir, IMC, IF):
     if IMC:
         IMC_cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos.parquet")
     if IF:
-        IF_cell_pos = pd.read_parquet(Path(dir) / "IF_cell_pos.parquet")
+        IF_cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos.parquet")
 
     if IF and not IMC:
         return IF_cell_pos
@@ -73,9 +73,7 @@ def add_pheno(data, phenotypes, type):
         )
     return data_merged
 
-def main():
-    config_path = get_arguments()
-    config_file = get_config(config_path)
+def main(config_file):
 
     if config_file['IMC_import']['present_in'] and config_file['IF_import']['present_in']:
         IMC_cell_pos, IF_cell_pos = import_data('./output_data',
@@ -91,14 +89,16 @@ def main():
         IMC_cell_pos_pheno = IMC_cell_pos_pheno.rename(columns={'Cluster':'Phenotypes'})
         IF_cell_pos_pheno = IF_cell_pos_pheno.rename(columns={'Cluster':'Phenotypes'})
         IMC_cell_pos_pheno.to_parquet('./output_data/IMC_cell_pos_pheno.parquet')
-        IF_cell_pos_pheno.to_parquet('./output_data/IF_cell_pos_pheno.parquet')
+        IF_cell_pos_pheno.to_parquet(f"./output_data/IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet")
 
         IMC_phenotypes_list = IMC_phenotypes['Cluster'].dropna().drop_duplicates()
         IF_phenotypes_list = IF_phenotypes['Cluster'].dropna().drop_duplicates()
 
         IMC_phenotypes_list.to_csv("./output_data/description/IMC_phenotypes.csv", index=False, header=False)
-        IF_phenotypes_list.to_csv("./output_data/description/IF_phenotypes.csv", index=False, header=False)
+        IF_phenotypes_list.to_csv(f"./output_data/description/IF_{config_file['IF_import']['panel']}_phenotypes.csv", index=False, header=False)
 
 if __name__ == "__main__":
-    main()
+    config_path = get_arguments()
+    config_file = get_config(config_path)
+    main(config_file)
 
