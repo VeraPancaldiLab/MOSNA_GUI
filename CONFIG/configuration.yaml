@@ -19,8 +19,8 @@ IMC_import:
 
 IF_import:
   present_in: True
-  directory_path: data/processed/Bram_data/IF_merged_by_patient/*.csv
-  panel: "C1"
+  directory_path: data/processed/Bram_data/IF_merged_by_patient/C2/*.csv
+  panel: "C2"
   path_encoding_patient: 
   path_file_to_patient: data/processed/Bram_data/file_to_patient/IF_file_to_patient.csv
   normalize: False
@@ -28,10 +28,10 @@ IF_import:
   there_is_duplicata: True
 
   columns_to_drop: 
-  marker_columns: "3:6"
+  marker_columns: "3:5"
   cell_id_columns: 0
   spatial_columns: "1:2"
-  layer_columns: 8
+  layer_columns: 7
 
 phenograph: False
 
@@ -49,7 +49,7 @@ cell_encounter:
   threshold_filter: 0.05
 
 NAS:
-  output_id: '1'
+  output_id: 'test'
   method: 'NAS'
   order: 2
   stat_funcs: [np.mean, np.std]

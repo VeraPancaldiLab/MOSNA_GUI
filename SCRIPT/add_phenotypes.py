@@ -59,18 +59,28 @@ def define_sample_name(type):
     return sample_name_dict[type]
 
 def add_pheno(data, phenotypes, type):
+
     data['patient'] = data['patient'].astype(str)
     phenotypes['patient'] = phenotypes['patient'].astype(str)
 
     data[tab_sample_name_type(type)] = data[tab_sample_name_type(type)].astype(str)
     phenotypes[tab_sample_name_type(type)] = phenotypes[tab_sample_name_type(type)].astype(str)
 
-    phenotypes_unique = phenotypes.drop_duplicates(subset=['X_position', 'Y_position','patient',tab_sample_name_type(type)])
-    data_merged = data.merge(
-        phenotypes_unique[['X_position', 'Y_position', 'Cluster', 'patient',tab_sample_name_type(type)]],  # on ne garde que les colonnes nécessaires de df2
-        on=['X_position', 'Y_position','patient',tab_sample_name_type(type)],              # on fusionne sur ces deux colonnes
-        how='left'                                    # 'left' garde toutes les lignes de df1
-        )
+    #phenotypes_unique = phenotypes.drop_duplicates(subset=['X_position', 'Y_position','patient',tab_sample_name_type(type)])
+
+    if not config_file[f'{type}_import']['re_index']:
+        data_merged = data.merge(
+            phenotypes[['CellID','X_position', 'Y_position', 'Cluster', 'patient',tab_sample_name_type(type)]],  # on ne garde que les colonnes nécessaires de df2
+            on=['CellID','X_position', 'Y_position','patient',tab_sample_name_type(type)],              # on fusionne sur ces deux colonnes
+            how='left'                                    # 'left' garde toutes les lignes de df1
+            )
+    else:
+        data_merged = data.merge(
+            phenotypes[['X_position', 'Y_position', 'Cluster', 'patient',tab_sample_name_type(type)]],  # on ne garde que les colonnes nécessaires de df2
+            on=['X_position', 'Y_position','patient',tab_sample_name_type(type)],              # on fusionne sur ces deux colonnes
+            how='left'                                    # 'left' garde toutes les lignes de df1
+            )
+    
     return data_merged
 
 def main(config_file):

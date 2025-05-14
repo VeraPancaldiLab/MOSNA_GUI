@@ -30,6 +30,7 @@ from tysserand import tysserand as ty
 from mosna import mosna
 
 import matplotlib as mpl
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 mpl.rcParams["figure.facecolor"] = 'white'
 mpl.rcParams["axes.facecolor"] = 'white'
@@ -150,6 +151,49 @@ def phenograph_clustering(markers_to_cluster, k_neighbors, primary_metrics_pheno
     gc.collect()
     return clustering, Q
 
+def process_sample(args):
+    (
+        patient_sample, sample_name, IF_sample_cell, IF_markers, IF_cell_pos, 
+        there_is_duplicata, type, make_phenograph, k_neighbors, 
+        primary_metrics_phenograh, normalize, method, min_neighbors
+    ) = args
+
+    patient, sample = patient_sample
+    tqdm.write(f"{type} Tysserand for patient {patient} and {sample_name} {sample}")
+    filtre = (IF_sample_cell['patient'] == patient) & (IF_sample_cell[sample_name] == sample)
+
+    if there_is_duplicata:
+        cells_df = IF_sample_cell.loc[filtre, ['CellID']]
+        markers_to_cluster = cells_df.merge(IF_markers.drop_duplicates(subset='CellID'), on='CellID', how='left')
+        cell_ID_pos = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left')
+        coords = cell_ID_pos[['X_position', 'Y_position']]
+    else:
+        cells = IF_sample_cell.loc[filtre, 'CellID'].drop_duplicates()
+        coords = IF_cell_pos.loc[filtre, ['X_position', 'Y_position']]
+        markers_to_cluster = IF_markers[IF_markers['CellID'].isin(cells)].drop_duplicates(subset='CellID')
+        cell_ID_pos = IF_cell_pos.loc[filtre, ['CellID','X_position','Y_position','Phenotypes']]
+
+    if make_phenograph:
+        markers_to_cluster = markers_to_cluster.set_index('CellID')
+        if normalize:
+            markers_to_cluster = normalize_markers(markers_to_cluster)
+        clustering, _ = phenograph_clustering(markers_to_cluster, k_neighbors, primary_metrics_phenograh)
+        cell_ID_pos['Phenotypes'] = clustering
+    else:
+        clustering = cell_ID_pos['Phenotypes']
+
+    pairs = draw_tysserand_network(coords, clustering, patient, type=type, sample=sample, method=method, min_neighbors=min_neighbors, sample_name=sample_name)
+    
+    edges = pd.DataFrame(pairs, columns=['source', 'target'])
+    nodes = markers_to_cluster.reset_index().merge(cell_ID_pos, on='CellID', suffixes=('_marker', '_pos'))
+    nodes['patient'] = patient
+    nodes[sample_name] = sample
+
+    edges.to_parquet(Path(f"output_data/{type}_networks_sample") / f'edges_patient-{patient}_{sample_name}-{sample}.parquet', index=False)
+    nodes.to_parquet(Path(f"output_data/{type}_networks_sample") / f'nodes_patient-{patient}_{sample_name}-{sample}.parquet', index=False)
+
+    return f"{patient}_{sample} done"
+
 def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, 
                       there_is_duplicata, type, 
                       make_phenograph=False, k_neighbors = 30, primary_metrics_phenograh='minkowski', normalize = False, 
@@ -164,68 +208,21 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
         IF_cell_pos['Phenotypes'] = ''
 
     if sample_name in IF_sample_cell.columns:
-        unique_patient_samples = IF_sample_cell[IF_sample_cell['patient'] == 'B'][['patient', sample_name]].drop_duplicates()
-        #unique_patient_samples = IF_sample_cell[['patient',sample_name]].drop_duplicates()
+        unique_patient_samples = IF_sample_cell[['patient',sample_name]].drop_duplicates()
         unique_list = list(unique_patient_samples.itertuples(index=False, name=None))
 
-        for patient_sample in tqdm(unique_list, desc=f" └─ Processing {type} file", position=1):
-            tqdm.write(f"{type} Tysserand for patient {patient_sample[0]} and {sample_name} {patient_sample[1]}")
-            filtre = ((IF_sample_cell['patient'] == patient_sample[0]) &
-                        (IF_sample_cell[f'{sample_name}'] == patient_sample[1]))
+        args_list = [
+            (
+            patient_sample, sample_name, IF_sample_cell, IF_markers, IF_cell_pos,
+            there_is_duplicata, type, make_phenograph, k_neighbors,
+            primary_metrics_phenograh, normalize, method, min_neighbors
+            )   
+            for patient_sample in unique_list
+        ]
 
-            if there_is_duplicata:
-                cells_df = IF_sample_cell.loc[filtre, ['CellID']]
-                markers_to_cluter_IF = cells_df.merge(IF_markers.drop_duplicates(subset='CellID'), on='CellID', how='left')
-                cell_ID_pos = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left')
-                coords = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left') 
-                coords = coords.drop(columns=['CellID','Phenotypes'])
-                nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
-                nodes['patient'] = patient_sample[0]
-                nodes[f'{sample_name}'] = patient_sample[1]
-                tqdm.write(f"\tTysserand networks with : {len(coords)} cells")
-
-            else:
-                cells = IF_sample_cell.loc[filtre, 'CellID'].drop_duplicates()
-                coords = IF_cell_pos.loc[filtre, ['X_position','Y_position']]
-                markers_to_cluter_IF = IF_markers[IF_markers['CellID'].isin(cells)].drop_duplicates(subset='CellID')
-                cell_ID_pos = IF_cell_pos.loc[filtre, ['CellID','X_position','Y_position','Phenotypes']]
-                nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
-                nodes['patient'] = patient_sample[0]
-                nodes[f'{sample_name}'] = patient_sample[1]
-                tqdm.write(f"\tTysserand networks with : {len(coords)} cells")
-            
-
-            if make_phenograph:
-                tqdm.write("\tCLUSTERING BY PHENOGRAPH",end='\t\t\t')       
-                markers_to_cluter_IF = markers_to_cluter_IF.set_index('CellID')
-                if normalize:
-                    markers_to_cluter_IF = normalize_markers(markers_to_cluter_IF)
-                
-                clustering_IF, Q_IF = phenograph_clustering(markers_to_cluter_IF, k_neighbors, primary_metrics_phenograh)
-                cell_ID_pos['Phenotypes']=clustering_IF
-                tqdm.write("DONE\n")
-                
-            else:
-                clustering_IF=cell_ID_pos['Phenotypes']
-                
-            tqdm.write("\tDRAW TYSSERAND NETWORK",end='\t\t\t')
-            pairs = draw_tysserand_network(coords, clustering_IF, patient_sample[0], type=type,sample=patient_sample[1], method=method, min_neighbors=min_neighbors, sample_name=sample_name)
-    
-            del coords, cell_ID_pos, clustering_IF, markers_to_cluter_IF
-            if 'cells' in locals():
-                del cells
-            if 'cells_df' in locals():
-                del cells_df
-            gc.collect()
-            tqdm.write("\t\t\t\tDONE\n")
-            edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
-            sample_name_for_file = sample_name.replace('_', '-')
-            if type == 'IMC':
-                edges.to_parquet(Path(f"output_data/{type}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
-                nodes.to_parquet(Path(f"output_data/{type}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
-            if type == 'IF':
-                edges.to_parquet(Path(f"output_data/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
-                nodes.to_parquet(Path(f"output_data/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+        with ProcessPoolExecutor() as executor:
+            for result in tqdm(executor.map(process_sample, args_list), total=len(args_list), desc="Parallel Tysserand"):
+                tqdm.write(result)
 
         del unique_list, unique_patient_samples, edges, pairs, nodes
         gc.collect()
@@ -234,59 +231,18 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
         unique_patient_samples = IF_sample_cell['patient'].drop_duplicates()
         unique_list = unique_patient_samples.tolist()
 
+        args_list = [
+            (
+            patient_sample, sample_name, IF_sample_cell, IF_markers, IF_cell_pos,
+            there_is_duplicata, type, make_phenograph, k_neighbors,
+            primary_metrics_phenograh, normalize, method, min_neighbors
+            )   
+            for patient_sample in unique_list
+        ]
 
-        for patient in tqdm(unique_list, desc=f" └─ Processing {type} file", position=1):
-            tqdm.write(f"{type} Tysserand for patient {patient}")
-            filtre = IF_sample_cell['patient'] == patient
-
-            if there_is_duplicata:
-                cells_df = IF_sample_cell.loc[filtre, ['CellID']]
-                markers_to_cluter_IF = cells_df.merge(IF_markers.drop_duplicates(subset='CellID'), on='CellID', how='left')
-                cell_ID_pos = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left')
-                coords = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left') 
-                coords=coords.drop(columns=['CellID','Phenotypes'])
-                nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
-                nodes['patient'] = patient
-                tqdm.write(f"\tTysserand networks with : {len(coords)} cells")
-            else:
-                cells = IF_sample_cell.loc[filtre, 'CellID'].drop_duplicates()
-                coords = IF_cell_pos.loc[filtre, ['X_position','Y_position']]
-                markers_to_cluter_IF = IF_markers[IF_markers['CellID'].isin(cells)].drop_duplicates(subset='CellID')
-                cell_ID_pos = IF_cell_pos.loc[filtre, ['CellID','X_position','Y_position','Phenotypes']]
-                nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
-                nodes['patient'] = patient
-                tqdm.write(f"\tTysserand networks with : {len(coords)} cells")
-                        
-            if make_phenograph:
-                markers_to_cluter_IF = markers_to_cluter_IF.set_index('CellID')
-                
-                tqdm.write("\tCLUSTERING BY PHENOGRAPH",end='\t\t\t')
-                if normalize:
-                    markers_to_cluter_IF = normalize_markers(markers_to_cluter_IF)
-                
-                clustering_IF, Q_IF = phenograph_clustering(markers_to_cluter_IF, k_neighbors, primary_metrics_phenograh)
-                cell_ID_pos['Phenotypes']=clustering_IF
-                tqdm.write("DONE\n")
-                
-            else:
-                clustering_IF=cell_ID_pos['Phenotypes']
-
-            tqdm.write("\tDRAW TYSSERAND NETWORK",end='\t\t\t')
-            pairs = draw_tysserand_network(coords, clustering_IF, patient, type=type, method=method, min_neighbors=min_neighbors)
-            del coords, cell_ID_pos, clustering_IF, markers_to_cluter_IF
-            if 'cells' in locals():
-                del cells
-            if 'cells_df' in locals():
-                del cells_df
-            gc.collect()
-            tqdm.write("\t\t\t\tDONE\n")
-            edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
-            if type == 'IMC':
-                edges.to_parquet(Path(f"output_data/{type}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
-                nodes.to_parquet(Path(f"output_data/nodes/{type}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
-            if type == 'IF':
-                edges.to_parquet(Path(f"output_data/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
-                nodes.to_parquet(Path(f"output_data/nodes/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
+        with ProcessPoolExecutor() as executor:
+            for result in tqdm(executor.map(process_sample, args_list), total=len(args_list), desc="Parallel Tysserand"):
+                tqdm.write(result)
 
         del unique_list, unique_patient_samples, edges, pairs, nodes
         gc.collect()

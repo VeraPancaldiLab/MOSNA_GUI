@@ -173,20 +173,56 @@ def group_assort(net_stat, z_cols, save_dir, type, panel):
 
     z_net_stats = net_stat[z_cols].astype(float)
     z_net_stats = clean_net_stat(z_net_stats)
-    z_net_stats = z_net_stats.mean()
+    z_mean = z_net_stats.mean()
+    z_std = z_net_stats.std()
 
-    mixmat_z = mosna.series_to_mixmat(z_net_stats.loc[z_cols], discard=' Z').astype(float)
+    mixmat_z_mean = mosna.series_to_mixmat(z_mean.loc[z_cols], discard=' Z').astype(float)
+    mixmat_z_std = mosna.series_to_mixmat(z_std.loc[z_cols], discard=' Z').astype(float)
+
     sns.set_context("notebook")
-    figsize = (9, 8)
+    figsize = (18, 10)
+    fig, axes = plt.subplots(1, 2, figsize=figsize)
+
     if type == 'IF':
         title = f"mean Z-scored assortativity for {type} with {config_file['IF_import']['panel']} panel dataset by cell types"
     if type == 'IMC':
         title = f"mean Z-scored assortativity for {type} dataset by cell types"
-    f, ax = plt.subplots(figsize=figsize)
-    sns.heatmap(mixmat_z, center=0, cmap="vlag", annot=False, linewidths=.5, ax=ax)
-    ax.set_title(title)
-    plt.xticks(rotation=45, ha='right')
+    
+    # --- Assortativity matrix ---
+
+    sns.heatmap(mixmat_z_mean, center=0, cmap="vlag", annot=False, linewidths=.5, ax=axes[0])
+    axes[0].set_title("Z_scored assortativity")
+    axes[0].tick_params(axis='x', rotation=45)
+
+    # --- BARPLOT of mean ± std ---
+
+    data = []
+    for i in mixmat_z_mean.index:
+        for j in mixmat_z_mean.columns:
+            data.append({
+                'source': i,
+                'target': j,
+                'mean': mixmat_z_mean.loc[i, j],
+                'std': mixmat_z_std.loc[i, j]
+            })
+    df_plot = pd.DataFrame(data)
+
+    sns.barplot(data=df_plot, x="source", y="mean", hue="target", ax=axes[1],
+                errorbar=None, palette="vlag")
+    for i in range(len(df_plot)):
+        row = df_plot.iloc[i]
+        axes[1].errorbar(i, row['mean'], yerr=row['std'], fmt='none', c='gray', capsize=3)
+
+    axes[1].set_title("Mean ± Std per Cell-Type Pair")
+    axes[1].set_ylabel("Z-scored Assortativity")
+    axes[1].tick_params(axis='x', rotation=45)
+
+    # --- Plot subplot ---
+
+    fig.suptitle(title)
+    plt.tight_layout()
     plt.savefig(save_dir / f"assortativity_z-scored_{type}{panel}", bbox_inches='tight', facecolor='white')
+    plt.close()
 
 ########################################## Main #######################################
 
