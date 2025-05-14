@@ -181,7 +181,7 @@ def group_assort(net_stat, z_cols, save_dir, type, panel):
 
     sns.set_context("notebook")
     figsize = (18, 10)
-    fig, axes = plt.subplots(1, 2, figsize=figsize)
+    fig, axes = plt.subplots(1, 2, figsize=figsize, gridspec_kw={'width_ratios': [5, 2]})
 
     if type == 'IF':
         title = f"mean Z-scored assortativity for {type} with {config_file['IF_import']['panel']} panel dataset by cell types"
@@ -200,18 +200,16 @@ def group_assort(net_stat, z_cols, save_dir, type, panel):
     for i in mixmat_z_mean.index:
         for j in mixmat_z_mean.columns:
             data.append({
-                'source': i,
-                'target': j,
+                'pair': f"{i}–{j}",
                 'mean': mixmat_z_mean.loc[i, j],
                 'std': mixmat_z_std.loc[i, j]
             })
-    df_plot = pd.DataFrame(data)
 
-    sns.barplot(data=df_plot, x="source", y="mean", hue="target", ax=axes[1],
-                errorbar=None, palette="vlag")
-    for i in range(len(df_plot)):
-        row = df_plot.iloc[i]
-        axes[1].errorbar(i, row['mean'], yerr=row['std'], fmt='none', c='gray', capsize=3)
+    df_plot = pd.DataFrame(data)
+    df_plot = df_plot.sort_values(by="mean")
+
+    axes[1].barh(y=df_plot["pair"], width=df_plot["mean"], xerr=df_plot["std"],
+             capsize=4, color='steelblue', edgecolor='black')
 
     axes[1].set_title("Mean ± Std per Cell-Type Pair")
     axes[1].set_ylabel("Z-scored Assortativity")

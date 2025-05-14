@@ -164,8 +164,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
         IF_cell_pos['Phenotypes'] = ''
 
     if sample_name in IF_sample_cell.columns:
-        unique_patient_samples = IF_sample_cell[IF_sample_cell['patient'] == 'B'][['patient', sample_name]].drop_duplicates()
-        #unique_patient_samples = IF_sample_cell[['patient',sample_name]].drop_duplicates()
+        unique_patient_samples = IF_sample_cell[['patient',sample_name]].drop_duplicates()
         unique_list = list(unique_patient_samples.itertuples(index=False, name=None))
 
         for patient_sample in tqdm(unique_list, desc=f" └─ Processing {type} file", position=1):
