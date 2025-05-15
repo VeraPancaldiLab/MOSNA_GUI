@@ -41,6 +41,8 @@ mpl.rcParams["figure.facecolor"] = 'white'
 mpl.rcParams["axes.facecolor"] = 'white'
 mpl.rcParams["savefig.facecolor"] = 'white'
 
+########################################## Function ##########################################
+
 def get_arguments():
 
     parser = argparse.ArgumentParser(description = "Draw tysserand for IMC / IF")
@@ -174,76 +176,72 @@ def color_map(clustering):
         n_colors = len(clusters_cmap)
         celltypes_color_mapper = {x: clusters_cmap[i % n_colors] for i, x in enumerate(uniq)}
     return celltypes_color_mapper
- ##################################### Main #########################################
 
 ####################################################### Main #######################################################
 
+
 def main(IMC, IF, config_file):
+
 
     FUNC_MAP = {
     'np.mean': np.mean,
     'np.std': np.std,
     }   
 
-    stat_funcs = [FUNC_MAP[name] for name in config_file['NAS']['stat_funcs']]
-    stat_names = config_file['NAS']['stat_funcs']
+
     method = config_file['NAS']['method']
     pheno_col = 'Phenotypes'
     output_dir = Path('./output_data')
-    normalize = config_file['NAS']['normalize']
 
     uniq_phenotypes_IF, uniq_phenotypes_IMC, cell_types_IF, cell_types_IMC, IF_markers, IMC_markers, IF_sample, IMC_sample = import_params(output_dir, pheno_col)
 
     if method == 'NAS':
         sof_dir = output_dir / f"NAS"    
-        sof_dir.mkdir(parents=True, exist_ok=True)
     elif method == 'SCAN-IT':
         sof_dir = output_dir / f"SCAN-IT"    
-        sof_dir.mkdir(parents=True, exist_ok=True)
 
-    save_dir = sof_dir / 'niches_figure'
-    save_dir.mkdir(parents=True, exist_ok=True)
-    
-    network_dir_IF = Path(f"./output_data/IF_{config_file['IF_import']['panel']}_networks_sample")
-    network_dir_IMC = Path('./output_data/IMC_networks_sample')
+    def process(type, tab_markers, tab_sample):
+        config = config_file['NAS'][f"{type}"]
 
-    def process(type):
+        stat_funcs = [FUNC_MAP[name] for name in config['stat_funcs']]
+        stat_names = config['stat_funcs']
+        normalize = config['normalize']
+        order = config['order']
+        clusterer_type = config['clusterer_type']
+        reducer_type = config['reducer_type']
+        metric = config['metric']
+        n_neighbors = config['n_neighbors']
+        min_dist = config['min_dist']
+        dim_clust = config['dim_clust']
+        min_cluster_size = config['min_cluster_size']
+
+        if config_file['NAS']['output_name_file'] is not None:
+            save_dir = sof_dir / f"{str(config_file['NAS']['output_name_file'])}"
+        else:
+            save_dir_ = sof_dir / 'standard'
+        
         if type == 'IMC':
             panel = ''
         if type == 'IF':
             panel = config_file['IF_import']['panel']
             panel = '_' + panel
-        
-        for patient, sample in tqdm(IMC_sample, desc= f'{type} niches'):
-            sample_name = define_sample_name(type)
-            save_dir_IMC = save_dir / f'{type}{panel}'
-            if config_file['NAS']['output_id'] is not None:
-                save_directory = save_dir_IMC / f"normalization_{normalize}_{str(config_file['NAS']['output_id'])}"
-            else:
-                save_directory = save_dir_IMC / f'normalization_{normalize}'
+        network_dir = Path(f'./output_data/{type}{panel}_networks_sample')
 
+        for patient, sample in tqdm(tab_sample, desc= f'{type} niches'):
+            sample_name = define_sample_name(type)
+            save_dir_data = save_dir / f'{type}{panel}'
+            save_directory = save_dir_data / f"normalization_{normalize}"
             save_directory.mkdir(parents=True, exist_ok=True)
             
-            if type == 'IMC':
-                nodes = pd.read_parquet(network_dir_IMC / f'nodes_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
-                edges = pd.read_parquet(network_dir_IMC / f'edges_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
+            nodes = pd.read_parquet(network_dir / f'nodes_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
+            edges = pd.read_parquet(network_dir / f'edges_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
 
-                cluster_labels = get_param_for_niches(nodes, edges, IMC_markers, 
-                                                stat_funcs, stat_names, config_file['NAS']['order'], config_file['NAS']['reducer_type'], 
-                                                config_file['NAS']['clusterer_type'], config_file['NAS']['n_neighbors'], config_file['NAS']['metric'], 
-                                                config_file['NAS']['min_dist'], config_file['NAS']['dim_clust'], config_file['NAS']['min_cluster_size'],
-                                                save_dir_IMC, patient, sample)
+            cluster_labels = get_param_for_niches(nodes, edges, tab_markers, 
+                                                stat_funcs, stat_names, order, reducer_type, 
+                                                clusterer_type, n_neighbors, metric, 
+                                                min_dist, dim_clust, min_cluster_size,
+                                                save_dir, patient, sample)
             
-            elif type == 'IF':
-                nodes = pd.read_parquet(network_dir_IF / f'nodes_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
-                edges = pd.read_parquet(network_dir_IF / f'edges_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
-
-                cluster_labels = get_param_for_niches(nodes, edges, IF_markers, 
-                                                stat_funcs, stat_names, config_file['NAS']['order'], config_file['NAS']['reducer_type'], 
-                                                config_file['NAS']['clusterer_type'], config_file['NAS']['n_neighbors'], config_file['NAS']['metric'], 
-                                                config_file['NAS']['min_dist'], config_file['NAS']['dim_clust'], config_file['NAS']['min_cluster_size'],
-                                                save_dir_IMC, patient, sample)
-
             load_niches(nodes, cluster_labels, save_directory, patient, sample, type, normalize=config_file['NAS']['normalize'])
 
             nodes[f'niches_{normalize}'] = cluster_labels
@@ -253,15 +251,32 @@ def main(IMC, IF, config_file):
         yaml_file = config_file['NAS'].copy()
         yaml_file['stat_funcs'] = str(yaml_file['stat_funcs'])
         yaml_file['stat_names'] = str(yaml_file['stat_names'])
-        with open(save_directory / "NAS_parameters.json", "w") as f:
+        with open(save_dir / "NAS_parameters.json", "w") as f:
             json.dump(yaml_file, f, indent=2)
 
     if IMC:
-        process('IMC')
+        process('IMC', IMC_markers, IMC_sample)
     if IF:
-        process('IF')
+        process('IF', IF_markers, IF_sample)
 
 if __name__ == "__main__":
     config_path = get_arguments()
     config_file = get_config(config_path)
-    main(config_file['IMC_import']['present_in'], config_file['IF_import']['present_in'])
+
+    if (
+        (config_file['NAS']['IF_perform'] == config_file['IF_import']['present_in'] 
+         and config_file['tysserand']['IF_perform']) 
+         or not config_file['NAS']['IF_perform']):
+        
+        if (
+            (config_file['NAS']['IMC_perform'] == config_file['IMC_import']['present_in'] 
+             and config_file['tysserand']['IMC_perform']) 
+             or not config_file['NAS']['IMC_perform']):
+            
+            main(config_file['NAS']['IF_perform'],
+                config_file['NAS']['IMC_perform'],
+                config_file)
+        else:
+            raise ValueError("There is no IMC in your data")
+    else:
+        raise ValueError("There is IF in your data")

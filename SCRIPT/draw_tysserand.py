@@ -35,6 +35,8 @@ mpl.rcParams["figure.facecolor"] = 'white'
 mpl.rcParams["axes.facecolor"] = 'white'
 mpl.rcParams["savefig.facecolor"] = 'white'
 
+########################################## Function ##########################################
+
 def get_arguments():
 
     parser = argparse.ArgumentParser(description = "Draw tysserand for IMC / IF")
@@ -290,6 +292,8 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
         del unique_list, unique_patient_samples, edges, pairs, nodes
         gc.collect()
 
+########################################## Main ##########################################
+
 def main(IMC, IF, config_file):
 
     def process(type):
@@ -318,5 +322,17 @@ def main(IMC, IF, config_file):
 if __name__ == "__main__":
     config_path = get_arguments()
     config_file = get_config(config_path)
-    main(config_file['IMC_import']['present_in'], config_file['IF_import']['present_in'], config_file)
+    if (config_file['tysserand']['IF_perform'] == config_file['IF_import']['present_in'] 
+        or not config_file['tysserand']['IF_perform']):
+
+        if (config_file['tysserand']['IMC_perform'] == config_file['IMC_import']['present_in'] 
+            or not config_file['tysserand']['IMC_perform']):
+            
+            main(config_file['tysserand']['IF_perform'],
+                config_file['tysserand']['IMC_perform'],
+                config_file)
+        else:
+            raise ValueError("There is no IMC in your data")
+    else:
+        raise ValueError("There is IF in your data")
 

@@ -34,10 +34,13 @@ from lifelines import KaplanMeierFitter, CoxPHFitter
 from tysserand import tysserand as ty
 from mosna import mosna
 import matplotlib as mpl
-
+import matplotlib.gridspec as gridspec
+from matplotlib.patches import Patch
 mpl.rcParams["figure.facecolor"] = 'white'
 mpl.rcParams["axes.facecolor"] = 'white'
 mpl.rcParams["savefig.facecolor"] = 'white'
+
+########################################## Function ##########################################
 
 def get_arguments():
 
@@ -179,48 +182,105 @@ def group_assort(net_stat, z_cols, save_dir, type, panel):
     mixmat_z_mean = mosna.series_to_mixmat(z_mean.loc[z_cols], discard=' Z').astype(float)
     mixmat_z_std = mosna.series_to_mixmat(z_std.loc[z_cols], discard=' Z').astype(float)
 
-    sns.set_context("notebook")
-    figsize = (18, 10)
-    fig, axes = plt.subplots(1, 2, figsize=figsize, gridspec_kw={'width_ratios': [5, 2]})
-
-    if type == 'IF':
-        title = f"mean Z-scored assortativity for {type} with {config_file['IF_import']['panel']} panel dataset by cell types"
-    if type == 'IMC':
-        title = f"mean Z-scored assortativity for {type} dataset by cell types"
-    
-    # --- Assortativity matrix ---
-
-    sns.heatmap(mixmat_z_mean, center=0, cmap="vlag", annot=False, linewidths=.5, ax=axes[0])
-    axes[0].set_title("Z_scored assortativity")
-    axes[0].tick_params(axis='x', rotation=45)
-
-    # --- BARPLOT of mean ± std ---
-
     data = []
+    already_seen = set()
     for i in mixmat_z_mean.index:
         for j in mixmat_z_mean.columns:
+            pair_key = tuple(sorted([i, j]))  
+            if pair_key in already_seen:
+                continue  
+            already_seen.add(pair_key)
             data.append({
-                'pair': f"{i}–{j}",
+                'pair': f"{i} <=> {j}",
                 'mean': mixmat_z_mean.loc[i, j],
-                'std': mixmat_z_std.loc[i, j]
+                'std': mixmat_z_std.loc[i, j],
+                'is_auto': i == j
             })
-
     df_plot = pd.DataFrame(data)
+    df_plot["color"] = df_plot["is_auto"].map({True: "crimson", False: "steelblue"})
     df_plot = df_plot.sort_values(by="mean")
 
-    axes[1].barh(y=df_plot["pair"], width=df_plot["mean"], xerr=df_plot["std"],
-             capsize=4, color='steelblue', edgecolor='black')
+    sns.set_context("notebook")
 
-    axes[1].set_title("Mean ± Std per Cell-Type Pair")
-    axes[1].set_ylabel("Z-scored Assortativity")
-    axes[1].tick_params(axis='x', rotation=45)
+    def plotting(df_plot):
+        fig = plt.figure(figsize=(20, 10))
+        gs = gridspec.GridSpec(1, 2, width_ratios=[5, 3])
+        ax_bar = fig.add_subplot(gs[1])
+        ax_heat = fig.add_subplot(gs[0])
+        if type == 'IF':
+            title = f"mean Z-scored assortativity for {type} with {config_file['IF_import']['panel']} panel dataset by cell types"
+        if type == 'IMC':
+            title = f"mean Z-scored assortativity for {type} dataset by cell types"
+            
+        # --- Assortativity matrix ---
 
-    # --- Plot subplot ---
+        sns.heatmap(mixmat_z_mean, center=0, cmap="vlag", annot=False, linewidths=.5, ax=ax_heat)
+        ax_heat.set_title("Z_scored assortativity")
+        ax_heat.tick_params(axis='x', rotation=45)
 
-    fig.suptitle(title)
-    plt.tight_layout()
-    plt.savefig(save_dir / f"assortativity_z-scored_{type}{panel}", bbox_inches='tight', facecolor='white')
-    plt.close()
+        # --- BARPLOT of mean ± std ---
+
+        ax_bar.barh(y=df_plot["pair"], width=df_plot["mean"], xerr=df_plot["std"],
+                    capsize=4, color=df_plot["color"], edgecolor='black')
+        legend_elements = [
+            Patch(facecolor='crimson', edgecolor='black', label='Auto-assortative'),
+            Patch(facecolor='steelblue', edgecolor='black', label='Hetero-assortative')
+        ]
+        ax_bar.legend(handles=legend_elements, loc='lower right')
+        ax_bar.set_title("Mean ± Std per Cell-Type Pair")
+        ax_bar.set_ylabel("Z-scored Assortativity")
+        ax_bar.tick_params(axis='x', rotation=45)
+
+        # --- Plot subplot ---
+
+        fig.suptitle(title)
+        plt.tight_layout()
+        plt.savefig(save_dir / f"assortativity_z-scored_{type}{panel}", bbox_inches='tight', facecolor='white')
+        plt.close()
+
+    if len(df_plot['pair']) <= 30:
+        plotting(df_plot)
+    else:
+        if type == 'IF':
+            title_hear = f"mean Z-scored assortativity for {type} with {config_file['IF_import']['panel']} panel dataset by cell types"
+            title_bar=f"Mean ± Std Assortativity per Cell-Type Pair for {type} with {config_file['IF_import']['panel']} panel"
+        if type == 'IMC':
+            title_heat = f"mean Z-scored assortativity for {type} dataset by cell types"
+            title_bar=f"Mean ± Std Assortativity per Cell-Type Pair for {type} dataset"
+    
+        # --- BARPLOT of mean ± std ---
+
+        fig2_height = max(6, len(df_plot["pair"]) * 0.3)  # adapt height to number of pairs
+        fig2 = plt.figure(figsize=(20, fig2_height))
+        ax_bar = fig2.add_subplot(111)
+
+        ax_bar.barh(
+            y=df_plot["pair"],
+            width=df_plot["mean"],
+            xerr=df_plot["std"],
+            capsize=4,
+            color=df_plot["color"],
+            edgecolor='black'
+        )
+        legend_elements = [
+            Patch(facecolor='crimson', edgecolor='black', label='Auto-assortative'),
+            Patch(facecolor='steelblue', edgecolor='black', label='Hetero-assortative')
+        ]
+        ax_bar.legend(handles=legend_elements, loc='lower right')
+        ax_bar.set_title(title_bar)
+        ax_bar.set_xlabel("Z-scored Assortativity")
+        ax_bar.tick_params(axis='x', rotation=45)
+
+        plt.tight_layout()
+        plt.savefig(save_dir / f"Mean_Std_Assortativity_z-scored_{type}{panel}", bbox_inches='tight', facecolor='white')
+        plt.close(fig2)
+
+        # --- Assortativity matrix ---
+
+        df_plot["abs_mean"] = df_plot["mean"].abs()
+        df_plot = df_plot.sort_values(by="abs_mean", ascending=False).head(30)
+        df_plot = df_plot.sort_values(by="mean")
+        plotting(df_plot)
 
 ########################################## Main #######################################
 
@@ -275,7 +335,21 @@ def main(IF, IMC, config_file):
 if __name__ == "__main__":
     config_path = get_arguments()
     config_file = get_config(config_path)
-    main(config_file['IMC_import']['present_in'],
-         config_file['IF_import']['present_in'],
-         config_file)
+
+    if (
+        (config_file['Assortativity']['IF_perform'] == config_file['IF_import']['present_in'] 
+         and config_file['tysserand']['IF_perform']) 
+         or not config_file['Assortativity']['IF_perform']):
+        
+        if ((config_file['Assortativity']['IMC_perform'] == config_file['IMC_import']['present_in'] 
+             and config_file['tysserand']['IF_perform']) 
+             or not config_file['Assortativity']['IMC_perform']):
+            
+            main(config_file['Assortativity']['IF_perform'],
+                config_file['Assortativity']['IMC_perform'],
+                config_file)
+        else:
+            raise ValueError("There is no IMC in your data")
+    else:
+        raise ValueError("There is IF in your data")
 
