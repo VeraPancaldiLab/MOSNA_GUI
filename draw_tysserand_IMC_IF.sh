@@ -4,6 +4,7 @@ conda activate mosna
 
 TEST=$(yq '.test' CONFIG/configuration.yaml)
 phenotypes_not_defined=$(yq '.phenograph' CONFIG/configuration.yaml)
+add_pheno=$(yq '.add_pheno' CONFIG/configuration.yaml)
 panel=$(yq -r '.IF_import.panel' CONFIG/configuration.yaml)
 
 mkdir -p output_data/description
@@ -31,10 +32,12 @@ if [ "$TEST" == "true" ]; then
     printf "TEST --- DONE\n\n"
 fi
 
-if [ "$phenotypes_not_defined" == false ]; then
-    printf 'Add phenotypes --- '
-    python SCRIPT/add_phenotypes.py --file CONFIG/configuration.yaml
-    echo -e 'DONE\n'
+if [ " $add_pheno" == true ]; then
+    if [ "$phenotypes_not_defined" == false ]; then
+        printf 'Add phenotypes --- '
+        python SCRIPT/add_phenotypes.py --file CONFIG/configuration.yaml
+        echo -e 'DONE\n'
+    fi
 fi
 
 if [[ "$1" == "--silent" ]]; then

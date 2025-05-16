@@ -1,3 +1,4 @@
+print('############ Import and LOG ############')
 import os
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 import sys
@@ -180,14 +181,12 @@ def color_map(clustering):
 ####################################################### Main #######################################################
 
 
-def main(IMC, IF, config_file):
-
+def main(IF, IMC, config_file):
 
     FUNC_MAP = {
     'np.mean': np.mean,
     'np.std': np.std,
     }   
-
 
     method = config_file['NAS']['method']
     pheno_col = 'Phenotypes'
@@ -228,6 +227,10 @@ def main(IMC, IF, config_file):
         network_dir = Path(f'./output_data/{type}{panel}_networks_sample')
 
         for patient, sample in tqdm(tab_sample, desc= f'{type} niches'):
+            if type == 'IMC':
+                tqdm.write(f"niches for patient {patient} and ROI {sample}")
+            else:
+                tqdm.write(f"niches for patient {patient} and layer {sample}")
             sample_name = define_sample_name(type)
             save_dir_data = save_dir / f'{type}{panel}'
             save_directory = save_dir_data / f"normalization_{normalize}"
@@ -242,11 +245,12 @@ def main(IMC, IF, config_file):
                                                 min_dist, dim_clust, min_cluster_size,
                                                 save_dir, patient, sample)
             
-            load_niches(nodes, cluster_labels, save_directory, patient, sample, type, normalize=config_file['NAS']['normalize'])
+            load_niches(nodes, cluster_labels, save_directory, patient, sample, type, normalize=normalize)
 
             nodes[f'niches_{normalize}'] = cluster_labels
             pairs = edges[['source', 'target']].values
-            tysserand(nodes[['X_position','Y_position']], pairs, cluster_labels, type, patient, sample, sample_name, save_directory, normalize=config_file['NAS']['normalize'])
+            tysserand(nodes[['X_position','Y_position']], pairs, cluster_labels, type, 
+                      patient, sample, sample_name, save_directory, normalize=normalize)
         
         yaml_file = config_file['NAS'].copy()
         yaml_file['stat_funcs'] = str(yaml_file['stat_funcs'])
@@ -254,29 +258,28 @@ def main(IMC, IF, config_file):
         with open(save_dir / "NAS_parameters.json", "w") as f:
             json.dump(yaml_file, f, indent=2)
 
-    if IMC:
-        process('IMC', IMC_markers, IMC_sample)
-    if IF:
-        process('IF', IF_markers, IF_sample)
+    try:
+        if IMC:
+            if not config_file['IMC_import']['present_in'] or not config_file['tysserand']['IMC_perform']:
+                raise ValueError("There is no IMC in your data or the Tysserand networks were not generated")
+            else:
+                process('IMC', IMC_markers, IMC_sample)
+    except ValueError as e:
+        print(f"IMC error: {e}")
+
+    try:
+        if IF:
+            if not config_file['IF_import']['present_in'] or not config_file['tysserand']['IF_perform']:
+                raise ValueError("There is IF in your data or the Tysserand networks were not generated")
+            else:
+                process('IF', IF_markers, IF_sample)
+    except ValueError as e:
+        print(f"IF error: {e}")
 
 if __name__ == "__main__":
+    print('\n\n############ Perform NAS ############\n')
     config_path = get_arguments()
-    config_file = get_config(config_path)
-
-    if (
-        (config_file['NAS']['IF_perform'] == config_file['IF_import']['present_in'] 
-         and config_file['tysserand']['IF_perform']) 
-         or not config_file['NAS']['IF_perform']):
-        
-        if (
-            (config_file['NAS']['IMC_perform'] == config_file['IMC_import']['present_in'] 
-             and config_file['tysserand']['IMC_perform']) 
-             or not config_file['NAS']['IMC_perform']):
-            
-            main(config_file['NAS']['IF_perform'],
+    config_file = get_config(config_path)   
+    main(config_file['NAS']['IF_perform'],
                 config_file['NAS']['IMC_perform'],
                 config_file)
-        else:
-            raise ValueError("There is no IMC in your data")
-    else:
-        raise ValueError("There is IF in your data")

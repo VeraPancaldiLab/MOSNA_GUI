@@ -34,9 +34,10 @@ IF_import:
   layer_columns: 7
 
 phenograph: False
+add_pheno: True
 
 tysserand:
-  IF_perform: True
+  IF_perform: False
   IMC_perform: True
   k_neighbors_phenograph: 30
   primary_metric_phenograph: 'minkowski'
@@ -57,20 +58,20 @@ Assortativity:
 NAS:
   method: 'NAS'
   output_name_file: 'test'
-  IMC_perform: True
+  IMC_perform: False
   IF_perform: True
 
   IF:
-    order: 2
-    stat_funcs: [np.mean, np.std]
+    order: 1
+    stat_funcs: [np.mean, np.std]     
     stat_names: ['mean', 'std']
-    clusterer_type: leiden
-    reducer_type: umap
-    metric: euclidean
-    n_neighbors: 15
-    min_dist: 0.0
+    clusterer_type: leiden                         
+    reducer_type: umap              
+    metric: euclidean               
+    n_neighbors: 10                 
+    min_dist: 0.0               
     dim_clust: 2
-    min_cluster_size: 10
+    min_cluster_size: 50
     normalize: niche
 
   IMC:
@@ -85,3 +86,40 @@ NAS:
     dim_clust: 2
     min_cluster_size: 10
     normalize: niche
+
+__doc__:
+  NAS: |
+    ¤ reducer_type : str
+        DR method, can be 'umap', for now, other ones coming soon.
+    ¤ n_components : int
+        Number of final dimensions.
+    ¤ n-neighbors : int
+        Number of closest neighbors used in various DR methods.
+    ¤ metric : str
+        Type of distance used.
+    ¤ min_dist : float
+        Minimum distance between DRed data, we usually want 0.
+    ¤ clusterer_type : str
+        Clustering algorithm to partition data, either 'leiden', 'ecg' for Ensemble 
+        Clustering for Graphs, 'spectral' for balanced spectral clustering or 'gmm' 
+        for Gaussian Mixture Model.
+    ¤ dim_clust : int
+        Dimensionality of the reducede space in which data is clustered.
+        A higher number allows for more complex cluster shapes, but introduces outliers.
+    ¤ k_cluster : int
+        Number of neighbors considered during the clustering.
+    ¤ resolution : float
+        Level of details of the clustering. A higher number increases the level of details.
+    ¤ n_clusters : int, None
+        Number of target clusters, used with GaussianMixtureModel clusterer.
+    ¤ ecg_min_weight : float, 0.05
+        min_weight parameter for the ecg method.
+    ¤ ecg_ensemble_size : int, 20
+        ensemble_size parameter for the ecg method.
+    ¤ flavor : str, None
+        If 'CellCharter', uses UMAP for dimensionality reduction, and a gaussian mixture
+        model for clustering. 
+    ¤ avoid_neigh_overflow : bool, True
+        Whether the number of neighbors for clustering is limited by the number of
+        neighbors for dimensionality reduction.
+          

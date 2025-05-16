@@ -1,3 +1,4 @@
+print('############ Import and LOG ############')
 import os
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 import sys
@@ -223,8 +224,8 @@ def group_assort(net_stat, z_cols, save_dir, type, panel):
         ax_bar.barh(y=df_plot["pair"], width=df_plot["mean"], xerr=df_plot["std"],
                     capsize=4, color=df_plot["color"], edgecolor='black')
         legend_elements = [
-            Patch(facecolor='crimson', edgecolor='black', label='Auto-assortative'),
-            Patch(facecolor='steelblue', edgecolor='black', label='Hetero-assortative')
+            Patch(facecolor='darkorange', edgecolor='black', label='Auto-assortativity'),
+            Patch(facecolor='seagreen', edgecolor='black', label='Hetero-assortativity')
         ]
         ax_bar.legend(handles=legend_elements, loc='lower right')
         ax_bar.set_title("Mean ± Std per Cell-Type Pair")
@@ -263,8 +264,8 @@ def group_assort(net_stat, z_cols, save_dir, type, panel):
             edgecolor='black'
         )
         legend_elements = [
-            Patch(facecolor='crimson', edgecolor='black', label='Auto-assortative'),
-            Patch(facecolor='steelblue', edgecolor='black', label='Hetero-assortative')
+            Patch(facecolor='darkorange', edgecolor='black', label='Auto-assortativity'),
+            Patch(facecolor='seagreen', edgecolor='black', label='Hetero-assortativity')
         ]
         ax_bar.legend(handles=legend_elements, loc='lower right')
         ax_bar.set_title(title_bar)
@@ -327,29 +328,30 @@ def main(IF, IMC, config_file):
         z_net_stat = group_assort(net_stat, z_cols, save_dir, type, panel)
     
 
-    if IF:
-        process('IF', config_file)
-    if IMC: 
-        process('IMC', config_file)
-  
+    try:
+        if IMC:
+            if not config_file['IMC_import']['present_in'] or not config_file['tysserand']['IMC_perform']:
+                raise ValueError("There is no IMC in your data or the Tysserand networks were not generated")
+            else:
+                process('IMC', config_file)
+    except ValueError as e:
+        print(f"IMC error: {e}")
+
+    try:
+        if IF:
+            if not config_file['IF_import']['present_in'] or not config_file['tysserand']['IF_perform']:
+                raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
+            else:
+                process('IF', config_file)
+    except ValueError as e:
+        print(f"IF error: {e}")
+
 if __name__ == "__main__":
+    print('\n\n############ Perform Assortativity ############\n')
     config_path = get_arguments()
     config_file = get_config(config_path)
-
-    if (
-        (config_file['Assortativity']['IF_perform'] == config_file['IF_import']['present_in'] 
-         and config_file['tysserand']['IF_perform']) 
-         or not config_file['Assortativity']['IF_perform']):
-        
-        if ((config_file['Assortativity']['IMC_perform'] == config_file['IMC_import']['present_in'] 
-             and config_file['tysserand']['IF_perform']) 
-             or not config_file['Assortativity']['IMC_perform']):
-            
-            main(config_file['Assortativity']['IF_perform'],
+    main(config_file['Assortativity']['IF_perform'],
                 config_file['Assortativity']['IMC_perform'],
                 config_file)
-        else:
-            raise ValueError("There is no IMC in your data")
-    else:
-        raise ValueError("There is IF in your data")
+
 

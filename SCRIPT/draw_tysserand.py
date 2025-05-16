@@ -1,3 +1,4 @@
+print('############ Import and LOG ############')
 import os
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 import sys
@@ -294,7 +295,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
 
 ########################################## Main ##########################################
 
-def main(IMC, IF, config_file):
+def main(IF, IMC, config_file):
 
     def process(type):
         tab_import = config_file[f'{type}_import']
@@ -314,25 +315,31 @@ def main(IMC, IF, config_file):
                           config_file['tysserand']['method_tysserand'],
                           config_file['tysserand']['min_neighbors'])
         
-    if IF:
-        process('IF')
-    if IMC:
-        process('IMC')
-        
+
+    try:
+        if IMC:
+            if not config_file['IMC_import']['present_in']:
+                raise ValueError("There is no IMC in your data")
+            else:
+                process('IMC')
+    except ValueError as e:
+        print(f"IMC error: {e}")
+
+    try:
+        if IF:
+            if not config_file['IF_import']['present_in']:
+                raise ValueError("There is no IF in your data")
+            else:
+                process('IF')
+    except ValueError as e:
+        print(f"IF error: {e}")
+
 if __name__ == "__main__":
+    print('\n\n############ Perform Tysserand for generating networks ############\n')
     config_path = get_arguments()
     config_file = get_config(config_path)
-    if (config_file['tysserand']['IF_perform'] == config_file['IF_import']['present_in'] 
-        or not config_file['tysserand']['IF_perform']):
 
-        if (config_file['tysserand']['IMC_perform'] == config_file['IMC_import']['present_in'] 
-            or not config_file['tysserand']['IMC_perform']):
-            
-            main(config_file['tysserand']['IF_perform'],
+    main(config_file['tysserand']['IF_perform'],
                 config_file['tysserand']['IMC_perform'],
                 config_file)
-        else:
-            raise ValueError("There is no IMC in your data")
-    else:
-        raise ValueError("There is IF in your data")
 
