@@ -1,6 +1,8 @@
 save_file: True
 pheno_dir: data/processed/Bram_data/phenotypes
 test: False
+phenograph: False
+add_pheno: True
 
 IMC_import:
   present_in: True
@@ -32,9 +34,6 @@ IF_import:
   cell_id_columns: 0
   spatial_columns: "1:2"
   layer_columns: 7
-
-phenograph: False
-add_pheno: True
 
 tysserand:
   IF_perform: False
