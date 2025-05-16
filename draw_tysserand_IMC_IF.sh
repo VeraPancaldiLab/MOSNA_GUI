@@ -32,7 +32,7 @@ if [ "$TEST" == "true" ]; then
     printf "TEST --- DONE\n\n"
 fi
 
-if [ " $add_pheno" == true ]; then
+if [ "$add_pheno" == true ]; then
     if [ "$phenotypes_not_defined" == false ]; then
         printf 'Add phenotypes --- '
         python SCRIPT/add_phenotypes.py --file CONFIG/configuration.yaml

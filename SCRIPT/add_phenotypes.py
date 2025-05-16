@@ -39,9 +39,9 @@ def import_data(dir, IMC, IF):
 
 def import_phenotypes(dir, IMC, IF, panel):
     if IMC:
-        IMC_phenotypes = pd.read_csv(Path(dir) / "IMC_with_phenotypes.csv")
+        IMC_phenotypes = pd.read_csv(Path(dir) / "IMC_with_phenotypes.csv", dtype={tab_sample_name_type('IMC'): str})
     if IF:
-        IF_phenotypes = pd.read_csv(Path(dir) / f"IF_{panel}_with_phenotypes.csv")
+        IF_phenotypes = pd.read_csv(Path(dir) / f"IF_{panel}_with_phenotypes.csv", dtype={tab_sample_name_type('IF'): str})
 
     if IF and not IMC:
         return IF_phenotypes
@@ -54,10 +54,6 @@ def tab_sample_name_type(type):
     sample_name={'IMC':'ROI', 'IF':'layer'}
     return sample_name[type]
 
-def define_sample_name(type):
-    sample_name_dict={'IMC':'ROI', 'IF':'layer'}
-    return sample_name_dict[type]
-
 def add_pheno(data, phenotypes, type):
 
     data['patient'] = data['patient'].astype(str)
@@ -65,22 +61,22 @@ def add_pheno(data, phenotypes, type):
 
     data[tab_sample_name_type(type)] = data[tab_sample_name_type(type)].astype(str)
     phenotypes[tab_sample_name_type(type)] = phenotypes[tab_sample_name_type(type)].astype(str)
-
-    #phenotypes_unique = phenotypes.drop_duplicates(subset=['X_position', 'Y_position','patient',tab_sample_name_type(type)])
-
+    
     if not config_file[f'{type}_import']['re_index']:
+        #phenotypes = phenotypes.drop_duplicates(subset=['CellID','X_position', 'Y_position','patient',tab_sample_name_type(type)])
         data_merged = data.merge(
             phenotypes[['CellID','X_position', 'Y_position', 'Cluster', 'patient',tab_sample_name_type(type)]],  # on ne garde que les colonnes nécessaires de df2
             on=['CellID','X_position', 'Y_position','patient',tab_sample_name_type(type)],              # on fusionne sur ces deux colonnes
             how='left'                                    # 'left' garde toutes les lignes de df1
             )
-    else:
+    elif config_file[f'{type}_import']['re_index']:
+        #phenotypes = phenotypes.drop_duplicates(subset=['X_position', 'Y_position','patient',tab_sample_name_type(type)])
         data_merged = data.merge(
             phenotypes[['X_position', 'Y_position', 'Cluster', 'patient',tab_sample_name_type(type)]],  # on ne garde que les colonnes nécessaires de df2
             on=['X_position', 'Y_position','patient',tab_sample_name_type(type)],              # on fusionne sur ces deux colonnes
             how='left'                                    # 'left' garde toutes les lignes de df1
             )
-    
+
     return data_merged
 
 def main(config_file):
@@ -92,7 +88,7 @@ def main(config_file):
         IMC_phenotypes, IF_phenotypes = import_phenotypes(config_file['pheno_dir'],                           
                                                 config_file['IMC_import']['present_in'],
                                                 config_file['IF_import']['present_in'], config_file['IF_import']['panel'])
-    
+
         IMC_cell_pos_pheno = add_pheno(IMC_cell_pos, IMC_phenotypes, 'IMC')
         IF_cell_pos_pheno = add_pheno(IF_cell_pos, IF_phenotypes, 'IF')
 

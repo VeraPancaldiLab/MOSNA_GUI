@@ -170,10 +170,7 @@ def color_map(clustering):
         nb_clust = clustering.max()
         uniq = pd.Series(clustering).value_counts().index
 
-        # choose colormap
         clusters_cmap = mosna.make_cluster_cmap(uniq)
-        # make color mapper
-        # series to sort by decreasing order
         n_colors = len(clusters_cmap)
         celltypes_color_mapper = {x: clusters_cmap[i % n_colors] for i, x in enumerate(uniq)}
     return celltypes_color_mapper
@@ -252,10 +249,10 @@ def main(IF, IMC, config_file):
             tysserand(nodes[['X_position','Y_position']], pairs, cluster_labels, type, 
                       patient, sample, sample_name, save_directory, normalize=normalize)
         
-        yaml_file = config_file['NAS'].copy()
+        yaml_file = config.copy()
         yaml_file['stat_funcs'] = str(yaml_file['stat_funcs'])
         yaml_file['stat_names'] = str(yaml_file['stat_names'])
-        with open(save_dir / "NAS_parameters.json", "w") as f:
+        with open(save_directory / f"NAS_{type}_parameters.json", "w") as f:
             json.dump(yaml_file, f, indent=2)
 
     try:
@@ -270,7 +267,7 @@ def main(IF, IMC, config_file):
     try:
         if IF:
             if not config_file['IF_import']['present_in'] or not config_file['tysserand']['IF_perform']:
-                raise ValueError("There is IF in your data or the Tysserand networks were not generated")
+                raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
             else:
                 process('IF', IF_markers, IF_sample)
     except ValueError as e:
