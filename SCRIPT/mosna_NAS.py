@@ -280,9 +280,9 @@ def main(IF, IMC, config_file):
             panel = config_file['IF_import']['panel']
             panel = '_' + panel
         network_dir = Path(f'./output_data/{type}{panel}_networks_sample')
-
+        save_dir.mkdir(parents=True, exist_ok=True)
         ######################################## Node aggregation ########################################
-
+        
         if nodes_aggregation:
             stat_funcs, stat_names, normalize, order, clusterer_type, \
             reducer_type, metric, n_neighbors, min_dist, dim_clust, \
