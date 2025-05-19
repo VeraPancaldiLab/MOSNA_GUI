@@ -173,6 +173,25 @@ def clean_net_stat(z_net_stats):
         )
     return z_net_stats_cleaned
 
+def correct_batch_effect(nodes_dir, marker_col, sample, save_dir):
+    nodes_dir, nodes_corr = mosna.batch_correct_nodes(
+        nodes_dir=nodes_dir,
+        id_level_1 = 'patient',
+        id_level_2 = sample, 
+        extension ='parquet',
+        data_index = None,
+        use_cols = marker_col,
+        add_sample_info = True,
+        batch_key = 'patient',
+        max_dimred= 100,
+        return_dense = True,
+        save_dir = save_dir,
+        force_recompute = False,
+        return_nodes = True,
+        verbose = 0,
+        )
+    return nodes_dir, nodes_corr
+
 def group_assort(net_stat, z_cols, save_dir, type, panel):
 
     z_net_stats = net_stat[z_cols].astype(float)
@@ -302,10 +321,19 @@ def main(IF, IMC, config_file):
 
         sample_name={'IMC':'ROI', 'IF':'layer'}
         cell_pos, markers, sample_cell = import_data('./output_data',type)
-        
         sample = sample_are_present_in_data(sample_cell, sample_name[type])
-        nodes_transfo(f"./output_data/{type}{panel}_networks_sample", markers_col, sample_name[type], sample_present=sample)
-    
+        """
+        dir_batch = Path(f"./output_data/{type}{panel}_networks_sample") / "batch"
+        dir_batch.mkdir(parents=True, exist_ok=True)
+        nodes_directory, nodes_corr_batch = correct_batch_effect(f"./output_data/{type}{panel}_networks_sample", 
+                                                                 markers_col, sample_name[type], dir_batch)
+        print(nodes_directory)
+        print(nodes_corr_batch)
+        """
+        nodes_transfo(f"./output_data/{type}{panel}_networks_sample", 
+                        markers_col, sample_name[type], sample_present=sample)
+
+
         if not (save_dir / f"{type}{panel}_net_stat.parquet").exists():
             t = time()
             print(f"Processing Assortativity for {type} data --- ", end='')

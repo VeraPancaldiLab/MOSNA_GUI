@@ -36,7 +36,7 @@ IF_import:
   layer_columns: 7
 
 tysserand:
-  IF_perform: False
+  IF_perform: True
   IMC_perform: True
   k_neighbors_phenograph: 30
   primary_metric_phenograph: 'minkowski'
@@ -57,20 +57,52 @@ Assortativity:
 NAS:
   method: 'NAS'
   output_name_file: 'minimize_niches_1'
-  IMC_perform: False
-  IF_perform: True
+  IMC_perform: True
+  IF_perform: False
+  node_aggregation: False
+  perform_NAS_all_sample: True
+
+  nodes_aggregation:
+    IF:
+      order: 1
+      stat_funcs: [np.mean, np.std]     
+      stat_names: ['mean', 'std']
+      clusterer_type: leiden                         
+      reducer_type: umap          
+      metric: euclidean               
+      n_neighbors: 11               
+      min_dist: 0.1              
+      dim_clust: 2
+      min_cluster_size: 5000
+      k_cluster: 15
+      normalize: niche
+
+    IMC:
+      order: 2
+      stat_funcs: [np.mean, np.std]     
+      stat_names: ['mean', 'std']
+      clusterer_type: leiden                         
+      reducer_type: umap          
+      metric: euclidean               
+      n_neighbors: 15              
+      min_dist: 0.0              
+      dim_clust: 2
+      min_cluster_size: 1000
+      k_cluster: 15
+      normalize: niche
 
   IF:
     order: 1
     stat_funcs: [np.mean, np.std]     
     stat_names: ['mean', 'std']
     clusterer_type: leiden                         
-    reducer_type: umap              
+    reducer_type: umap          
     metric: euclidean               
-    n_neighbors: 12                 
-    min_dist: 0.0               
+    n_neighbors: 11               
+    min_dist: 0.1              
     dim_clust: 2
-    min_cluster_size: 2000
+    min_cluster_size: 5000
+    k_cluster: 15
     normalize: niche
 
   IMC:
@@ -84,6 +116,7 @@ NAS:
     min_dist: 0.0
     dim_clust: 2
     min_cluster_size: 10
+    k_cluster: 10
     normalize: niche
 
 __doc__:
@@ -99,9 +132,11 @@ __doc__:
     ¤ min_dist : float
         Minimum distance between DRed data, we usually want 0.
     ¤ clusterer_type : str
-        Clustering algorithm to partition data, either 'leiden', 'ecg' for Ensemble 
-        Clustering for Graphs, 'spectral' for balanced spectral clustering or 'gmm' 
-        for Gaussian Mixture Model.
+        'leiden'
+        'ecg' for Ensemble Clustering for Graphs, 
+        'spectral' for balanced spectral clustering 
+        'gmm' for Gaussian Mixture Model
+        'hdbscan'
     ¤ dim_clust : int
         Dimensionality of the reducede space in which data is clustered.
         A higher number allows for more complex cluster shapes, but introduces outliers.

@@ -73,9 +73,6 @@ def define_sample_name(type):
     sample_name_dict={'IMC':'ROI', 'IF':'layer'}
     return sample_name_dict[type]
 
-def replace_sample_name(sample_name):
-    return sample_name.replace('_', '-')
-
 def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, stat_funcs, stat_names, sample_name, file_type):
     if sample_name is None:
         sample_name = 'sample'
@@ -95,7 +92,7 @@ def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, s
             stat_funcs=stat_funcs,
             stat_names=stat_names,
             id_level_1='patient',
-            id_level_2=replace_sample_name(sample_name), 
+            id_level_2=sample_name, 
             parallel_groups=False,
             memory_limit='max',
             save_intermediate_results=False, 
@@ -103,12 +100,13 @@ def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, s
             verbose=1,
             )
         var_aggreg.to_parquet(output_dir / f'{file_type}_aggregation_stats.parquet', index=False)
-    return var_aggreg.drop(columns=['patient', replace_sample_name(sample_name)], inplace=True)
+    var_aggreg.drop(columns=['patient', sample_name], inplace=True)
+    return var_aggreg
 
 def get_param_for_niches(nodes_df, edges_df, node_features_list, 
-                        stat_funcs, stat_names, order, reducer_type, clusterer_type, n_neighbors, metric, min_dist, dim_clust, min_cluster_size,
+                        stat_funcs, stat_names, order,
                         save_dir, patient, sample,):
-    features_nas = mosna.make_features_NAS(
+    features_NAS = mosna.make_features_NAS(
         X=nodes_df[node_features_list].values,
         pairs=edges_df.values,
         order=order,
@@ -118,10 +116,20 @@ def get_param_for_niches(nodes_df, edges_df, node_features_list,
         var_sep='_'
     )
 
-    dir=save_dir / f'clustering-{patient}-{sample}'
+    return features_NAS
+
+def clustering_NAS(features_NAS, 
+                   reducer_type, clusterer_type, n_neighbors, metric, min_dist, dim_clust, min_cluster_size,k_cluster,
+                   save_dir, patient, sample):
+    
+    if patient == None and sample == None:
+        dir=save_dir / f'clustering-aggregate'
+    elif patient != None and sample != None:
+        dir=save_dir / f'clustering-{patient}-{sample}'
     dir.mkdir(parents=True, exist_ok=True)
+
     cluster_labels, cluster_dir, nb_clust, clusterer = mosna.get_clusterer(
-        data=features_nas.values,
+        data=features_NAS.values,
         data_dir=dir,     # dossier pour sauvegarder modèles + embeddings
         reducer_type=reducer_type,
         clusterer_type=clusterer_type,
@@ -131,22 +139,28 @@ def get_param_for_niches(nodes_df, edges_df, node_features_list,
         dim_clust=dim_clust,
         min_cluster_size=min_cluster_size,
         use_gpu=False,
+        k_cluster=k_cluster,
         verbose=1,
     )
     shutil.rmtree(dir)
     return cluster_labels
 
-def load_niches(nodes, cluster_labels, save_dir, patient, sample, image_type, normalize='niche'):
-    counts = mosna.make_niches_composition(
-        var=nodes['Phenotypes'],       # ou un autre label
-        niches=cluster_labels,        # résultat du clustering
-        var_label='Phenotypes',
-        normalize=normalize
-    )
-    axes = mosna.plot_niches_composition(counts=counts)
-    fig = axes.figure
-    plt.title(f"{image_type}_niches composition for {patient}, sample {sample}_{normalize}_normalization")
-    fig.savefig(save_dir / f'{patient}-{sample}_niche_composition_{normalize}.png', dpi=300, bbox_inches='tight')
+def plot_niches(counts, cluster_labels, save_dir, patient, sample, image_type, normalize='niche'):
+    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+
+    axes[1] = mosna.plot_niches_composition(counts=counts, ax=axes[1])
+    axes[1].set_title("Niches Composition")
+
+    axes[0] = mosna.plot_niches_histogram(cluster_labels, ax=axes[0])
+    axes[0].set_title('Niches histogram')
+
+    fig.tight_layout()
+    if sample == None and patient == None:
+        fig.suptitle(f"niches composition for with {normalize}_normalization")
+        fig.savefig(save_dir / f'{image_type}_niche_composition_{normalize}.png', dpi=300, bbox_inches='tight')
+    if sample != None and patient != None:
+        fig.suptitle(f"niches composition for {patient}, sample {sample} with {normalize} normalization")
+        fig.savefig(save_dir / f'{patient}-{sample}_niche_composition_{normalize}.png', dpi=300, bbox_inches='tight')
     plt.close(fig)
 
 def tysserand(coords, pairs, clustering,
@@ -175,29 +189,33 @@ def color_map(clustering):
         celltypes_color_mapper = {x: clusters_cmap[i % n_colors] for i, x in enumerate(uniq)}
     return celltypes_color_mapper
 
-####################################################### Main #######################################################
+def register_params(config, save_directory):
+    yaml_file = config.copy()
+    yaml_file['stat_funcs'] = str(yaml_file['stat_funcs'])
+    yaml_file['stat_names'] = str(yaml_file['stat_names'])
+    with open(save_directory / f"NAS_{type}_parameters.json", "w") as f:
+        json.dump(yaml_file, f, indent=2)
+    return f'Parameters registered in {save_directory}'
+        
+def get_params(config_file, type, nodes_aggregation, method, FUNC_MAP):
+    if nodes_aggregation:
+        config = config_file[method]['nodes_aggregation'][type]
+                
+        stat_funcs = [FUNC_MAP[name] for name in config['stat_funcs']]
+        stat_names = config['stat_funcs']
+        normalize = config['normalize']
+        order = config['order']
+        clusterer_type = config['clusterer_type']
+        reducer_type = config['reducer_type']
+        metric = config['metric']
+        n_neighbors = config['n_neighbors']
+        min_dist = config['min_dist']
+        dim_clust = config['dim_clust']
+        min_cluster_size = config['min_cluster_size']
+        k_cluster = config['k_cluster']
 
-
-def main(IF, IMC, config_file):
-
-    FUNC_MAP = {
-    'np.mean': np.mean,
-    'np.std': np.std,
-    }   
-
-    method = config_file['NAS']['method']
-    pheno_col = 'Phenotypes'
-    output_dir = Path('./output_data')
-
-    uniq_phenotypes_IF, uniq_phenotypes_IMC, cell_types_IF, cell_types_IMC, IF_markers, IMC_markers, IF_sample, IMC_sample = import_params(output_dir, pheno_col)
-
-    if method == 'NAS':
-        sof_dir = output_dir / f"NAS"    
-    elif method == 'SCAN-IT':
-        sof_dir = output_dir / f"SCAN-IT"    
-
-    def process(type, tab_markers, tab_sample):
-        config = config_file['NAS'][f"{type}"]
+    else:
+        config = config_file[method][type]
 
         stat_funcs = [FUNC_MAP[name] for name in config['stat_funcs']]
         stat_names = config['stat_funcs']
@@ -210,7 +228,38 @@ def main(IF, IMC, config_file):
         min_dist = config['min_dist']
         dim_clust = config['dim_clust']
         min_cluster_size = config['min_cluster_size']
+        k_cluster = config['k_cluster']
 
+    return stat_funcs, stat_names, normalize, order, clusterer_type, reducer_type, metric, n_neighbors, min_dist, dim_clust, min_cluster_size, k_cluster
+
+####################################################### Main #######################################################
+
+def main(IF, IMC, config_file):
+
+    FUNC_MAP = {
+    'np.mean': np.mean,
+    'np.std': np.std,
+    }   
+
+    method = config_file['NAS']['method']
+    pheno_col = 'Phenotypes'
+    output_dir = Path('./output_data')
+    nodes_aggregation = config_file['NAS']['node_aggregation']
+    perform_NAS_all_sample = config_file['NAS']['perform_NAS_all_sample']
+
+    uniq_phenotypes_IF, uniq_phenotypes_IMC, cell_types_IF, cell_types_IMC, IF_markers, IMC_markers, IF_sample, IMC_sample = import_params(output_dir, pheno_col)
+
+    if method == 'NAS':
+        sof_dir = output_dir / f"NAS"    
+    elif method == 'SCAN-IT':
+        sof_dir = output_dir / f"SCAN-IT"    
+
+    def process(type, tab_markers, tab_sample):
+
+        ######################################## Define configuration ########################################
+
+        sample_name = define_sample_name(type)
+        
         if config_file['NAS']['output_name_file'] is not None:
             save_dir = sof_dir / f"{str(config_file['NAS']['output_name_file'])}"
         else:
@@ -223,37 +272,81 @@ def main(IF, IMC, config_file):
             panel = '_' + panel
         network_dir = Path(f'./output_data/{type}{panel}_networks_sample')
 
-        for patient, sample in tqdm(tab_sample, desc= f'{type} niches'):
+        ######################################## Node aggregation ########################################
+
+        if nodes_aggregation:
+            stat_funcs, stat_names, normalize, order, clusterer_type, \
+            reducer_type, metric, n_neighbors, min_dist, dim_clust, \
+            min_cluster_size, k_cluster = get_params(config_file, type, nodes_aggregation, method, FUNC_MAP)
             if type == 'IMC':
-                tqdm.write(f"niches for patient {patient} and ROI {sample}")
-            else:
-                tqdm.write(f"niches for patient {patient} and layer {sample}")
-            sample_name = define_sample_name(type)
-            save_dir_data = save_dir / f'{type}{panel}'
-            save_directory = save_dir_data / f"normalization_{normalize}"
-            save_directory.mkdir(parents=True, exist_ok=True)
-            
-            nodes = pd.read_parquet(network_dir / f'nodes_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
-            edges = pd.read_parquet(network_dir / f'edges_patient-{patient}_{replace_sample_name(sample_name)}-{sample}.parquet')
+                nodes_aggregate = var_aggregate(network_dir,save_dir,method,pheno_col, uniq_phenotypes_IMC,stat_funcs, 
+                                                stat_names, sample_name, type)
+            elif type == 'IF':
+                nodes_aggregate = var_aggregate(network_dir,save_dir,method,pheno_col, uniq_phenotypes_IF,stat_funcs, 
+                                                stat_names, sample_name, type)
+            cluster_labels = clustering_NAS(nodes_aggregate,reducer_type, 
+                            clusterer_type, n_neighbors, metric, 
+                            min_dist, dim_clust, min_cluster_size,k_cluster,
+                            save_dir, patient=None, sample=None)
+            if type == 'IMC':
+                counts = mosna.make_niches_composition(
+                    var=cell_types_IMC,
+                    niches=cluster_labels,
+                    var_label="Phenotypes",
+                    normalize=normalize
+                )
+            elif type == 'IF':
+                counts = mosna.make_niches_composition(
+                    var=cell_types_IF,
+                    niches=cluster_labels,
+                    var_label="Phenotypes",
+                    normalize=normalize
+                )
 
-            cluster_labels = get_param_for_niches(nodes, edges, tab_markers, 
-                                                stat_funcs, stat_names, order, reducer_type, 
-                                                clusterer_type, n_neighbors, metric, 
-                                                min_dist, dim_clust, min_cluster_size,
-                                                save_dir, patient, sample)
-            
-            load_niches(nodes, cluster_labels, save_directory, patient, sample, type, normalize=normalize)
+            plot_niches(counts, cluster_labels, save_dir, None, None, type, normalize=normalize)
+        ######################################## For each Patient/sample ########################################
+        if perform_NAS_all_sample:
+            stat_funcs, stat_names, normalize, order, clusterer_type, \
+            reducer_type, metric, n_neighbors, min_dist, dim_clust, \
+            min_cluster_size, k_cluster = get_params(config_file, type, False, method, FUNC_MAP)
 
-            nodes[f'niches_{normalize}'] = cluster_labels
-            pairs = edges[['source', 'target']].values
-            tysserand(nodes[['X_position','Y_position']], pairs, cluster_labels, type, 
-                      patient, sample, sample_name, save_directory, normalize=normalize)
-        
-        yaml_file = config.copy()
-        yaml_file['stat_funcs'] = str(yaml_file['stat_funcs'])
-        yaml_file['stat_names'] = str(yaml_file['stat_names'])
-        with open(save_directory / f"NAS_{type}_parameters.json", "w") as f:
-            json.dump(yaml_file, f, indent=2)
+            for patient, sample in tqdm(tab_sample, desc= f'{type} niches'):
+                if type == 'IMC':
+                    tqdm.write(f"\nniches for patient {patient} and ROI {sample}")
+                else:
+                    tqdm.write(f"\nniches for patient {patient} and layer {sample}")
+                save_dir_data = save_dir / f'{type}{panel}'
+                save_directory = save_dir_data / f"normalization_{normalize}"
+                save_directory.mkdir(parents=True, exist_ok=True)
+                
+                #################### Reading nodes and edges ####################
+
+                nodes = pd.read_parquet(network_dir / f'nodes_patient-{patient}_{sample_name}-{sample}.parquet')
+                edges = pd.read_parquet(network_dir / f'edges_patient-{patient}_{sample_name}-{sample}.parquet')
+
+                #################### Define parameters for niches and run the clustering ####################
+
+                features_NAS = get_param_for_niches(nodes, edges, tab_markers, 
+                                                    stat_funcs, stat_names, order, 
+                                                    save_dir, patient, sample)
+                
+                cluster_labels = clustering_NAS(features_NAS,reducer_type, 
+                                                    clusterer_type, n_neighbors, metric, 
+                                                    min_dist, dim_clust, min_cluster_size,k_cluster,
+                                                    save_dir, patient, sample)
+                #################### Plot niches on niche composition and on spatial tysserand ####################
+                counts = mosna.make_niches_composition(
+                        var=nodes['Phenotypes'],       
+                        niches=cluster_labels,        
+                        var_label='Phenotypes',
+                        normalize=normalize
+                    )
+                plot_niches(counts, cluster_labels, save_directory, patient, sample, type, normalize=normalize)
+
+                nodes[f'niches_{normalize}'] = cluster_labels
+                pairs = edges[['source', 'target']].values
+                tysserand(nodes[['X_position','Y_position']], pairs, cluster_labels, type, 
+                        patient, sample, sample_name, save_directory, normalize=normalize)
 
     try:
         if IMC:
