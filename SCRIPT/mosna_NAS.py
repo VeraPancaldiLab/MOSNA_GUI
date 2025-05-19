@@ -119,7 +119,8 @@ def get_param_for_niches(nodes_df, edges_df, node_features_list,
     return features_NAS
 
 def clustering_NAS(features_NAS, 
-                   reducer_type, clusterer_type, n_neighbors, metric, min_dist, dim_clust, min_cluster_size,k_cluster,
+                   reducer_type, clusterer_type, n_neighbors, metric, min_dist, dim_clust,
+                   min_cluster_size,k_cluster, resolution, n_clusters,
                    save_dir, patient, sample):
     
     if patient == None and sample == None:
@@ -135,6 +136,8 @@ def clustering_NAS(features_NAS,
         clusterer_type=clusterer_type,
         n_neighbors=n_neighbors,
         metric=metric,
+        n_clusters=n_clusters,
+        resolution=resolution,
         min_dist=min_dist,
         dim_clust=dim_clust,
         min_cluster_size=min_cluster_size,
@@ -213,6 +216,8 @@ def get_params(config_file, type, nodes_aggregation, method, FUNC_MAP):
         dim_clust = config['dim_clust']
         min_cluster_size = config['min_cluster_size']
         k_cluster = config['k_cluster']
+        resolution = config['resolution']
+        n_clusters = config['n_clusters']
 
     else:
         config = config_file[method][type]
@@ -229,8 +234,12 @@ def get_params(config_file, type, nodes_aggregation, method, FUNC_MAP):
         dim_clust = config['dim_clust']
         min_cluster_size = config['min_cluster_size']
         k_cluster = config['k_cluster']
+        resolution = config['resolution']
+        n_clusters = config['n_clusters']
 
-    return stat_funcs, stat_names, normalize, order, clusterer_type, reducer_type, metric, n_neighbors, min_dist, dim_clust, min_cluster_size, k_cluster
+    return stat_funcs, stat_names, normalize, order, clusterer_type, \
+            reducer_type, metric, n_neighbors, min_dist, dim_clust, \
+            min_cluster_size, k_cluster,resolution, n_clusters
 
 ####################################################### Main #######################################################
 
@@ -277,16 +286,17 @@ def main(IF, IMC, config_file):
         if nodes_aggregation:
             stat_funcs, stat_names, normalize, order, clusterer_type, \
             reducer_type, metric, n_neighbors, min_dist, dim_clust, \
-            min_cluster_size, k_cluster = get_params(config_file, type, nodes_aggregation, method, FUNC_MAP)
+            min_cluster_size, k_cluster, resolution, n_clusters = get_params(config_file, type, nodes_aggregation, method, FUNC_MAP)
             if type == 'IMC':
                 nodes_aggregate = var_aggregate(network_dir,save_dir,method,pheno_col, uniq_phenotypes_IMC,stat_funcs, 
                                                 stat_names, sample_name, type)
             elif type == 'IF':
                 nodes_aggregate = var_aggregate(network_dir,save_dir,method,pheno_col, uniq_phenotypes_IF,stat_funcs, 
                                                 stat_names, sample_name, type)
+                
             cluster_labels = clustering_NAS(nodes_aggregate,reducer_type, 
                             clusterer_type, n_neighbors, metric, 
-                            min_dist, dim_clust, min_cluster_size,k_cluster,
+                            min_dist, dim_clust, min_cluster_size,k_cluster,resolution, n_clusters,
                             save_dir, patient=None, sample=None)
             if type == 'IMC':
                 counts = mosna.make_niches_composition(
@@ -308,7 +318,7 @@ def main(IF, IMC, config_file):
         if perform_NAS_all_sample:
             stat_funcs, stat_names, normalize, order, clusterer_type, \
             reducer_type, metric, n_neighbors, min_dist, dim_clust, \
-            min_cluster_size, k_cluster = get_params(config_file, type, False, method, FUNC_MAP)
+            min_cluster_size, k_cluster, resolution, n_clusters = get_params(config_file, type, False, method, FUNC_MAP)
 
             for patient, sample in tqdm(tab_sample, desc= f'{type} niches'):
                 if type == 'IMC':
@@ -332,7 +342,7 @@ def main(IF, IMC, config_file):
                 
                 cluster_labels = clustering_NAS(features_NAS,reducer_type, 
                                                     clusterer_type, n_neighbors, metric, 
-                                                    min_dist, dim_clust, min_cluster_size,k_cluster,
+                                                    min_dist, dim_clust, min_cluster_size,k_cluster,resolution, n_clusters,
                                                     save_dir, patient, sample)
                 #################### Plot niches on niche composition and on spatial tysserand ####################
                 counts = mosna.make_niches_composition(

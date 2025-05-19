@@ -61,21 +61,23 @@ NAS:
   output_name_file: 'IMC_IF_Bram_PDAC_data'
   IMC_perform: True
   IF_perform: False
-  node_aggregation: False
-  perform_NAS_all_sample: True
+  node_aggregation: True
+  perform_NAS_all_sample: False
 
   nodes_aggregation:
     IF:
       order: 1
       stat_funcs: [np.mean, np.std]     
       stat_names: ['mean', 'std']
-      clusterer_type: leiden                         
+      clusterer_type: leiden 
+      n_clusters: # with ggm as clusterer_type only                        
       reducer_type: umap          
-      metric: euclidean               
-      n_neighbors: 11               
+      metric: euclidean
+      resolution: 0.0001               
+      n_neighbors: 15        
       min_dist: 0.1              
       dim_clust: 2
-      min_cluster_size: 5000
+      min_cluster_size: 0.001
       k_cluster: 15
       normalize: niche
 
@@ -83,13 +85,15 @@ NAS:
       order: 2
       stat_funcs: [np.mean, np.std]     
       stat_names: ['mean', 'std']
-      clusterer_type: leiden                         
+      clusterer_type: gmm
+      n_clusters: 15                        
       reducer_type: umap          
-      metric: euclidean               
+      metric: euclidean
+      resolution: 0.0001              
       n_neighbors: 15              
       min_dist: 0.0              
       dim_clust: 2
-      min_cluster_size: 1000
+      min_cluster_size: 0.001
       k_cluster: 15
       normalize: niche
 
@@ -97,14 +101,16 @@ NAS:
     order: 1
     stat_funcs: [np.mean, np.std]     
     stat_names: ['mean', 'std']
-    clusterer_type: leiden                         
+    clusterer_type: leiden 
+    n_clusters:                       
     reducer_type: umap          
-    metric: euclidean               
+    metric: euclidean
+    resolution: 0.0001             
     n_neighbors: 11               
     min_dist: 0.1              
     dim_clust: 2
-    min_cluster_size: 5000
-    k_cluster: 15
+    min_cluster_size: 0.001
+    k_cluster: 11
     normalize: niche
 
   IMC:
@@ -112,13 +118,15 @@ NAS:
     stat_funcs: [np.mean, np.std]
     stat_names: ['mean', 'std']
     clusterer_type: leiden
+    n_clusters: 
     reducer_type: umap
     metric: euclidean
+    resolution: 0.005
     n_neighbors: 15
     min_dist: 0.0
     dim_clust: 2
-    min_cluster_size: 10
-    k_cluster: 10
+    min_cluster_size: 0.001
+    k_cluster: 15
     normalize: niche
 
 __doc__:
