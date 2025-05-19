@@ -73,7 +73,7 @@ def define_sample_name(type):
     sample_name_dict={'IMC':'ROI', 'IF':'layer'}
     return sample_name_dict[type]
 
-def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, stat_funcs, stat_names, sample_name, file_type):
+def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, stat_funcs, stat_names, sample_name, file_type, panel):
     if sample_name is None:
         sample_name = 'sample'
 
@@ -99,7 +99,7 @@ def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, s
             dir_save_interm=None,
             verbose=1,
             )
-        var_aggreg.to_parquet(output_dir / f'{file_type}_aggregation_stats.parquet', index=False)
+        var_aggreg.to_parquet(output_dir / f'{file_type}{panel}_aggregation_stats.parquet', index=False)
     var_aggreg.drop(columns=['patient', sample_name], inplace=True)
     return var_aggreg
 
@@ -143,13 +143,13 @@ def clustering_NAS(features_NAS,
         min_cluster_size=min_cluster_size,
         use_gpu=False,
         k_cluster=k_cluster,
-        verbose=1,
+        verbose=0,
     )
     shutil.rmtree(dir)
     return cluster_labels
 
-def plot_niches(counts, cluster_labels, save_dir, patient, sample, image_type, normalize='niche'):
-    fig, axes = plt.subplots(1, 2, figsize=(20, 8))
+def plot_niches(counts, cluster_labels, save_dir, patient, sample, image_type, panel, normalize='niche'):
+    fig, axes = plt.subplots(1, 2, figsize=(20, 8), constrained_layout=True)
 
     axes[1] = mosna.plot_niches_composition(counts=counts, ax=axes[1])
     axes[1].set_title("Niches Composition")
@@ -159,10 +159,10 @@ def plot_niches(counts, cluster_labels, save_dir, patient, sample, image_type, n
 
     fig.tight_layout()
     if sample == None and patient == None:
-        fig.suptitle(f"niches composition for with {normalize}_normalization")
-        fig.savefig(save_dir / f'{image_type}_niche_composition_{normalize}.png', dpi=300, bbox_inches='tight')
+        fig.suptitle(f"For an {image_type}{panel} image and panel niches composition for with {normalize}_normalization")
+        fig.savefig(save_dir / f'{image_type}{panel}_niche_composition_{normalize}.png', dpi=300, bbox_inches='tight')
     if sample != None and patient != None:
-        fig.suptitle(f"niches composition for {patient}, sample {sample} with {normalize} normalization")
+        fig.suptitle(f"For an {image_type}{panel} image and panel niches composition for {patient}, sample {sample} with {normalize} normalization")
         fig.savefig(save_dir / f'{patient}-{sample}_niche_composition_{normalize}.png', dpi=300, bbox_inches='tight')
     plt.close(fig)
 
@@ -289,10 +289,10 @@ def main(IF, IMC, config_file):
             min_cluster_size, k_cluster, resolution, n_clusters = get_params(config_file, type, nodes_aggregation, method, FUNC_MAP)
             if type == 'IMC':
                 nodes_aggregate = var_aggregate(network_dir,save_dir,method,pheno_col, uniq_phenotypes_IMC,stat_funcs, 
-                                                stat_names, sample_name, type)
+                                                stat_names, sample_name, type, panel)
             elif type == 'IF':
                 nodes_aggregate = var_aggregate(network_dir,save_dir,method,pheno_col, uniq_phenotypes_IF,stat_funcs, 
-                                                stat_names, sample_name, type)
+                                                stat_names, sample_name, type, panel)
                 
             cluster_labels = clustering_NAS(nodes_aggregate,reducer_type, 
                             clusterer_type, n_neighbors, metric, 
@@ -313,7 +313,7 @@ def main(IF, IMC, config_file):
                     normalize=normalize
                 )
 
-            plot_niches(counts, cluster_labels, save_dir, None, None, type, normalize=normalize)
+            plot_niches(counts, cluster_labels, save_dir, None, None, type, panel, normalize=normalize)
         ######################################## For each Patient/sample ########################################
         if perform_NAS_all_sample:
             stat_funcs, stat_names, normalize, order, clusterer_type, \
@@ -351,7 +351,7 @@ def main(IF, IMC, config_file):
                         var_label='Phenotypes',
                         normalize=normalize
                     )
-                plot_niches(counts, cluster_labels, save_directory, patient, sample, type, normalize=normalize)
+                plot_niches(counts, cluster_labels, save_directory, patient, sample, type, panel, normalize=normalize)
 
                 nodes[f'niches_{normalize}'] = cluster_labels
                 pairs = edges[['source', 'target']].values

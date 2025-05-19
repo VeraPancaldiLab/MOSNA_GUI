@@ -144,7 +144,8 @@ def mix_mat_assortativity(nodes_dir, pheno_col, n_shuffle = 50, type=None):
         n_shuffle=n_shuffle,
         parallel_groups='max',  # or False
         memory_limit='max',
-        save_intermediate_results=False)
+        save_intermediate_results=False,
+        verbose=0)
     net_stats.index = net_stats['id']
     net_stats.drop(columns=['id'], inplace=True)
     return net_stats
