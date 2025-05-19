@@ -322,17 +322,15 @@ def main(IF, IMC, config_file):
         sample_name={'IMC':'ROI', 'IF':'layer'}
         cell_pos, markers, sample_cell = import_data('./output_data',type)
         sample = sample_are_present_in_data(sample_cell, sample_name[type])
-        """
-        dir_batch = Path(f"./output_data/{type}{panel}_networks_sample") / "batch"
-        dir_batch.mkdir(parents=True, exist_ok=True)
-        nodes_directory, nodes_corr_batch = correct_batch_effect(f"./output_data/{type}{panel}_networks_sample", 
-                                                                 markers_col, sample_name[type], dir_batch)
-        print(nodes_directory)
-        print(nodes_corr_batch)
-        """
-        nodes_transfo(f"./output_data/{type}{panel}_networks_sample", 
+        
+        if config_file['assortativity']['perform_batch']:
+            dir_batch = Path(f"./output_data/{type}{panel}_networks_sample") / "batch"
+            dir_batch.mkdir(parents=True, exist_ok=True)
+            nodes_directory, nodes_corr_batch = correct_batch_effect(f"./output_data/{type}{panel}_networks_sample", 
+                                                                     markers_col, sample_name[type], dir_batch) 
+        if config_file['assortativity']['perform_clr_transfo']:                                                      
+            nodes_transfo(f"./output_data/{type}{panel}_networks_sample", 
                         markers_col, sample_name[type], sample_present=sample)
-
 
         if not (save_dir / f"{type}{panel}_net_stat.parquet").exists():
             t = time()

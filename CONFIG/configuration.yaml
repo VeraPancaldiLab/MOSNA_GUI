@@ -53,10 +53,12 @@ cell_encounter:
 Assortativity:
   IF_perform: True
   IMC_perform: True
+  perform_batch: False
+  perform_clr_transfo: False
 
 NAS:
   method: 'NAS'
-  output_name_file: 'minimize_niches_1'
+  output_name_file: 'IMC_IF_Bram_PDAC_data'
   IMC_perform: True
   IF_perform: False
   node_aggregation: False
