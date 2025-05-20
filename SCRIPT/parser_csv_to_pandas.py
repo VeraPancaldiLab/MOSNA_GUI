@@ -10,9 +10,7 @@ import glob
 from pathlib import Path
 import copy
 
-
-################################################# Main Function ############################################
-
+#################### Main Function ####################
 def get_arguments():
 
     parser = argparse.ArgumentParser(description = "Draw tysserand for IMC / IF")
@@ -30,212 +28,195 @@ def define_sample_name(type):
     sample_name_dict={'IMC':'ROI', 'IF':'layer'}
     return sample_name_dict[type]
 
-def import_data(path_data, marker_columns, spatial_columns, cell_id_columns, 
-                path_encoding_patient = None, path_file_to_patient = None, columns_to_drop = None, 
-                layer_columns=None, layer_name=None, type=None):
-    
-    objects_path = glob.glob(path_data)
-    files=dict()
+def get_encoding_map(kwargs):
+    path = kwargs.get('path_encoding_patient')
+    if path:
+        df = pd.read_csv(Path(path))
+        return dict(zip(df['Original_ID'], df['Encoded_ID']))
+    return None
 
-    if path_encoding_patient is not None:
-        ID_patient_to_alphabet = pd.read_csv(Path(path_encoding_patient))
-        ID_patient_to_alphabet = dict(zip(ID_patient_to_alphabet['Original_ID'], ID_patient_to_alphabet['Encoded_ID']))
+def load_and_process_files(**kwargs):
+    base_path = kwargs['directory_path']
+    panel = kwargs.get('panel')
+    columns_to_drop = kwargs.get('columns_to_drop')
+    path_encoding_patient = kwargs.get('path_encoding_patient')
+    path_file_to_patient = kwargs.get('path_file_to_patient')
 
-    ##### GENERATE A FILES DICTIONNARY WITH ALL DATASET FOR EACH DATASET_INDICES, WE MAKE THAT TO CONCATENATE AFTER #####
-
-    sample_number=1
-    for file in objects_path:
-        if path_file_to_patient is not None:
-            file_to_patient = pd.read_csv(Path(path_file_to_patient))
-            file_to_patient = dict(zip(file_to_patient['file'], file_to_patient['patient']))
-
-        if Path(file).with_suffix('.parquet').exists():
-            obj = pd.read_parquet(Path(file).with_suffix('.parquet'))
-            if columns_to_drop is not None:
-                obj.drop(columns=columns_to_drop, inplace=True)
-            if path_file_to_patient is not None:
-                if '_' in file_to_patient[Path(file).name]: 
-                    name_file = file_to_patient[Path(file).name].split('_')
-                    obj['patient'] = name_file[0]
-                    obj['sample'] = name_file[1]
-                else:
-                    obj['patient'] = file_to_patient[Path(file).name]
-            files.setdefault(f'sample {sample_number}', obj)
-        else:
-            obj = pd.read_csv(Path(file))
-            obj.to_parquet(Path(file).with_suffix('.parquet'))
-            if columns_to_drop is not None:
-                obj.drop(columns=columns_to_drop, inplace=True)
-            if path_file_to_patient is not None:
-                if '_' in file_to_patient[Path(file).name]: 
-                    name_file = file_to_patient[Path(file).name].split('_')
-                    obj['patient'] = name_file[0]
-                    obj['sample'] = name_file[1]
-                else:
-                    obj['patient'] = file_to_patient[Path(file).name]
-            files.setdefault(f'sample {sample_number}', obj)
-        
-        sample_number+=1
-
-    ##### CONCATENATION VERIFICATION AND PROCESS #####
-
-    verif = files["sample 1"].columns
-    concatanable = True
-
-    for file in files.values():
-        
-        if file.columns.all() != verif.all():
-            print("not concatanable files")
-            concatanable = False
-
-    nb_row=0
-    nb_row_concat=0
-    if concatanable:
-        IMC_markers=pd.DataFrame()
-        for file in files.values():
-            nb_row+=file.shape[0]
-            IMC_markers = pd.concat([IMC_markers, file], ignore_index=True)
-        nb_row_concat=IMC_markers.shape[0]
-    
-    ##### BUILD PANDAS DATAFRAME THANKS TO COLUMNS INDICES #####
-
-    ### sample information
-
-    IMC_sample_cell = pd.DataFrame({})
-    IMC_sample_cell[IMC_markers.columns[cell_id_columns]] = IMC_markers.iloc[:, cell_id_columns]
-    if 'sample' not in IMC_markers.columns:
-        IMC_sample_cell = pd.concat([IMC_sample_cell,IMC_markers['patient']],axis=1)
+    if panel:
+        path_data = str(Path(base_path) / panel / "*.csv")
     else:
-        IMC_sample_cell = pd.concat([IMC_sample_cell,IMC_markers[['patient','sample']]],axis=1)
-        IMC_sample_cell.rename(columns={'sample':define_sample_name(type)}, inplace=True)
+        path_data = str(Path(base_path) / "*.csv")
 
-    if layer_columns is not None:
-        if ':' in str(layer_columns):
-            ind_min_max = str(layer_columns).split(':')
-            ind_columns = [i for i in range(int(ind_min_max[0]), int(ind_min_max[1]+1))]
-            IMC_sample_cell[layer_name] = IMC_markers.iloc[:, ind_columns]
-        else:
-            IMC_sample_cell[layer_name] = IMC_markers.iloc[:, layer_columns]
-        
-
-    if path_encoding_patient is not None:
-        IMC_sample_cell['patient'] = IMC_sample_cell['patient'].map(ID_patient_to_alphabet)
-    
-    ### spatial information
-        
-    temp = pd.DataFrame({})
-    temp[IMC_markers.columns[cell_id_columns]] = IMC_markers.iloc[:, cell_id_columns]
-
-    if ' ' in spatial_columns:
-        spatial_columns = spatial_columns.split(' ')
-        for column in spatial_columns:
-            if ':' in column:
-                ind_min_max = column.split(':')
-                if 'sample' in IMC_markers.columns:
-                    temp = pd.concat([temp,IMC_markers[['patient','sample']],IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
-                    temp.rename(columns={'sample':define_sample_name(type)}, inplace=True)
-                elif layer_columns is not None:
-                    current_layer_name = IMC_markers.columns[int(layer_columns)]
-                    temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:, int(layer_columns)],IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
-                    temp.rename(columns={current_layer_name:define_sample_name(type)}, inplace=True)
-                else:
-                    temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
-            else:
-                if 'sample' in IMC_markers.columns:
-                    temp = pd.concat([temp,IMC_markers[['patient','sample']],IMC_markers.iloc[:, [int(column)]]], axis=1)
-                    temp.rename(columns={'sample':define_sample_name(type)}, inplace=True)
-                elif layer_columns is not None:
-                    current_layer_name = IMC_markers.columns[int(layer_columns)]
-                    temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:, int(layer_columns)],IMC_markers.iloc[:, [int(column)]]], axis=1)
-                    temp.rename(columns={current_layer_name:define_sample_name(type)}, inplace=True)
-                else:
-                    temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:,[int(column)]]], axis=1)
-
-
-        IMC_cell_pos = temp
+    if path_encoding_patient:
+        id_map = pd.read_csv(Path(path_encoding_patient))
+        id_map = dict(zip(id_map['Original_ID'], id_map['Encoded_ID']))
     else:
-        if ':' in spatial_columns:
-            ind_min_max = spatial_columns.split(':')
-            if 'sample' in IMC_markers.columns:
-                temp = pd.concat([temp,IMC_markers[['patient','sample']],IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
-                temp.rename(columns={'sample':define_sample_name(type)}, inplace=True)
-            elif layer_columns is not None:
-                current_layer_name = IMC_markers.columns[int(layer_columns)]
-                temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:, int(layer_columns)],IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
-                temp.rename(columns={current_layer_name:define_sample_name(type)}, inplace=True)
-            else:
-                temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
+        id_map = None
 
-        else:
-            if 'sample' in IMC_markers.columns:
-                temp = pd.concat([temp,IMC_markers[['patient','sample']],IMC_markers.iloc[:, [int(spatial_columns)]]], axis=1)
-                temp.rename(columns={'sample':define_sample_name(type)}, inplace=True)
-            elif layer_columns is not None:
-                current_layer_name = IMC_markers.columns[int(layer_columns)]
-                temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:, int(layer_columns)],IMC_markers.iloc[:, [int(spatial_columns)]]], axis=1)
-                temp.rename(columns={current_layer_name:define_sample_name(type)}, inplace=True)
-            else:
-                temp = pd.concat([temp,IMC_markers['patient'],IMC_markers.iloc[:,[int(spatial_columns)]]], axis=1)
-
-        IMC_cell_pos = temp
-
-    if path_encoding_patient is not None:
-        IMC_cell_pos['patient'] = IMC_cell_pos['patient'].map(ID_patient_to_alphabet)
-
-    ### markers
-
-    temp = pd.DataFrame({})
-    temp[IMC_markers.columns[cell_id_columns]]= IMC_markers.iloc[:, cell_id_columns]
-    if ' ' in marker_columns:
-        marker_columns = marker_columns.split(' ')
-        for column in marker_columns:
-            if ':' in column:
-                ind_min_max = column.split(':')
-                temp = pd.concat([temp,IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
-            else:
-                temp = pd.concat([temp, IMC_markers.iloc[:, column]])
-        IMC_markers = temp
+    if path_file_to_patient:
+        file_map = pd.read_csv(Path(path_file_to_patient))
+        file_map = dict(zip(file_map['file'], file_map['patient']))
     else:
-        if ':' in marker_columns:
-            ind_min_max = marker_columns.split(':')
-            temp = pd.concat([temp, IMC_markers.iloc[:, int(ind_min_max[0]):int(ind_min_max[1])+1]], axis=1)
-        else:
-            temp = pd.concat([temp, IMC_markers.iloc[:, marker_columns]], axis=1)
-        IMC_markers = temp
-    
-    return IMC_markers, IMC_sample_cell, IMC_cell_pos
+        file_map = None
 
-################################################# Main #####################################################
+    files = {}
+    for i, file in enumerate(glob.glob(path_data), 1):
+        file_path = Path(file)
+        if file_path.with_suffix('.parquet').exists():
+            df = pd.read_parquet(file_path.with_suffix('.parquet'))
+        else:
+            df = pd.read_csv(file_path)
+            df.to_parquet(file_path.with_suffix('.parquet'))
+
+        if columns_to_drop:
+            df.drop(columns=columns_to_drop, inplace=True)
+
+        if file_map:
+            patient_sample = file_map[file_path.name]
+            parts = patient_sample.split('_')
+            df['patient'] = parts[0]
+            if len(parts) > 1:
+                df['sample'] = parts[1]
+
+        files[f'sample {i}'] = df
+
+    return files
+
+def get_column_slice(df, col_ref):
+    """
+    Retourne un DataFrame de colonnes selon :
+    - str : nom de colonne
+    - int : index unique
+    - 'start:end' : plage de colonnes par indices
+    """
+    if isinstance(col_ref, str) and col_ref in df.columns:
+        return df[[col_ref]]
+    elif isinstance(col_ref, str) and ':' in col_ref:
+        start, end = map(int, col_ref.split(':'))
+        return df.iloc[:, start:end+1]
+    elif isinstance(col_ref, int):
+        return df.iloc[:, [col_ref]]
+    else:
+        raise ValueError(f"Format de 'layer_columns' non reconnu : {col_ref}")
+
+def get_column_slices(df, index_string):
+    """Gère les cas comme '4 7:9 15'"""
+    if not isinstance(index_string, str):
+        return get_column_slice(df, index_string)
+
+    parts = index_string.split()
+    slices = [get_column_slice(df, part) for part in parts]
+    return pd.concat(slices, axis=1)
+
+def concatenate_dataframes(files):
+    # Vérifie la compatibilité avant concaténation
+    base_cols = files["sample 1"].columns
+    if not all(df.columns.equals(base_cols) for df in files.values()):
+        raise ValueError("All files must have identical columns to concatenate.")
+    return pd.concat(files.values(), ignore_index=True)
+
+####### Function to extract the 3 pandas ########
+
+def extract_sample_info(df, cell_id_columns, patient_column=None, sample_column=None, type=None, **kwargs):
+    sample_info = pd.DataFrame()
+    sample_info['CellID'] = df.iloc[:, cell_id_columns]
+
+    # Si colonne "patient" explicitement fournie, on l'utilise telle quelle
+    if patient_column and patient_column in df.columns:
+        sample_info['patient'] = df[patient_column]
+    else:
+        sample_info['patient'] = df['patient'] if 'patient' in df.columns else None
+
+    # Gérer la colonne "sample" si elle est présente
+    if sample_column and sample_column in df.columns:
+        sample_info['sample'] = df[sample_column]
+    elif 'sample' in df.columns:
+        sample_info['sample'] = df['sample']
+    else:
+        sample_info['sample'] = None
+
+    # Si patient == sample => tout est fusionné, ne garder que "sample"
+    if sample_info['patient'].equals(sample_info['sample']):
+        sample_info.drop(columns='patient', inplace=True)
+        sample_info.rename(columns={'sample': 'sample'}, inplace=True)
+    else:
+        sample_info.rename(columns={'sample': define_sample_name(type)}, inplace=True)
+
+    return sample_info
+
+def extract_spatial_info(df, **kwargs):
+    spatial_columns = kwargs['spatial_columns']
+    cell_id_columns = kwargs['cell_id_columns']
+    layer_columns = kwargs.get('layer_columns')
+    type = kwargs.get('type')
+    encoding_map = get_encoding_map(kwargs)
+
+    spatial_info = pd.DataFrame()
+    spatial_info[df.columns[cell_id_columns]] = df.iloc[:, cell_id_columns]
+
+    spatial_cols = get_column_slices(df, spatial_columns)
+
+    if 'sample' in df.columns:
+        spatial_info = pd.concat([spatial_info, df[['patient', 'sample']], spatial_cols], axis=1)
+        spatial_info.rename(columns={'sample': define_sample_name(type)}, inplace=True)
+    elif layer_columns is not None:
+        layer_data = get_column_slice(df, layer_columns)
+        spatial_info = pd.concat([spatial_info, df['patient'], layer_data, spatial_cols], axis=1)
+        spatial_info.rename(columns={layer_columns: define_sample_name(type)}, inplace=True)
+    else:
+        spatial_info = pd.concat([spatial_info, df['patient'], spatial_cols], axis=1)
+
+    if encoding_map:
+        spatial_info['patient'] = spatial_info['patient'].map(encoding_map)
+
+    return spatial_info
+
+def extract_markers(df, **kwargs):
+    marker_columns = kwargs['marker_columns']
+    cell_id_columns = kwargs['cell_id_columns']
+
+    markers = pd.DataFrame()
+    markers[df.columns[cell_id_columns]] = df.iloc[:, cell_id_columns]
+    marker_data = get_column_slices(df, marker_columns)
+    return pd.concat([markers, marker_data], axis=1)
+
+def import_data(**kwargs):
+
+    dataframes = load_and_process_files(**kwargs)
+
+    # 2. Fusion si possible
+    combined_df = concatenate_dataframes(dataframes)
+
+    # 3. Extraction des trois tables
+    markers_df = extract_markers(combined_df, **kwargs)
+    sample_df = extract_sample_info(combined_df, **kwargs)
+    spatial_df = extract_spatial_info(combined_df, **kwargs)
+
+    return markers_df, sample_df, spatial_df
+
+######################################## Main ########################################
 
 def main():
     config_path = get_arguments()
     config_file = get_config(config_path)
 
     if config_file['IMC_import']['present_in']:
-        print("Import IMC data\t\t\t\t",end="")
-        IMC_markers, IMC_sample_cell, IMC_cell_pos = import_data(config_file['IMC_import']['directory_path'],
-                                                            marker_columns=config_file['IMC_import']['marker_columns'],
-                                                            spatial_columns=config_file['IMC_import']['spatial_columns'],
-                                                            cell_id_columns=config_file['IMC_import']['cell_id_columns'],
-                                                            layer_columns=config_file['IMC_import']['layer_columns'],
-                                                            path_encoding_patient=config_file['IMC_import']['path_encoding_patient'],
-                                                            path_file_to_patient=config_file['IMC_import']['path_file_to_patient'],
-                                                            columns_to_drop=config_file['IMC_import']['columns_to_drop'],
-                                                            layer_name = 'ROI', type='IMC')
+        print("Import IMC data\t\t\t\t", end="")
+        IMC_params = config_file['IMC_import'].copy()
+        IMC_params.update({'layer_name': 'ROI', 'type': 'IMC'})
+
+        IMC_markers, IMC_sample_cell, IMC_cell_pos = import_data(**IMC_params)
         print("DONE")
+
     if config_file['IF_import']['present_in']:
-        print("Import IF data\t\t\t\t",end="")
-        IF_markers, IF_sample_cell, IF_cell_pos = import_data(config_file['IF_import']['directory_path'],
-                                                        marker_columns=config_file['IF_import']['marker_columns'],
-                                                        spatial_columns=config_file['IF_import']['spatial_columns'],
-                                                        cell_id_columns=config_file['IF_import']['cell_id_columns'],
-                                                        layer_columns=config_file['IF_import']['layer_columns'],
-                                                        path_encoding_patient=config_file['IF_import']['path_encoding_patient'],
-                                                        path_file_to_patient=config_file['IF_import']['path_file_to_patient'],
-                                                        columns_to_drop=config_file['IF_import']['columns_to_drop'],
-                                                        layer_name = 'layer', type='IF')
-        
+        print("Import IF data\t\t\t\t", end="")
+        IF_params = config_file['IF_import'].copy()
+        IF_params.update({'layer_name': 'layer', 'type': 'IF'})
+
+        IF_markers, IF_sample_cell, IF_cell_pos = import_data(**IF_params)
         print("DONE")
+        
+
     if config_file['save_file']:
         print("Saving pandas in parquet\t\t",end='')
         if config_file['IMC_import']['present_in']:
