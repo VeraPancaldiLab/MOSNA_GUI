@@ -117,16 +117,22 @@ def concatenate_dataframes(files):
 
 ####### Function to extract the 3 pandas ########
 
-def extract_sample_info(df, cell_id_columns, patient_column=None, sample_column=None, type=None, **kwargs):
+def extract_sample_info(df, type=None,**kwargs):
     sample_info = pd.DataFrame()
+    cell_id_columns = kwargs['cell_id_columns']
     sample_info['CellID'] = df.iloc[:, cell_id_columns]
-
+    patient_column = kwargs['patient_columns']
+    sample_column = kwargs['layer_columns']
     # Si colonne "patient" explicitement fournie, on l'utilise telle quelle
+    encoding_map = get_encoding_map(kwargs)
+
     if patient_column and patient_column in df.columns:
         sample_info['patient'] = df[patient_column]
     else:
         sample_info['patient'] = df['patient'] if 'patient' in df.columns else None
-
+    if encoding_map:
+        sample_info['patient'] = sample_info['patient'].map(encoding_map)
+        
     # Gérer la colonne "sample" si elle est présente
     if sample_column and sample_column in df.columns:
         sample_info['sample'] = df[sample_column]
@@ -186,7 +192,6 @@ def import_data(**kwargs):
 
     # 2. Fusion si possible
     combined_df = concatenate_dataframes(dataframes)
-
     # 3. Extraction des trois tables
     markers_df = extract_markers(combined_df, **kwargs)
     sample_df = extract_sample_info(combined_df, **kwargs)

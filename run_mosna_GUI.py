@@ -4,13 +4,14 @@ import tkinter.font as tkfont
 import yaml
 import subprocess
 import os
+import ast
 
 CONFIG_PATH = 'CONFIG/configuration.yaml'
 SCRIPTS = [
-    'SCRIPT/pre_processing.sh',
-    'SCRIPT/draw_tysserand_IMC_IF.sh',
-    'SCRIPT/mosna_assortativity.sh',
-    'SCRIPT/mosna_NAS.sh'
+    'pre_processing.sh',
+    'draw_tysserand_IMC_IF.sh',
+    'mosna_assortativity.sh',
+    'mosna_NAS.sh'
 ]
 
 class MosnaGUI(tk.Tk):
@@ -30,11 +31,25 @@ class MosnaGUI(tk.Tk):
     def _load_config(self):
         try:
             with open(CONFIG_PATH, 'r') as f:
-                self.config_data = yaml.safe_load(f) or {}
+                raw = yaml.safe_load(f) or {}
+                self.config_data = self._normalize_config(raw)
         except Exception as e:
             messagebox.showerror('Error', f'Failed to load config: {e}')
             self.config_data = {}
-
+    
+    def _normalize_config(self, d):
+        def _safe_eval(v):
+            if isinstance(v, (dict, list)):
+                return v
+            try:
+                val = ast.literal_eval(v)
+                return val if isinstance(val, (list, dict)) else v
+            except Exception:
+                return v
+        if isinstance(d, dict):
+            return {k: self._normalize_config(_safe_eval(v)) for k, v in d.items()}
+        return d
+    
     def _save_config(self):
         try:
             # Preserve documentation at end
@@ -50,7 +65,9 @@ class MosnaGUI(tk.Tk):
                     default_flow_style=False,
                     sort_keys=False,
                     allow_unicode=True,
-                    width=4096
+                    width=4096,
+                    encoding=('utf-8'),
+                    default_style=None
                 )
             messagebox.showinfo('Saved', 'Configuration saved successfully.')
         except Exception as e:
@@ -184,17 +201,20 @@ class MosnaGUI(tk.Tk):
         new = {}
         if 'documentation' in self.config_data:
             new['documentation'] = self.config_data['documentation']
-        if '__general__' in self.entries:
-            for k, w in self.entries['__general__'].items():
-                new[k] = self._parse_value(w)
+
         for sec, its in self.entries.items():
             if sec == '__general__':
+                for k, w in its.items():
+                    new[k] = self._parse_value(w)
                 continue
-            section, sub = sec.split('__', 1) if '__' in sec else (sec, None)
-            if sub:
-                new.setdefault(section, {})[sub] = {k: self._parse_value(w) for k, w in its.items()}
-            else:
-                new[section] = {k: self._parse_value(w) for k, w in its.items()}
+
+            # Séparer tous les niveaux imbriqués (ex: NAS__nodes_aggregation__sub1)
+            keys = sec.split('__')
+            target = new
+            for key in keys[:-1]:
+                target = target.setdefault(key, {})
+            target[keys[-1]] = {k: self._parse_value(w) for k, w in its.items()}
+
         self.config_data = new
         self._save_config()
 

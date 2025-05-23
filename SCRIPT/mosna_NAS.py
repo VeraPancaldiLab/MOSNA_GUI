@@ -106,6 +106,7 @@ def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, s
 def get_param_for_niches(nodes_df, edges_df, node_features_list, 
                         stat_funcs, stat_names, order,
                         save_dir, patient, sample,):
+    
     features_NAS = mosna.make_features_NAS(
         X=nodes_df[node_features_list].values,
         pairs=edges_df.values,
@@ -204,8 +205,8 @@ def get_params(config_file, type, nodes_aggregation, method, FUNC_MAP):
     if nodes_aggregation:
         config = config_file[method]['nodes_aggregation'][type]
                 
-        stat_funcs = [FUNC_MAP[name] for name in config['stat_funcs']]
-        stat_names = config['stat_funcs']
+        stat_funcs = [FUNC_MAP[name] for name in config['stat_funcs'].split(',')]
+        stat_names = config['stat_funcs'].split(',')
         normalize = config['normalize']
         order = config['order']
         clusterer_type = config['clusterer_type']
@@ -222,8 +223,8 @@ def get_params(config_file, type, nodes_aggregation, method, FUNC_MAP):
     else:
         config = config_file[method][type]
 
-        stat_funcs = [FUNC_MAP[name] for name in config['stat_funcs']]
-        stat_names = config['stat_funcs']
+        stat_funcs = [FUNC_MAP[name] for name in config['stat_funcs'].split(',')]
+        stat_names = config['stat_funcs'].split(',')
         normalize = config['normalize']
         order = config['order']
         clusterer_type = config['clusterer_type']
@@ -236,7 +237,7 @@ def get_params(config_file, type, nodes_aggregation, method, FUNC_MAP):
         k_cluster = config['k_cluster']
         resolution = config['resolution']
         n_clusters = config['n_clusters']
-
+    print(stat_funcs, stat_names)
     return stat_funcs, stat_names, normalize, order, clusterer_type, \
             reducer_type, metric, n_neighbors, min_dist, dim_clust, \
             min_cluster_size, k_cluster,resolution, n_clusters

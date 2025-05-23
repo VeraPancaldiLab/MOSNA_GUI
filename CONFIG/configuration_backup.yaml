@@ -14,7 +14,7 @@ IMC_import:
   re_index: True
   there_is_duplicata: False
 
-  columns_to_drop: ['Unnamed: 0']
+  columns_to_drop: 'Unnamed: 0'
   marker_columns: "0:19 21:33"
   cell_id_columns: 20
   spatial_columns: "34:35"
@@ -60,12 +60,11 @@ NAS:
   IF_perform: True
   node_aggregation: True
   perform_NAS_all_sample: True
-
   nodes_aggregation:
     IF:
       order: 1
-      stat_funcs: [np.mean, np.std]     
-      stat_names: ['mean', 'std']
+      stat_funcs: np.mean,np.std 
+      stat_names: "'mean','std'"
       clusterer_type: gmm 
       n_clusters: 15                       
       reducer_type: umap          
@@ -80,8 +79,8 @@ NAS:
 
     IMC:
       order: 2
-      stat_funcs: [np.mean, np.std]     
-      stat_names: ['mean', 'std']
+      stat_funcs: np.mean,np.std    
+      stat_names: "'mean','std'"
       clusterer_type: gmm
       n_clusters: 15                        
       reducer_type: umap          
@@ -96,8 +95,8 @@ NAS:
 
   IF:
     order: 1
-    stat_funcs: [np.mean, np.std]     
-    stat_names: ['mean', 'std']
+    stat_funcs: np.mean,np.std     
+    stat_names: "'mean','std'"
     clusterer_type: gmm 
     n_clusters: 15                       
     reducer_type: umap          
@@ -112,8 +111,8 @@ NAS:
 
   IMC:
     order: 2
-    stat_funcs: [np.mean, np.std]
-    stat_names: ['mean', 'std']
+    stat_funcs: np.mean,np.std
+    stat_names: "'mean','std'"
     clusterer_type: leiden
     n_clusters: 
     reducer_type: umap
