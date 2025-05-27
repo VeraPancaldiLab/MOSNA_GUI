@@ -237,7 +237,7 @@ def get_params(config_file, type, nodes_aggregation, method, FUNC_MAP):
         k_cluster = config['k_cluster']
         resolution = config['resolution']
         n_clusters = config['n_clusters']
-    print(stat_funcs, stat_names)
+
     return stat_funcs, stat_names, normalize, order, clusterer_type, \
             reducer_type, metric, n_neighbors, min_dist, dim_clust, \
             min_cluster_size, k_cluster,resolution, n_clusters

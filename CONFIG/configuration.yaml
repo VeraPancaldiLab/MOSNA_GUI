@@ -1,78 +1,120 @@
-save_file: true
+save_file: True
 pheno_dir: data/processed/Bram_data/phenotypes
-test: false
-phenograph: false
-add_pheno: true
-IF_import:
-  present_in: true
-  directory_path: data/processed/Bram_data/IF_merged_by_patient/
-  panel: C1
-  path_encoding_patient: null
-  path_file_to_patient: data/processed/Bram_data/file_to_patient/IF_file_to_patient.csv
-  normalize: false
-  re_index: false
-  there_is_duplicata: true
-  columns_to_drop: null
-  marker_columns: '3:5'
-  cell_id_columns: 0
-  spatial_columns: '1:2'
-  layer_columns: ROI_ID
-  patient_columns: Patient_ID
+test: False
+phenograph: False
+add_pheno: True
+
 IMC_import:
-  present_in: true
+  present_in: True
   directory_path: data/processed/Bram_data/acquired_csv_files/
   path_encoding_patient: data/processed/Bram_data/alphabetical_encoding_patient_ID/IMC_patient_id_encoding.csv
   path_file_to_patient: data/processed/Bram_data/file_to_patient/IMC_file_to_patient.csv
-  normalize: true
-  re_index: true
-  there_is_duplicata: false
-  columns_to_drop: 'Unnamed: 0'
-  marker_columns: 0:19 21:33
-  cell_id_columns: 20
-  spatial_columns: '34:35'
-  layer_columns: null
-  patient_columns: null
-tysserand:
-  IF_perform: true
-  IMC_perform: true
-  k_neighbors_phenograph: 30
-  primary_metric_phenograph: minkowski
-  method_tysserand: delaunay
-  min_neighbors: 3
-Assortativity:
-  IF_perform: true
-  IMC_perform: true
-  perform_batch: false
-  perform_clr_transfo: false
-NAS:
 
-  method: NAS
-  output_name_file: IMC_IF_Bram_PDAC_data_1
-  IMC_perform: false
-  IF_perform: true
-  node_aggregation: true
-  perform_NAS_all_sample: true
+  normalize: True
+  re_index: True
+  there_is_duplicata: False
+
+  columns_to_drop: 'Unnamed: 0'
+  marker_columns: "0:19 21:33"
+  cell_id_columns: 20
+  spatial_columns: "34:35"
+  layer_columns: 
+  patient_columns: 
+
+IF_import:
+  present_in: True
+  directory_path: data/processed/Bram_data/IF_merged_by_patient/
+  panel: "C1"
+  path_encoding_patient: 
+  path_file_to_patient: data/processed/Bram_data/file_to_patient/IF_file_to_patient.csv
+
+  normalize: False
+  re_index: False
+  there_is_duplicata: True
+
+  columns_to_drop: 
+  marker_columns: "3:5"
+  cell_id_columns: 0
+  spatial_columns: "1:2"
+  layer_columns: ROI_ID
+  patient_columns: Patient_ID
+
+tysserand:
+  IF_perform: True
+  IMC_perform: True
+  k_neighbors_phenograph: 30
+  primary_metric_phenograph: 'minkowski'
+  method_tysserand: 'delaunay'
+  min_neighbors: 3
+
+Assortativity:
+  IF_perform: True
+  IMC_perform: True
+  perform_batch: False
+  perform_clr_transfo: False
+
+NAS:
+  method: 'NAS'
+  output_name_file: 'IMC_IF_Bram_PDAC_data_1'
+  IMC_perform: False
+  IF_perform: True
+  node_aggregation: True
+  perform_NAS_all_sample: True
+  nodes_aggregation:
+    IF:
+      order: 1
+      stat_funcs: np.mean,np.std 
+      stat_names: "'mean','std'"
+      clusterer_type: gmm 
+      n_clusters: 15                       
+      reducer_type: umap          
+      metric: euclidean
+      resolution: 0.005               
+      n_neighbors: 15        
+      min_dist: 0.0             
+      dim_clust: 3
+      min_cluster_size: 10
+      k_cluster: 15
+      normalize: niche
+
+    IMC:
+      order: 2
+      stat_funcs: np.mean,np.std    
+      stat_names: "'mean','std'"
+      clusterer_type: gmm
+      n_clusters: 15                        
+      reducer_type: umap          
+      metric: euclidean
+      resolution: 0.0001              
+      n_neighbors: 15              
+      min_dist: 0.0              
+      dim_clust: 3
+      min_cluster_size: 10
+      k_cluster: 15
+      normalize: niche
+
   IF:
     order: 1
-    stat_funcs: np.mean,np.std
+    stat_funcs: np.mean,np.std     
     stat_names: "'mean','std'"
-    clusterer_type: gmm
-    n_clusters: 15
-    reducer_type: umap
+    clusterer_type: gmm 
+    n_clusters: 15                       
+    reducer_type: umap          
     metric: euclidean
-    resolution: 0.005
-    n_neighbors: 15
-    min_dist: 0.1
+    resolution: 0.005            
+    n_neighbors: 15               
+    min_dist: 0.1              
     dim_clust: 3
     min_cluster_size: 1
     k_cluster: 15
     normalize: niche
+
   IMC:
     order: 2
     stat_funcs: np.mean,np.std
     stat_names: "'mean','std'"
     clusterer_type: leiden
-    n_clusters: null
+    n_clusters: 
     reducer_type: umap
     metric: euclidean
     resolution: 0.001
@@ -82,36 +124,42 @@ NAS:
     min_cluster_size: 1
     k_cluster: 15
     normalize: niche
-  nodes_aggregation:
-    IF:
-      order: 1
-      stat_funcs: np.mean,np.std
-      stat_names: "'mean','std'"
-      clusterer_type: gmm
-      n_clusters: 15
-      reducer_type: umap
-      metric: euclidean
-      resolution: 0.005
-      n_neighbors: 15
-      min_dist: 0.0
-      dim_clust: 3
-      min_cluster_size: 10
-      k_cluster: 15
-      normalize: niche
-    IMC:
-      order: 2
-      stat_funcs: np.mean,np.std
-      stat_names: "'mean','std'"
-      clusterer_type: gmm
-      n_clusters: 15
-      reducer_type: umap
-      metric: euclidean
-      resolution: 0.0001
-      n_neighbors: 15
-      min_dist: 0.0
-      dim_clust: 3
-      min_cluster_size: 10
-      k_cluster: 15
-      normalize: niche
+
 documentation:
-  NAS: "¤ reducer_type : str\n    DR method, can be 'umap', for now, other ones coming soon.\n¤ n_components : int\n    Number of final dimensions.\n¤ n-neighbors : int\n    Number of closest neighbors used in various DR methods.\n¤ metric : str\n    Type of distance used.\n¤ min_dist : float\n    Minimum distance between DRed data, we usually want 0.\n¤ clusterer_type : str\n    'leiden'\n    'ecg' for Ensemble Clustering for Graphs, \n    'spectral' for balanced spectral clustering \n    'gmm' for Gaussian Mixture Model\n    'hdbscan'\n¤ dim_clust : int\n    Dimensionality of the reducede space in which data is clustered.\n    A higher number allows for more complex cluster shapes, but introduces outliers.\n¤ k_cluster : int\n    Number of neighbors considered during the clustering.\n¤ resolution : float\n    Level of details of the clustering. A higher number increases the level of details.\n¤ n_clusters : int, None\n    Number of target clusters, used with GaussianMixtureModel clusterer.\n¤ ecg_min_weight : float, 0.05\n    min_weight parameter for the ecg method.\n¤ ecg_ensemble_size : int, 20\n    ensemble_size parameter for the ecg method.\n¤ flavor : str, None\n    If 'CellCharter', uses UMAP for dimensionality reduction, and a gaussian mixture\n    model for clustering. \n¤ avoid_neigh_overflow : bool, True\n    Whether the number of neighbors for clustering is limited by the number of\n    neighbors for dimensionality reduction.\n      "
+  NAS: |
+    ¤ reducer_type : str
+        DR method, can be 'umap', for now, other ones coming soon.
+    ¤ n_components : int
+        Number of final dimensions.
+    ¤ n-neighbors : int
+        Number of closest neighbors used in various DR methods.
+    ¤ metric : str
+        Type of distance used.
+    ¤ min_dist : float
+        Minimum distance between DRed data, we usually want 0.
+    ¤ clusterer_type : str
+        'leiden'
+        'ecg' for Ensemble Clustering for Graphs, 
+        'spectral' for balanced spectral clustering 
+        'gmm' for Gaussian Mixture Model
+        'hdbscan'
+    ¤ dim_clust : int
+        Dimensionality of the reducede space in which data is clustered.
+        A higher number allows for more complex cluster shapes, but introduces outliers.
+    ¤ k_cluster : int
+        Number of neighbors considered during the clustering.
+    ¤ resolution : float
+        Level of details of the clustering. A higher number increases the level of details.
+    ¤ n_clusters : int, None
+        Number of target clusters, used with GaussianMixtureModel clusterer.
+    ¤ ecg_min_weight : float, 0.05
+        min_weight parameter for the ecg method.
+    ¤ ecg_ensemble_size : int, 20
+        ensemble_size parameter for the ecg method.
+    ¤ flavor : str, None
+        If 'CellCharter', uses UMAP for dimensionality reduction, and a gaussian mixture
+        model for clustering. 
+    ¤ avoid_neigh_overflow : bool, True
+        Whether the number of neighbors for clustering is limited by the number of
+        neighbors for dimensionality reduction.
+          
