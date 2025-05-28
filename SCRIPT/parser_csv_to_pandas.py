@@ -1,5 +1,5 @@
 ################################################# Import ###################################################
-print("\n############### Welcome in parser CSV to pandas ###############")
+print("\n[PARSER CSV TO PANDAS]")
 
 import yaml
 import argparse
@@ -206,7 +206,7 @@ def main():
     config_file = get_config(config_path)
 
     if config_file['IMC_import']['present_in']:
-        print("[TASK] Import IMC data\t\t\t\t", end="")
+        print("\t[TASK] Import IMC data\t\t\t\t", end="")
         IMC_params = config_file['IMC_import'].copy()
         IMC_params.update({'layer_name': 'ROI', 'type': 'IMC'})
 
@@ -214,7 +214,7 @@ def main():
         print("DONE")
 
     if config_file['IF_import']['present_in']:
-        print("[TASK] Import IF data\t\t\t\t", end="")
+        print("\t[TASK] Import IF data\t\t\t\t", end="")
         IF_params = config_file['IF_import'].copy()
         IF_params.update({'layer_name': 'layer', 'type': 'IF'})
 
@@ -223,7 +223,7 @@ def main():
         
 
     if config_file['save_file']:
-        print("[TASK] Saving pandas in parquet\t\t\t",end='')
+        print("\t[TASK] Saving pandas in parquet\t\t\t",end='')
         if config_file['IMC_import']['present_in']:
             IMC_cell_pos.to_parquet(Path('./output_data') / "IMC_cell_pos.parquet")
             IMC_markers.to_parquet(Path('./output_data') / "IMC_markers.parquet")

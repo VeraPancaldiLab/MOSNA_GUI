@@ -299,7 +299,6 @@ class MosnaGUI(QMainWindow):
             self._append_console(f"[!] Error running script {script}:\n{e}\n")
             QMessageBox.critical(self, "Error", f"Script error: {e}")
 
-
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MosnaGUI()

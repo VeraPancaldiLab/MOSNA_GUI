@@ -1,4 +1,3 @@
-print('############ Import and LOG ############')
 import os
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 import sys
@@ -281,11 +280,11 @@ def network_parallelization_process_patient(patient, sample_name, IF_cell_pos, I
 def verif_cpu(cpu, unique_list):
     if cpu > multiprocessing.cpu_count():
         cpu = min(multiprocessing.cpu_count(), len(unique_list))
-        print(f"You've selected a higher number of cpu than your current available cpu : {multiprocessing.cpu_count()}")
+        print(f"\t[INFO] You've selected a higher number of cpu than your current available cpu : {multiprocessing.cpu_count()}")
     if cpu > len(unique_list):
         cpu = min(cpu, len(unique_list))
-        print(f"You've selected a higher number of cpu than the number needed : {multiprocessing.cpu_count()}")
-    print(f"you are currently using {cpu} cpu")
+        print(f"\t[INFO] You've selected a higher number of cpu than the number needed : {multiprocessing.cpu_count()}")
+    print(f"\t[INFO] you are currently using {cpu} cpu")
     return cpu
 
 def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, 
@@ -315,7 +314,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
                 executor.submit(network_parallelization_process_patient_and_sample, *args): args[0]
                 for args in args_list
             }
-            for future in tqdm(as_completed(futures), total=len(futures), desc=f" └─ Processing {type} file", position=1):
+            for future in tqdm(as_completed(futures), total=len(futures), desc=f"\t[PROCESS] └─ Processing {type} file"):
                 patient = futures[future]
                 try:
                     future.result()
@@ -338,7 +337,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
                 executor.submit(network_parallelization_process_patient, *args): args[0]
                 for args in args_list
             }
-            for future in tqdm(as_completed(futures), total=len(futures), desc=f" └─ Processing {type} file", position=1):
+            for future in tqdm(as_completed(futures), total=len(futures), desc=f"\t[PROCESS] └─ Processing {type} file"):
                 patient = futures[future]
                 try:
                     future.result()
@@ -389,7 +388,7 @@ def main(IF, IMC, config_file):
         print(f"IF error: {e}")
 
 if __name__ == "__main__":
-    print('\n\n############ Perform Tysserand for generating networks ############\n')
+    print('\n[TYSSERAND NETWORK GENERATION]')
     config_path = get_arguments()
     config_file = get_config(config_path)
 

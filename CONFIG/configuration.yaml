@@ -1,4 +1,5 @@
 save_file: true
+silent: false
 pheno_dir: data/processed/Bram_data/phenotypes
 test: false
 phenograph: false
@@ -113,5 +114,3 @@ NAS:
     min_cluster_size: 1
     k_cluster: 15
     normalize: niche
-documentation:
-  NAS: "¤ reducer_type : str\n    DR method, can be 'umap', for now, other ones coming soon.\n¤ n_components : int\n    Number of final dimensions.\n¤ n-neighbors : int\n    Number of closest neighbors used in various DR methods.\n¤ metric : str\n    Type of distance used.\n¤ min_dist : float\n    Minimum distance between DRed data, we usually want 0.\n¤ clusterer_type : str\n    'leiden'\n    'ecg' for Ensemble Clustering for Graphs, \n    'spectral' for balanced spectral clustering \n    'gmm' for Gaussian Mixture Model\n    'hdbscan'\n¤ dim_clust : int\n    Dimensionality of the reducede space in which data is clustered.\n    A higher number allows for more complex cluster shapes, but introduces outliers.\n¤ k_cluster : int\n    Number of neighbors considered during the clustering.\n¤ resolution : float\n    Level of details of the clustering. A higher number increases the level of details.\n¤ n_clusters : int, None\n    Number of target clusters, used with GaussianMixtureModel clusterer.\n¤ ecg_min_weight : float, 0.05\n    min_weight parameter for the ecg method.\n¤ ecg_ensemble_size : int, 20\n    ensemble_size parameter for the ecg method.\n¤ flavor : str, None\n    If 'CellCharter', uses UMAP for dimensionality reduction, and a gaussian mixture\n    model for clustering. \n¤ avoid_neigh_overflow : bool, True\n    Whether the number of neighbors for clustering is limited by the number of\n    neighbors for dimensionality reduction.\n      "

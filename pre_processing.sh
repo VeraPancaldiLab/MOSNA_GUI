@@ -34,7 +34,7 @@ fi
 
 if [ "$add_pheno" == true ]; then
     if [ "$phenotypes_not_defined" == false ]; then
-        printf '[TASK] Add phenotypes\t\t\t\t'
+        printf '\t[TASK] Add phenotypes\t\t\t\t'
         python -u SCRIPT/add_phenotypes.py --file CONFIG/configuration.yaml
         echo -e 'DONE\n'
     fi
