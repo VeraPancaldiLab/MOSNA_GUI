@@ -3,14 +3,16 @@ import sys
 import yaml
 import ast
 import subprocess
+import io
+from yaml.representer import SafeRepresenter
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QFileDialog, QMessageBox,
     QPushButton, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel, QLineEdit,
     QTextEdit, QFormLayout, QScrollArea
 )
-from PySide6.QtCore import Qt
-
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QTextCursor
 CONFIG_PATH = 'CONFIG/configuration.yaml'
 SCRIPTS = [
     'pre_processing.sh',
@@ -18,6 +20,18 @@ SCRIPTS = [
     'mosna_assortativity.sh',
     'mosna_NAS.sh'
 ]
+
+class FlowStyleList(list):
+    pass
+def represent_flow_style_list(dumper, data):
+    return dumper.represent_sequence('tag:yaml.org,2002:seq', data, flow_style=True)
+yaml.add_representer(FlowStyleList, represent_flow_style_list, Dumper=yaml.SafeDumper)
+def force_inline_lists(obj):
+    if isinstance(obj, dict):
+        return {k: force_inline_lists(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return FlowStyleList(force_inline_lists(i) for i in obj)
+    return obj
 
 class MosnaGUI(QMainWindow):
     def __init__(self):
@@ -77,11 +91,7 @@ class MosnaGUI(QMainWindow):
         btn_layout = QHBoxLayout()
         layout.addLayout(btn_layout)
 
-        run_all_btn = QPushButton("Run All Scripts")
-        run_all_btn.clicked.connect(self._run_all_scripts)
-        btn_layout.addWidget(run_all_btn)
-
-        for s in reversed(SCRIPTS):
+        for s in SCRIPTS:
             b = QPushButton(f"Run {os.path.basename(s)}")
             b.clicked.connect(lambda _, sc=s: self._run_script(sc))
             btn_layout.addWidget(b)
@@ -89,6 +99,13 @@ class MosnaGUI(QMainWindow):
         save_btn = QPushButton("Save Config")
         save_btn.clicked.connect(self._on_save)
         layout.addWidget(save_btn)
+
+        self.console_output = QTextEdit()
+        self.console_output.setReadOnly(True)
+        self.console_output.setStyleSheet("background-color: black; color: white; font-family: monospace;")
+        self.console_output.setMinimumHeight(250)
+        layout.addWidget(QLabel("Console Output:"))
+        layout.addWidget(self.console_output)
 
     def _add_tab(self, tab_name, section_key, data):
         tab = QWidget()
@@ -113,10 +130,10 @@ class MosnaGUI(QMainWindow):
 
         inner_tabs = QTabWidget()
         tab_layout.addWidget(inner_tabs)
-
+        
         general = {k: v for k, v in data.items() if not isinstance(v, dict)}
         if general:
-            self._add_inner_form(inner_tabs, "General", f"{section}__general", general)
+            self._add_inner_form(inner_tabs, "General", f"{section}", general)
 
         for subsec, subdata in data.items():
             if isinstance(subdata, dict):
@@ -126,12 +143,29 @@ class MosnaGUI(QMainWindow):
                     deep_tabs = QTabWidget()
                     nested_layout.addWidget(deep_tabs)
                     for subsub, subsubdata in subdata.items():
-                        self._add_inner_form(deep_tabs, subsub, f"nodes_aggregation__{subsub}", subsubdata)
+                        self._add_inner_form(deep_tabs, subsub, f"{section}__nodes_aggregation__{subsub}", subsubdata)
                     inner_tabs.addTab(nested, "nodes_aggregation")
                 else:
                     self._add_inner_form(inner_tabs, subsec, f"{section}__{subsec}", subdata)
 
         self.tabs.addTab(tab, section)
+
+    def _append_console(self, text):
+        cursor = self.console_output.textCursor()
+        cursor.movePosition(QTextCursor.End)
+
+        # Si le texte commence par retour chariot, on écrase la dernière ligne
+        if text.startswith('\r'):
+            cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)
+            cursor.removeSelectedText()
+            cursor.deleteChar()
+            self.console_output.insertPlainText(text.lstrip('\r'))
+        else:
+            self.console_output.insertPlainText(text)
+
+        self.console_output.moveCursor(QTextCursor.End)
+        QApplication.processEvents()
+
 
     def _add_inner_form(self, tab_widget, name, section_key, data):
         widget = QWidget()
@@ -172,22 +206,31 @@ class MosnaGUI(QMainWindow):
 
     def _parse_value(self, widget):
         if isinstance(widget, QTextEdit):
-            return widget.toPlainText()
-        val = widget.text().strip()
+            val = widget.toPlainText().strip()
+        else:
+            val = widget.text().strip()
+
         if val.lower() in ('none', 'null', ''):
             return None
         if val.lower() in ('true', 'false'):
             return val.lower() == 'true'
-        try:
-            return int(val)
-        except:
-            pass
-        try:
-            return float(val)
-        except:
-            pass
-        if val.startswith('[') and val.endswith(']'):
-            return val
+
+        # Try numeric types
+        for caster in (int, float):
+            try:
+                return caster(val)
+            except ValueError:
+                continue
+
+        # Clean redundant triple/surrounding quotes (e.g. '''mean','std''' -> 'mean','std')
+        if (val.startswith("[") and val.endswith("]")) or \
+        (val.startswith("{") and val.endswith("}")) or \
+        (val.startswith("(") and val.endswith(")")):
+            try:
+                return ast.literal_eval(val)
+            except Exception:
+                pass  # If eval fails, fall back to raw string
+
         return val
 
     def _on_save(self):
@@ -212,7 +255,7 @@ class MosnaGUI(QMainWindow):
                 ordered['documentation'] = doc
             with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
                 yaml.safe_dump(
-                    ordered,
+                    force_inline_lists(ordered),
                     f,
                     default_flow_style=False,
                     sort_keys=False,
@@ -223,29 +266,41 @@ class MosnaGUI(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save config:\n{e}")
 
+
     def _run_script(self, script):
         self._on_save()
         if not os.path.isfile(script):
             QMessageBox.warning(self, "Missing", f"Script not found: {script}")
             return
-        try:
-            subprocess.check_call(['bash', script])
-            QMessageBox.information(self, "Success", f"Script completed: {os.path.basename(script)}")
-        except subprocess.CalledProcessError as e:
-            QMessageBox.critical(self, "Error", f"Script failed: {script}\n{e}")
 
-    def _run_all_scripts(self):
-        self._on_save()
-        for s in SCRIPTS:
-            if not os.path.isfile(s):
-                QMessageBox.warning(self, "Missing", f"Script not found: {s}")
-                continue
-            try:
-                subprocess.check_call(['bash', s])
-            except subprocess.CalledProcessError as e:
-                QMessageBox.critical(self, "Error", f"Script failed: {s}\n{e}")
-                return
-        QMessageBox.information(self, "Done", "All scripts completed successfully.")
+        self._append_console(f"\n$ bash {script}\n{'='*60}\n")
+
+        try:
+            proc = subprocess.Popen(
+                ['bash', script],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                bufsize=1,
+                text=True
+            )
+
+            for line in proc.stdout:
+                self._append_console(line)  # line contient le \n à la fin
+
+            proc.stdout.close()
+            returncode = proc.wait()
+
+            if returncode == 0:
+                self._append_console(f"[✓] Script completed: {script}\n")
+                QMessageBox.information(self, "Success", f"Script completed: {os.path.basename(script)}")
+            else:
+                self._append_console(f"[✗] Script failed (code {returncode}): {script}\n")
+                QMessageBox.critical(self, "Error", f"Script failed: {script}\nExit code: {returncode}")
+
+        except Exception as e:
+            self._append_console(f"[!] Error running script {script}:\n{e}\n")
+            QMessageBox.critical(self, "Error", f"Script error: {e}")
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

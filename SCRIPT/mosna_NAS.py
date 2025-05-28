@@ -206,7 +206,7 @@ def get_params(config_file, type, nodes_aggregation, method, FUNC_MAP):
         config = config_file[method]['nodes_aggregation'][type]
                 
         stat_funcs = [FUNC_MAP[name] for name in config['stat_funcs'].split(',')]
-        stat_names = config['stat_funcs'].split(',')
+        stat_names = config['stat_names']
         normalize = config['normalize']
         order = config['order']
         clusterer_type = config['clusterer_type']
@@ -224,7 +224,7 @@ def get_params(config_file, type, nodes_aggregation, method, FUNC_MAP):
         config = config_file[method][type]
 
         stat_funcs = [FUNC_MAP[name] for name in config['stat_funcs'].split(',')]
-        stat_names = config['stat_funcs'].split(',')
+        stat_names = config['stat_names']
         normalize = config['normalize']
         order = config['order']
         clusterer_type = config['clusterer_type']

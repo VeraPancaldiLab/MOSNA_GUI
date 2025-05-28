@@ -12,7 +12,7 @@ mkdir -p output_data/test
 mkdir -p output_data/IF_${panel}_networks_sample
 mkdir -p output_data/IMC_networks_sample
 
-python SCRIPT/parser_csv_to_pandas.py --file CONFIG/configuration.yaml
+python -u SCRIPT/parser_csv_to_pandas.py --file CONFIG/configuration.yaml
 
 if [ "$TEST" == "true" ]; then
     echo -n 'Concatenation For test --- '
@@ -28,14 +28,14 @@ if [ "$TEST" == "true" ]; then
     printf 'DONE\n\n'
 
     echo '########### TEST ###########'
-    python SCRIPT/test_parser.py --file CONFIG/configuration.yaml
+    python -u SCRIPT/test_parser.py --file CONFIG/configuration.yaml
     printf "TEST --- DONE\n\n"
 fi
 
 if [ "$add_pheno" == true ]; then
     if [ "$phenotypes_not_defined" == false ]; then
-        printf 'Add phenotypes --- '
-        python SCRIPT/add_phenotypes.py --file CONFIG/configuration.yaml
+        printf '[TASK] Add phenotypes\t\t\t\t'
+        python -u SCRIPT/add_phenotypes.py --file CONFIG/configuration.yaml
         echo -e 'DONE\n'
     fi
 fi
