@@ -17,7 +17,6 @@ import yaml
 import argparse
 import matplotlib.pyplot as plt
 import seaborn as sns
-from time import time
 from pathlib import Path
 from time import time
 from tqdm import tqdm
@@ -26,11 +25,12 @@ import matplotlib as mpl
 import colorcet as cc
 import composition_stats as cs
 from phenograph.cluster import cluster
-    
+
 from tysserand import tysserand as ty
 from mosna import mosna
 
 import matplotlib as mpl
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 mpl.rcParams["figure.facecolor"] = 'white'
 mpl.rcParams["axes.facecolor"] = 'white'
@@ -94,7 +94,7 @@ def draw_tysserand_network(coords, clustering, patient, type, method='delaunay',
     coords = np.array(coords.values.tolist())
     pairs = ty.build_delaunay(coords)
         # we want to avoid isolated cells, so we link them to their 3 closest neighbors
-    pairs = ty.link_solitaries(coords, pairs, method=method, min_neighbors=min_neighbors)
+    pairs = ty.link_solitaries(coords, pairs, method=method, min_neighbors=min_neighbors, verbose=0)
 
     fig, ax = ty.plot_network(
         coords, pairs,labels=clustering,
@@ -156,8 +156,12 @@ def phenograph_clustering(markers_to_cluster, k_neighbors, primary_metrics_pheno
 def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, 
                       there_is_duplicata, type, 
                       make_phenograph=False, k_neighbors = 30, primary_metrics_phenograh='minkowski', normalize = False, 
-                      method='delaunay', min_neighbors=3):
+                      method='delaunay', min_neighbors=3, cpu=4):
     
+    if cpu > os.cpu_count():
+        cpu=os.cpu_count()
+        print(f"You choose a cpu number higher than your current available cpu : {os.cpu_count()}")
+
     if type == 'IMC':  
         sample_name = 'ROI'
     else:
@@ -170,8 +174,9 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
         unique_patient_samples = IF_sample_cell[['patient',sample_name]].drop_duplicates()
         unique_list = list(unique_patient_samples.itertuples(index=False, name=None))
 
-        for patient_sample in tqdm(unique_list, desc=f" └─ Processing {type} file", position=1):
-            tqdm.write(f"{type} Tysserand for patient {patient_sample[0]} and {sample_name} {patient_sample[1]}")
+        def network_parallelization_process_patient_and_sample(patient_sample):
+        #for patient_sample in tqdm(unique_list, desc=f" └─ Processing {type} file", position=1):
+            #tqdm.write(f"{type} Tysserand for patient {patient_sample[0]} and {sample_name} {patient_sample[1]}")
             filtre = ((IF_sample_cell['patient'] == patient_sample[0]) &
                         (IF_sample_cell[f'{sample_name}'] == patient_sample[1]))
 
@@ -184,7 +189,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
                 nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
                 nodes['patient'] = patient_sample[0]
                 nodes[f'{sample_name}'] = patient_sample[1]
-                tqdm.write(f"\tTysserand networks with : {len(coords)} cells")
+                #tqdm.write(f"\tTysserand networks with : {len(coords)} cells")
 
             else:
                 cells = IF_sample_cell.loc[filtre, 'CellID'].drop_duplicates()
@@ -194,23 +199,23 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
                 nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
                 nodes['patient'] = patient_sample[0]
                 nodes[f'{sample_name}'] = patient_sample[1]
-                tqdm.write(f"\tTysserand networks with : {len(coords)} cells")
+                #tqdm.write(f"\tTysserand networks with : {len(coords)} cells")
             
 
             if make_phenograph:
-                tqdm.write("\tCLUSTERING BY PHENOGRAPH",end='\t\t\t')       
+                #tqdm.write("\tCLUSTERING BY PHENOGRAPH",end='\t\t\t')       
                 markers_to_cluter_IF = markers_to_cluter_IF.set_index('CellID')
                 if normalize:
                     markers_to_cluter_IF = normalize_markers(markers_to_cluter_IF)
                 
                 clustering_IF, Q_IF = phenograph_clustering(markers_to_cluter_IF, k_neighbors, primary_metrics_phenograh)
                 cell_ID_pos['Phenotypes']=clustering_IF
-                tqdm.write("DONE\n")
+                #tqdm.write("DONE\n")
                 
             else:
                 clustering_IF=cell_ID_pos['Phenotypes']
                 
-            tqdm.write("\tDRAW TYSSERAND NETWORK",end='\t\t\t')
+            #tqdm.write("\tDRAW TYSSERAND NETWORK",end='\t\t\t')
             pairs = draw_tysserand_network(coords, clustering_IF, patient_sample[0], type=type,sample=patient_sample[1], method=method, min_neighbors=min_neighbors, sample_name=sample_name)
     
             del coords, cell_ID_pos, clustering_IF, markers_to_cluter_IF
@@ -219,7 +224,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
             if 'cells_df' in locals():
                 del cells_df
             gc.collect()
-            tqdm.write("\t\t\t\tDONE\n")
+            #tqdm.write("\t\t\t\tDONE\n")
             edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
             sample_name_for_file = sample_name.replace('_', '-')
             if type == 'IMC':
@@ -229,6 +234,19 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
                 edges.to_parquet(Path(f"output_data/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
                 nodes.to_parquet(Path(f"output_data/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
 
+        with ThreadPoolExecutor(max_workers=cpu) as executor:  
+            futures = {
+                executor.submit(network_parallelization_process_patient_and_sample, patient_sample): patient_sample
+                for patient_sample in unique_list
+            }
+
+            for future in tqdm(as_completed(futures), total=len(futures), desc=f" └─ Processing {type} file", position=1):
+                patient_sample = futures[future]
+                try:
+                    future.result()
+                except Exception as e:
+                    tqdm.write(f"[Erreur] patient={patient_sample[0]} sample={patient_sample[1]} : {e}")
+            
         del unique_list, unique_patient_samples, edges, pairs, nodes
         gc.collect()
 
@@ -236,9 +254,9 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
         unique_patient_samples = IF_sample_cell['patient'].drop_duplicates()
         unique_list = unique_patient_samples.tolist()
 
-
-        for patient in tqdm(unique_list, desc=f" └─ Processing {type} file", position=1):
-            tqdm.write(f"{type} Tysserand for patient {patient}")
+        def network_parallelization_process_patient(patient):
+        #for patient in tqdm(unique_list, desc=f" └─ Processing {type} file", position=1):
+            #tqdm.write(f"{type} Tysserand for patient {patient}")
             filtre = IF_sample_cell['patient'] == patient
 
             if there_is_duplicata:
@@ -249,7 +267,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
                 coords=coords.drop(columns=['CellID','Phenotypes'])
                 nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
                 nodes['patient'] = patient
-                tqdm.write(f"\tTysserand networks with : {len(coords)} cells")
+                #tqdm.write(f"\tTysserand networks with : {len(coords)} cells")
             else:
                 cells = IF_sample_cell.loc[filtre, 'CellID'].drop_duplicates()
                 coords = IF_cell_pos.loc[filtre, ['X_position','Y_position']]
@@ -257,23 +275,23 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
                 cell_ID_pos = IF_cell_pos.loc[filtre, ['CellID','X_position','Y_position','Phenotypes']]
                 nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
                 nodes['patient'] = patient
-                tqdm.write(f"\tTysserand networks with : {len(coords)} cells")
+                #tqdm.write(f"\tTysserand networks with : {len(coords)} cells")
                         
             if make_phenograph:
                 markers_to_cluter_IF = markers_to_cluter_IF.set_index('CellID')
                 
-                tqdm.write("\tCLUSTERING BY PHENOGRAPH",end='\t\t\t')
+                #tqdm.write("\tCLUSTERING BY PHENOGRAPH",end='\t\t\t')
                 if normalize:
                     markers_to_cluter_IF = normalize_markers(markers_to_cluter_IF)
                 
                 clustering_IF, Q_IF = phenograph_clustering(markers_to_cluter_IF, k_neighbors, primary_metrics_phenograh)
                 cell_ID_pos['Phenotypes']=clustering_IF
-                tqdm.write("DONE\n")
+                #tqdm.write("DONE\n")
                 
             else:
                 clustering_IF=cell_ID_pos['Phenotypes']
 
-            tqdm.write("\tDRAW TYSSERAND NETWORK",end='\t\t\t')
+            #tqdm.write("\tDRAW TYSSERAND NETWORK",end='\t\t\t')
             pairs = draw_tysserand_network(coords, clustering_IF, patient, type=type, method=method, min_neighbors=min_neighbors)
             del coords, cell_ID_pos, clustering_IF, markers_to_cluter_IF
             if 'cells' in locals():
@@ -281,7 +299,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
             if 'cells_df' in locals():
                 del cells_df
             gc.collect()
-            tqdm.write("\t\t\t\tDONE\n")
+            #tqdm.write("\t\t\t\tDONE\n")
             edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
             if type == 'IMC':
                 edges.to_parquet(Path(f"output_data/{type}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
@@ -289,7 +307,19 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
             if type == 'IF':
                 edges.to_parquet(Path(f"output_data/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
                 nodes.to_parquet(Path(f"output_data/nodes/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
+        
+        with ThreadPoolExecutor(max_workers=cpu) as executor:  
+            futures = {
+                executor.submit(network_parallelization_process_patient, patient): patient
+                for patient in unique_list
+            }
 
+            for future in tqdm(as_completed(futures), total=len(futures), desc=f" └─ Processing {type} file", position=1):
+                patient = futures[future]
+                try:
+                    future.result()
+                except Exception as e:
+                    tqdm.write(f"[Erreur] patient={patient} : {e}")
         del unique_list, unique_patient_samples, edges, pairs, nodes
         gc.collect()
 
@@ -313,7 +343,7 @@ def main(IF, IMC, config_file):
                           config_file['tysserand']['primary_metric_phenograph'],
                           tab_import['normalize'],
                           config_file['tysserand']['method_tysserand'],
-                          config_file['tysserand']['min_neighbors'])
+                          config_file['tysserand']['min_neighbors'], cpu=config_file['tysserand']['cpu'])
         
 
     try:

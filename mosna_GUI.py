@@ -166,7 +166,6 @@ class MosnaGUI(QMainWindow):
         self.console_output.moveCursor(QTextCursor.End)
         QApplication.processEvents()
 
-
     def _add_inner_form(self, tab_widget, name, section_key, data):
         widget = QWidget()
         layout = QFormLayout(widget)
@@ -266,7 +265,6 @@ class MosnaGUI(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save config:\n{e}")
 
-
     def _run_script(self, script):
         self._on_save()
         if not os.path.isfile(script):
@@ -305,6 +303,6 @@ class MosnaGUI(QMainWindow):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = MosnaGUI()
-    window.resize(1000, 800)
+    window.resize(2000, 1600)
     window.show()
     sys.exit(app.exec())

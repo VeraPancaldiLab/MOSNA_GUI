@@ -4,7 +4,7 @@ test: false
 phenograph: false
 add_pheno: true
 IF_import:
-  present_in: true
+  present_in: false
   directory_path: data/processed/Bram_data/IF_merged_by_patient/
   panel: C1
   path_encoding_patient: null
@@ -35,6 +35,7 @@ IMC_import:
 tysserand:
   IF_perform: true
   IMC_perform: true
+  cpu: 4
   k_neighbors_phenograph: 30
   primary_metric_phenograph: minkowski
   method_tysserand: delaunay
