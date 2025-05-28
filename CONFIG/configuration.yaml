@@ -33,9 +33,9 @@ IMC_import:
   layer_columns: null
   patient_columns: null
 tysserand:
-  IF_perform: true
+  IF_perform: false
   IMC_perform: true
-  cpu: 4
+  cpu: 20
   k_neighbors_phenograph: 30
   primary_metric_phenograph: minkowski
   method_tysserand: delaunay
