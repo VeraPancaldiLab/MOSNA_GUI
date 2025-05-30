@@ -1,4 +1,3 @@
-print('############ Import and LOG ############')
 import os
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 import sys
@@ -112,7 +111,6 @@ def sample_are_present_in_data(data, name):
 def open_markers(file):
     with open(file, 'r') as f:
         markers = [line.strip() for line in f if line.strip()]
-    print(markers)
     return markers
 
 def replace_sample_name(sample_name):
@@ -348,12 +346,12 @@ def main(IF, IMC, config_file):
 
         if not (save_dir / f"{type}{panel}_net_stat.parquet").exists():
             t = time()
-            print(f"Processing Assortativity for {type} data --- ", end='')
+            print(f"\t[INFO] Processing Assortativity for {type} data\t\t\t", end='')
             net_stat = mix_mat_assortativity(f"./output_data/{type}{panel}_networks_sample", 
                                                 "Phenotypes", 
                                                 type=type)
             net_stat.to_parquet(save_dir / f"{type}{panel}_net_stat.parquet")
-            print(f"Done\nAssortativity for IMC took {time()-t} s")
+            print(f"DONE\n\t[INFO] Assortativity for IMC took {time()-t} s")
             del net_stat, t
             gc.collect()
         
@@ -362,7 +360,7 @@ def main(IF, IMC, config_file):
         save_dir_type = save_dir / f"figures/{type}{panel}"
         save_dir_type.mkdir(parents=True, exist_ok=True)
         
-        for id in tqdm(list_id, desc=f" └─ Processing assortativity for {type}"):
+        for id in tqdm(list_id, desc=f"\[PROCESS]  └─ Processing assortativity for {type}"):
             z_cols = plot_mix_mat(save_dir_type, clean_net_stat(net_stat), id, type, panel)
         
         z_net_stat = group_assort(net_stat, z_cols, save_dir, type, panel)
@@ -375,7 +373,7 @@ def main(IF, IMC, config_file):
             else:
                 raise ValueError("There is no IMC in your data or the Tysserand networks were not generated")
     except ValueError as e:
-        print(f"IMC error: {e}")
+        print(f"\t[INFO] IMC error: {e}")
 
     try:
         if IF:
@@ -385,14 +383,12 @@ def main(IF, IMC, config_file):
                 raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
                 
     except ValueError as e:
-        print(f"IF error: {e}")
+        print(f"\t[INFO] IF error: {e}")
 
 if __name__ == "__main__":
-    print('\n\n############ Perform Assortativity ############\n')
+    print('\n\n[ASSORTATIVITY]')
     config_path = get_arguments()
     config_file = get_config(config_path)
     main(config_file['Assortativity']['IF_perform'],
                 config_file['Assortativity']['IMC_perform'],
                 config_file)
-
-
