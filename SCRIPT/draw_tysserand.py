@@ -56,7 +56,7 @@ def define_sample_name(type):
     sample_name_dict={'IMC':'ROI', 'IF':'layer'}
     return sample_name_dict[type]
 
-def import_data(dir, type, panel=None):
+def import_data(dir, type):
     if type == 'IMC':
         sample_cell = pd.read_parquet(Path(dir) / "IMC_sample_cell.parquet")
         markers = pd.read_parquet(Path(dir) / "IMC_markers.parquet")
@@ -73,7 +73,7 @@ def import_data(dir, type, panel=None):
         if (Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet").exists():
             cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet")
         else:
-            cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos.parquet")
+            cell_pos = pd.read_parquet(Path(dir) / f"IF_cell_pos.parquet")
         cell_pos.drop(columns='patient', inplace=True)
         cell_pos.drop(columns=define_sample_name(type), inplace=True)
 
@@ -384,6 +384,7 @@ def main(IF, IMC, config_file):
                 raise ValueError("There is no IF in your data")
             else:
                 process('IF')
+                print(f'\t[INFO] process on {config_file['IF_import']['panel']} panel')
     except ValueError as e:
         print(f"IF error: {e}")
 
