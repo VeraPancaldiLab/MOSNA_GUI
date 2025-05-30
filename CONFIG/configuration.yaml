@@ -5,7 +5,7 @@ test: false
 phenograph: false
 add_pheno: true
 IF_import:
-  present_in: true
+  present_in: false
   directory_path: data/processed/Bram_data/IF_merged_by_patient/
   panel: C1
   path_encoding_patient: null
@@ -20,7 +20,7 @@ IF_import:
   layer_columns: ROI_ID
   patient_columns: Patient_ID
 IMC_import:
-  present_in: false
+  present_in: true
   directory_path: data/processed/Bram_data/acquired_csv_files/
   path_encoding_patient: data/processed/Bram_data/alphabetical_encoding_patient_ID/IMC_patient_id_encoding.csv
   path_file_to_patient: data/processed/Bram_data/file_to_patient/IMC_file_to_patient.csv

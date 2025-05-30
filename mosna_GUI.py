@@ -15,10 +15,10 @@ from PySide6.QtCore import Qt, QTimer, QThread, Signal
 from PySide6.QtGui import QTextCursor
 CONFIG_PATH = 'CONFIG/configuration.yaml'
 SCRIPTS = [
-    'pre_processing.sh',
-    'draw_tysserand_IMC_IF.sh',
-    'mosna_assortativity.sh',
-    'mosna_NAS.sh'
+    'SCRIPT/pre_processing.sh',
+    'SCRIPT/draw_tysserand_IMC_IF.sh',
+    'SCRIPT/mosna_assortativity.sh',
+    'SCRIPT/mosna_NAS.sh'
 ]
 class ScriptRunnerThread(QThread):
     output_signal = Signal(str)
