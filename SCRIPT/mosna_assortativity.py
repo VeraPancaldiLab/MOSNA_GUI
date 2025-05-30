@@ -55,7 +55,7 @@ def define_panel(type):
     if type == 'IMC':
         panel = ''
     if type == 'IF':
-        panel = config_file['IF_import']['panel']
+        panel = config_file['Assortativity']['panel']
         panel = '_' + panel
     return panel
 
@@ -89,12 +89,12 @@ def import_data(dir, type):
         cell_pos.drop(columns=define_sample_name(type), inplace=True)
 
     if type == 'IF':
-        sample_cell = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_sample_cell.parquet")
-        markers = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_markers.parquet")
-        if (Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet").exists():
-            cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet")
+        sample_cell = pd.read_parquet(Path(dir) / f"IF_{config_file['Assortativity']['panel']}_sample_cell.parquet")
+        markers = pd.read_parquet(Path(dir) / f"IF_{config_file['Assortativity']['panel']}_markers.parquet")
+        if (Path(dir) / f"IF_{config_file['Assortativity']['panel']}_cell_pos_pheno.parquet").exists():
+            cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['Assortativity']['panel']}_cell_pos_pheno.parquet")
         else:
-            cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos.parquet")
+            cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['Assortativity']['panel']}_cell_pos.parquet")
         cell_pos.drop(columns='patient', inplace=True)
         cell_pos.drop(columns=define_sample_name(type), inplace=True)
         
@@ -186,7 +186,7 @@ def clean_net_stat(z_net_stats):
         z_net_stats, 
         method='mixed',
         thresh=0.8,
-        )
+        verbose=0)
     return z_net_stats_cleaned
 
 def correct_batch_effect(nodes_dir, marker_col, sample, save_dir):
@@ -244,7 +244,7 @@ def group_assort(net_stat, z_cols, save_dir, type, panel):
         ax_bar = fig.add_subplot(gs[1])
         ax_heat = fig.add_subplot(gs[0])
         if type == 'IF':
-            title = f"mean Z-scored assortativity for {type} with {config_file['IF_import']['panel']} panel dataset by cell types"
+            title = f"mean Z-scored assortativity for {type} with {config_file['Assortativity']['panel']} panel dataset by cell types"
         if type == 'IMC':
             title = f"mean Z-scored assortativity for {type} dataset by cell types"
             
@@ -278,8 +278,8 @@ def group_assort(net_stat, z_cols, save_dir, type, panel):
         plotting(df_plot)
     else:
         if type == 'IF':
-            title_hear = f"mean Z-scored assortativity for {type} with {config_file['IF_import']['panel']} panel dataset by cell types"
-            title_bar=f"Mean ± Std Assortativity per Cell-Type Pair for {type} with {config_file['IF_import']['panel']} panel"
+            title_hear = f"mean Z-scored assortativity for {type} with {config_file['Assortativity']['panel']} panel dataset by cell types"
+            title_bar=f"Mean ± Std Assortativity per Cell-Type Pair for {type} with {config_file['Assortativity']['panel']} panel"
         if type == 'IMC':
             title_heat = f"mean Z-scored assortativity for {type} dataset by cell types"
             title_bar=f"Mean ± Std Assortativity per Cell-Type Pair for {type} dataset"
@@ -335,12 +335,12 @@ def main(IF, IMC, config_file):
         cell_pos, markers, sample_cell = import_data('./output_data',type)
         sample = sample_are_present_in_data(sample_cell, sample_name[type])
         
-        if config_file['assortativity']['perform_batch']:
+        if config_file['Assortativity']['perform_batch']:
             dir_batch = Path(f"./output_data/{type}{panel}_networks_sample") / "batch"
             dir_batch.mkdir(parents=True, exist_ok=True)
             nodes_directory, nodes_corr_batch = correct_batch_effect(f"./output_data/{type}{panel}_networks_sample", 
                                                                      markers_col, sample_name[type], dir_batch) 
-        if config_file['assortativity']['perform_clr_transfo']:                                                      
+        if config_file['Assortativity']['perform_clr_transfo']:                                                      
             nodes_transfo(f"./output_data/{type}{panel}_networks_sample", 
                         markers_col, sample_name[type], sample_present=sample)
 
@@ -365,7 +365,6 @@ def main(IF, IMC, config_file):
         
         z_net_stat = group_assort(net_stat, z_cols, save_dir, type, panel)
     
-
     try:
         if IMC:
             if ((config_file['IMC_import']['present_in'] and config_file['tysserand']['IMC_perform']) or verif_file('IMC', define_panel('IMC'))):

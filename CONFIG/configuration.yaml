@@ -35,6 +35,7 @@ IMC_import:
   patient_columns: null
 tysserand:
   IF_perform: true
+  panel: C1
   IMC_perform: false
   cpu: 20
   k_neighbors_phenograph: 30
@@ -42,7 +43,8 @@ tysserand:
   method_tysserand: delaunay
   min_neighbors: 3
 Assortativity:
-  IF_perform: true
+  IF_perform: false
+  panel: C1
   IMC_perform: true
   perform_batch: false
   perform_clr_transfo: false
@@ -51,6 +53,7 @@ NAS:
   output_name_file: IMC_IF_Bram_PDAC_data_1
   IMC_perform: false
   IF_perform: true
+  panel: C2
   node_aggregation: true
   perform_NAS_all_sample: true
   nodes_aggregation:

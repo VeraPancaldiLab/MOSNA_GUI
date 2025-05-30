@@ -57,7 +57,7 @@ def define_panel(type):
     if type == 'IMC':
         panel = ''
     if type == 'IF':
-        panel = config_file['IF_import']['panel']
+        panel = config_file['NAS']['panel']
         panel = '_' + panel
     return panel
 
@@ -77,12 +77,12 @@ def get_config(config_path):
 
 def import_params(output_dir, pheno_col):
     uniq_phenotypes_IMC = pd.read_csv(output_dir / "description/IMC_phenotypes.csv").iloc[:, 0].to_numpy()
-    uniq_phenotypes_IF = pd.read_csv(output_dir / f"description/IF_{config_file['IF_import']['panel']}_phenotypes.csv").iloc[:, 0].to_numpy()
+    uniq_phenotypes_IF = pd.read_csv(output_dir / f"description/IF_{config_file['NAS']['panel']}_phenotypes.csv").iloc[:, 0].to_numpy()
     cell_types_IMC = pd.read_parquet(output_dir / "IMC_cell_pos_pheno.parquet")[pheno_col]
-    cell_types_IF = pd.read_parquet(output_dir / f"IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet")[pheno_col]
-    IF_markers = pd.read_csv(output_dir / f"description/IF_{config_file['IF_import']['panel']}_markers.csv").iloc[:, 0].to_list()
+    cell_types_IF = pd.read_parquet(output_dir / f"IF_{config_file['NAS']['panel']}_cell_pos_pheno.parquet")[pheno_col]
+    IF_markers = pd.read_csv(output_dir / f"description/IF_{config_file['NAS']['panel']}_markers.csv").iloc[:, 0].to_list()
     IMC_markers = pd.read_csv(output_dir / "description/IMC_markers.csv").iloc[:, 0].to_list()
-    IF_sample = pd.read_csv(output_dir / f"description/IF_{config_file['IF_import']['panel']}_file_description.csv", header=None).values.tolist()
+    IF_sample = pd.read_csv(output_dir / f"description/IF_{config_file['NAS']['panel']}_file_description.csv", header=None).values.tolist()
     IMC_sample = pd.read_csv(output_dir / "description/IMC_file_description.csv", header=None).values.tolist()
     return uniq_phenotypes_IF, uniq_phenotypes_IMC, cell_types_IF, cell_types_IMC, IF_markers, IMC_markers, IF_sample, IMC_sample
 

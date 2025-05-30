@@ -51,7 +51,7 @@ def define_panel(type):
     if type == 'IMC':
         panel = ''
     if type == 'IF':
-        panel = config_file['IF_import']['panel']
+        panel = config_file['tysserand']['panel']
         panel = '_' + panel
     return panel
 
@@ -85,10 +85,10 @@ def import_data(dir, type):
         cell_pos.drop(columns=define_sample_name(type), inplace=True)
         
     if type == 'IF':
-        sample_cell = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_sample_cell.parquet")
-        markers = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_markers.parquet")
-        if (Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet").exists():
-            cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet")
+        sample_cell = pd.read_parquet(Path(dir) / f"IF_{config_file['tysserand']['panel']}_sample_cell.parquet")
+        markers = pd.read_parquet(Path(dir) / f"IF_{config_file['tysserand']['panel']}_markers.parquet")
+        if (Path(dir) / f"IF_{config_file['tysserand']['panel']}_cell_pos_pheno.parquet").exists():
+            cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['tysserand']['panel']}_cell_pos_pheno.parquet")
         else:
             cell_pos = pd.read_parquet(Path(dir) / f"IF_cell_pos.parquet")
         cell_pos.drop(columns='patient', inplace=True)
@@ -127,8 +127,8 @@ def draw_tysserand_network(coords, clustering, patient, type, method='delaunay',
             plt.savefig(f"output_data/Tysserand_network/{type}_Tysserand_network_{patient}.png", bbox_inches="tight")
             plt.close(fig)
         if type == 'IF':
-            plt.title(f"Draw an {type} Tysserand network for panel {config_file['IF_import']['panel']} and patient {patient}", fontsize=30)
-            plt.savefig(f"output_data/Tysserand_network/{type}_{config_file['IF_import']['panel']}_Tysserand_network_{patient}.png", bbox_inches="tight")
+            plt.title(f"Draw an {type} Tysserand network for panel {config_file['tysserand']['panel']} and patient {patient}", fontsize=30)
+            plt.savefig(f"output_data/Tysserand_network/{type}_{config_file['tysserand']['panel']}_Tysserand_network_{patient}.png", bbox_inches="tight")
             plt.close(fig)
     else:
         if type == 'IMC':
@@ -136,8 +136,8 @@ def draw_tysserand_network(coords, clustering, patient, type, method='delaunay',
             plt.savefig(f"output_data/Tysserand_network/{type}_Tysserand_network_{patient}_{sample_name}_{sample}.png", bbox_inches="tight")
             plt.close(fig)
         if type == 'IF':
-            plt.title(f"Draw an {type} Tysserand network for panel {config_file['IF_import']['panel']} and patient {patient} and {sample_name} {sample}", fontsize=30)
-            plt.savefig(f"output_data/Tysserand_network/{type}_{config_file['IF_import']['panel']}_Tysserand_network_{patient}_{sample_name}_{sample}.png", bbox_inches="tight")
+            plt.title(f"Draw an {type} Tysserand network for panel {config_file['tysserand']['panel']} and patient {patient} and {sample_name} {sample}", fontsize=30)
+            plt.savefig(f"output_data/Tysserand_network/{type}_{config_file['tysserand']['panel']}_Tysserand_network_{patient}_{sample_name}_{sample}.png", bbox_inches="tight")
             plt.close(fig)
 
     del clusters_cmap, n_colors, celltypes_color_mapper, uniq, fig
@@ -230,8 +230,8 @@ def network_parallelization_process_patient_and_sample(patient_sample, sample_na
             edges.to_parquet(Path(f"output_data/{type}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
             nodes.to_parquet(Path(f"output_data/{type}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
         if type == 'IF':
-            edges.to_parquet(Path(f"output_data/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
-            nodes.to_parquet(Path(f"output_data/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+            edges.to_parquet(Path(f"output_data/{type}_{config_file['tysserand']['panel']}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+            nodes.to_parquet(Path(f"output_data/{type}_{config_file['tysserand']['panel']}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
         del edges, pairs, nodes
         gc.collect()
 
@@ -289,8 +289,8 @@ def network_parallelization_process_patient(patient, sample_name, IF_cell_pos, I
             edges.to_parquet(Path(f"output_data/{type}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
             nodes.to_parquet(Path(f"output_data/nodes/{type}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
         if type == 'IF':
-            edges.to_parquet(Path(f"output_data/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
-            nodes.to_parquet(Path(f"output_data/nodes/{type}_{config_file['IF_import']['panel']}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
+            edges.to_parquet(Path(f"output_data/{type}_{config_file['tysserand']['panel']}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
+            nodes.to_parquet(Path(f"output_data/nodes/{type}_{config_file['tysserand']['panel']}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
         del edges, pairs, nodes
         gc.collect()
 
@@ -398,7 +398,7 @@ def main(IF, IMC, config_file):
     try:
         if IF:
             if config_file['IF_import']['present_in'] or verif_file('IF', define_panel('IF')):
-                print(f"\t[INFO] process on {config_file['IF_import']['panel']} panel")
+                print(f"\t[INFO] process on {config_file['tysserand']['panel']} panel")
                 process('IF')
             else:
                 raise ValueError("There is no IF in your data")
