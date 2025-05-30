@@ -51,7 +51,7 @@ Assortativity:
 NAS:
   method: NAS
   output_name_file: IMC_IF_Bram_PDAC_data_1
-  IMC_perform: false
+  IMC_perform: true
   IF_perform: true
   panel: C2
   node_aggregation: true

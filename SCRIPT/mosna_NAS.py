@@ -295,6 +295,7 @@ def main(IF, IMC, config_file):
 
         network_dir = Path(f'./output_data/{type}{panel}_networks_sample')
         save_dir.mkdir(parents=True, exist_ok=True)
+        
         ######################################## Node aggregation ########################################
         
         if nodes_aggregation:
