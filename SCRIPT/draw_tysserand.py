@@ -37,6 +37,23 @@ mpl.rcParams["axes.facecolor"] = 'white'
 mpl.rcParams["savefig.facecolor"] = 'white'
 
 ########################################## Function ##########################################
+def verif_file(type, panel=None):
+    if os.path.isfile(f"./output_data/{type}{panel}_cell_pos.parquet") and \
+        os.path.isfile(f"./output_data/{type}{panel}_cell_pos_pheno.parquet") and \
+        os.path.isfile(f"./output_data/{type}{panel}_markers.parquet") and \
+        os.path.isfile(f"./output_data/{type}{panel}_sample_cell.parquet") and \
+        os.path.isdir(f'./output_data/{type}{panel}_networks_sample'):
+
+        return True
+    return False
+
+def define_panel(type):
+    if type == 'IMC':
+        panel = ''
+    if type == 'IF':
+        panel = config_file['IF_import']['panel']
+        panel = '_' + panel
+    return panel
 
 def get_arguments():
 
@@ -371,20 +388,21 @@ def main(IF, IMC, config_file):
 
     try:
         if IMC:
-            if not config_file['IMC_import']['present_in']:
-                raise ValueError("There is no IMC in your data")
-            else:
+            if config_file['IMC_import']['present_in'] or verif_file('IMC', define_panel('IMC')):
                 process('IMC')
+            else:
+                raise ValueError("There is no IMC in your data")
     except ValueError as e:
         print(f"IMC error: {e}")
 
     try:
         if IF:
-            if not config_file['IF_import']['present_in']:
-                raise ValueError("There is no IF in your data")
-            else:
+            if config_file['IF_import']['present_in'] or verif_file('IF', define_panel('IF')):
+                print(f"\t[INFO] process on {config_file['IF_import']['panel']} panel")
                 process('IF')
-                print(f'\t[INFO] process on {config_file['IF_import']['panel']} panel')
+            else:
+                raise ValueError("There is no IF in your data")
+
     except ValueError as e:
         print(f"IF error: {e}")
 

@@ -42,6 +42,23 @@ mpl.rcParams["axes.facecolor"] = 'white'
 mpl.rcParams["savefig.facecolor"] = 'white'
 
 ########################################## Function ##########################################
+def verif_file(type, panel=None):
+    if os.path.isfile(f"./output_data/{type}{panel}_cell_pos.parquet") and \
+        os.path.isfile(f"./output_data/{type}{panel}_cell_pos_pheno.parquet") and \
+        os.path.isfile(f"./output_data/{type}{panel}_markers.parquet") and \
+        os.path.isfile(f"./output_data/{type}{panel}_sample_cell.parquet") and \
+        os.path.isdir(f'./output_data/{type}{panel}_networks_sample'):
+
+        return True
+    return False
+
+def define_panel(type):
+    if type == 'IMC':
+        panel = ''
+    if type == 'IF':
+        panel = config_file['IF_import']['panel']
+        panel = '_' + panel
+    return panel
 
 def get_arguments():
 
@@ -311,12 +328,8 @@ def main(IF, IMC, config_file):
     save_dir.mkdir(parents=True, exist_ok=True)
 
     def process(type, config_file):
-        if type == 'IMC':
-            panel = ''
-        if type == 'IF':
-            panel = config_file['IF_import']['panel']
-            panel = '_' + panel
 
+        panel = define_panel(type)
         markers_col = pd.read_csv(f'./output_data/description/{type}{panel}_markers.csv', header=None)[0].tolist()
         pheno = pd.read_csv(f'./output_data/description/{type}{panel}_phenotypes.csv', header=None)[0].tolist()
 
@@ -357,19 +370,20 @@ def main(IF, IMC, config_file):
 
     try:
         if IMC:
-            if not config_file['IMC_import']['present_in'] or not config_file['tysserand']['IMC_perform']:
-                raise ValueError("There is no IMC in your data or the Tysserand networks were not generated")
-            else:
+            if ((config_file['IMC_import']['present_in'] and config_file['tysserand']['IMC_perform']) or verif_file('IMC', define_panel('IMC'))):
                 process('IMC', config_file)
+            else:
+                raise ValueError("There is no IMC in your data or the Tysserand networks were not generated")
     except ValueError as e:
         print(f"IMC error: {e}")
 
     try:
         if IF:
-            if not config_file['IF_import']['present_in'] or not config_file['tysserand']['IF_perform']:
-                raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
-            else:
+            if ((config_file['IF_import']['present_in'] and config_file['tysserand']['IF_perform']) or verif_file('IF', define_panel('IF'))):
                 process('IF', config_file)
+            else:
+                raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
+                
     except ValueError as e:
         print(f"IF error: {e}")
 

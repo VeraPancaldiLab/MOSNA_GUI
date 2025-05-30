@@ -7,7 +7,7 @@ add_pheno: true
 IF_import:
   present_in: true
   directory_path: data/processed/Bram_data/IF_merged_by_patient/
-  panel: C2
+  panel: C1
   path_encoding_patient: null
   path_file_to_patient: data/processed/Bram_data/file_to_patient/IF_file_to_patient.csv
   normalize: false
