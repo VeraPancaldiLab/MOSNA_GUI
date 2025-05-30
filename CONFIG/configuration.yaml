@@ -43,7 +43,7 @@ tysserand:
   method_tysserand: delaunay
   min_neighbors: 3
 Assortativity:
-  IF_perform: false
+  IF_perform: true
   panel: C1
   IMC_perform: true
   perform_batch: false

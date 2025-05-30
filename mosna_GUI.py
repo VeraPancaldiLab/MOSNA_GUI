@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QPushButton, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel, QLineEdit,
     QTextEdit, QFormLayout, QScrollArea
 )
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QThread, Signal
 from PySide6.QtGui import QTextCursor
 CONFIG_PATH = 'CONFIG/configuration.yaml'
 SCRIPTS = [
@@ -20,7 +20,31 @@ SCRIPTS = [
     'mosna_assortativity.sh',
     'mosna_NAS.sh'
 ]
+class ScriptRunnerThread(QThread):
+    output_signal = Signal(str)
+    finished_signal = Signal(bool, int)  # success, returncode
 
+    def __init__(self, script_path):
+        super().__init__()
+        self.script_path = script_path
+
+    def run(self):
+        try:
+            proc = subprocess.Popen(
+                ['bash', self.script_path],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                bufsize=1,
+                text=True
+            )
+            for line in proc.stdout:
+                self.output_signal.emit(line)
+            proc.stdout.close()
+            returncode = proc.wait()
+            self.finished_signal.emit(returncode == 0, returncode)
+        except Exception as e:
+            self.output_signal.emit(f"[!] Error: {e}\n")
+            self.finished_signal.emit(False, -1)
 class FlowStyleList(list):
     pass
 def represent_flow_style_list(dumper, data):
@@ -43,6 +67,14 @@ class MosnaGUI(QMainWindow):
 
         self._load_config()
         self._build_ui()
+
+    def _on_script_finished(self, script, success, returncode):
+        if success:
+            self._append_console(f"[✓] Script completed: {script}\n")
+            QMessageBox.information(self, "Success", f"Script completed: {os.path.basename(script)}")
+        else:
+            self._append_console(f"[✗] Script failed (code {returncode}): {script}\n")
+            QMessageBox.critical(self, "Error", f"Script failed: {script}\nExit code: {returncode}")
 
     def _load_config(self):
         try:
@@ -270,37 +302,22 @@ class MosnaGUI(QMainWindow):
         if not os.path.isfile(script):
             QMessageBox.warning(self, "Missing", f"Script not found: {script}")
             return
-
         self._append_console(f"\n$ bash {script}\n{'='*60}\n")
 
-        try:
-            proc = subprocess.Popen(
-                ['bash', script],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                bufsize=1,
-                text=True
-            )
-
-            for line in proc.stdout:
-                self._append_console(line)  # line contient le \n à la fin
-
-            proc.stdout.close()
-            returncode = proc.wait()
-
-            if returncode == 0:
-                self._append_console(f"[✓] Script completed: {script}\n")
-                QMessageBox.information(self, "Success", f"Script completed: {os.path.basename(script)}")
-            else:
-                self._append_console(f"[✗] Script failed (code {returncode}): {script}\n")
-                QMessageBox.critical(self, "Error", f"Script failed: {script}\nExit code: {returncode}")
-
-        except Exception as e:
-            self._append_console(f"[!] Error running script {script}:\n{e}\n")
-            QMessageBox.critical(self, "Error", f"Script error: {e}")
+        self.script_thread = ScriptRunnerThread(script)
+        self.script_thread.output_signal.connect(self._append_console)
+        self.script_thread.finished_signal.connect(lambda success, code: self._on_script_finished(script, success, code))
+        self.script_thread.start()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
+
+    try:
+        with open("./SCRIPT/style.qss") as f:
+            app.setStyleSheet(f.read())
+    except Exception as e:
+        print(f"Impossible to download the style file : {e}")
+    
     window = MosnaGUI()
     window.resize(2000, 1600)
     window.show()

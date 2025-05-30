@@ -1,4 +1,3 @@
-print('############ Import and LOG ############')
 import os
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 import sys
@@ -95,10 +94,10 @@ def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, s
         sample_name = 'sample'
 
     if (output_dir / f'{file_type}_aggregation_stats.parquet').exists():
-        print(f'Load aggregation statistics from {file_type}')
+        print(f'\t[INFO] Load aggregation statistics from {file_type}')
         var_aggreg = pd.read_parquet(output_dir / f'{file_type}_aggregation_stats.parquet')
     else:
-        print(f'Compute aggregation statistics from {file_type}')
+        print(f'\t[INFO] Compute aggregation statistics from {file_type}')
         var_aggreg = mosna.compute_spatial_omic_features_all_networks(
             method=method,
             nodes_dir=network_dir,
@@ -337,9 +336,9 @@ def main(IF, IMC, config_file):
 
             for patient, sample in tqdm(tab_sample, desc= f'{type} niches'):
                 if type == 'IMC':
-                    tqdm.write(f"\nniches for patient {patient} and ROI {sample}")
+                    tqdm.write(f"\n\t[INFO] niches for patient {patient} and ROI {sample}")
                 else:
-                    tqdm.write(f"\nniches for patient {patient} and layer {sample}")
+                    tqdm.write(f"\n\t[INFO] niches for patient {patient} and layer {sample}")
                 save_dir_data = save_dir / f'{type}{panel}'
                 save_directory = save_dir_data / f"normalization_{normalize}"
                 save_directory.mkdir(parents=True, exist_ok=True)
@@ -380,7 +379,7 @@ def main(IF, IMC, config_file):
             else:
                 raise ValueError("There is no IMC in your data or the Tysserand networks were not generated")
     except ValueError as e:
-        print(f"IMC error: {e}")
+        print(f"\t[INFO] IMC error: {e}")
 
     try:
         if IF:
@@ -390,11 +389,11 @@ def main(IF, IMC, config_file):
                 raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
                 
     except ValueError as e:
-        print(f"IF error: {e}")
+        print(f"\t[INFO] IF error: {e}")
 
 
 if __name__ == "__main__":
-    print('\n\n############ Perform NAS ############\n')
+    print('\n\n[NAS]')
     config_path = get_arguments()
     config_file = get_config(config_path)   
     main(config_file['NAS']['IF_perform'],

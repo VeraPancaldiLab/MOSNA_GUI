@@ -233,7 +233,7 @@ def group_assort(net_stat, z_cols, save_dir, type, panel):
                 'is_auto': i == j
             })
     df_plot = pd.DataFrame(data)
-    df_plot["color"] = df_plot["is_auto"].map({True: "crimson", False: "steelblue"})
+    df_plot["color"] = df_plot["is_auto"].map({True: "darkorange", False: "seagreen"})
     df_plot = df_plot.sort_values(by="mean")
 
     sns.set_context("notebook")
@@ -360,7 +360,7 @@ def main(IF, IMC, config_file):
         save_dir_type = save_dir / f"figures/{type}{panel}"
         save_dir_type.mkdir(parents=True, exist_ok=True)
         
-        for id in tqdm(list_id, desc=f"\[PROCESS]  └─ Processing assortativity for {type}"):
+        for id in tqdm(list_id, desc=f"\t[PROCESS]  └─ Processing assortativity for {type}"):
             z_cols = plot_mix_mat(save_dir_type, clean_net_stat(net_stat), id, type, panel)
         
         z_net_stat = group_assort(net_stat, z_cols, save_dir, type, panel)
