@@ -44,18 +44,10 @@ then cd /path/to/mosna_benchmark/
 
 ## To install directly my env you can make the following steps :
 
-clone my repo and run this scrip : 
+clone my repo and run this:
 
-    cd Mosna_analysis
-    conda env create -f mosna.yml -n mosna
-    conda activate mosna
-    cd mosna
-    pip install -e .
-    pip install scipy==1.13
-
-## package installation for Ubuntu
-
-    sudo apt install jq
+    chmod +x setup.sh
+    ./setup.sh
 
 # Tool
 
@@ -85,8 +77,8 @@ This step generate Tysserand networks for each patient/sample
 ### Step 3: Generate Assortativity
 
 
-
 ### Step 4: Plot Niches Analysis
+
 
 # Exemple of using
 
