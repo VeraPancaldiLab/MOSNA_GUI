@@ -254,7 +254,7 @@ class MosnaGUI(QMainWindow):
         layout.addLayout(btn_layout)
 
         for s in SCRIPTS:
-            b = QPushButton(f"Run {os.path.basename(s)}")
+            b = QPushButton(f"Run {os.path.splitext(os.path.basename(s))[0].replace('_', ' ')}")
             b.clicked.connect(lambda _, sc=s: self._run_script(sc))
             btn_layout.addWidget(b)
 
