@@ -12,7 +12,7 @@
     - [Niches Composition](#niches-composition)
 
 The purpose of this tool is to facilitate the using of MOSNA and Tysserand, two package made by PancaldiLAB to build spatial networks and to analyse them with statistics.
-This tool provide a GUI to generate easily the networks and other spatial analyse.   
+This tool provide a GUI to generate easily the networks and other spatial analyse.
 
 # Installation
 
@@ -20,7 +20,7 @@ First clone this repo :
 
     git clone https://github.com/AlexCoul/mosna.git
 
-## To install only mosna lib and ohter dependancies you can make the following steps :
+## To install only mosna lib and ohter dependancies you can make the following steps
 
 To use mosna with GPU-compatible libraries, you can try:
 
@@ -42,7 +42,7 @@ then cd /path/to/mosna_benchmark/
     pip install -e .
     pip install scipy==1.13
 
-## To install directly my env you can make the following steps :
+## To install directly my env you can make the following steps
 
 clone my repo and run this:
 
