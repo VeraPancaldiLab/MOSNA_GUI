@@ -309,7 +309,7 @@ class MosnaGUI(QMainWindow):
 
         self.tabs.addTab(tab, "Documentation")
 
-    def _parse_value(self, widget):
+    def _parse_value(self, key, widget):
         if isinstance(widget, QTextEdit):
             val = widget.toPlainText().strip()
         elif isinstance(widget, QComboBox):
@@ -317,6 +317,8 @@ class MosnaGUI(QMainWindow):
         else:
             val = widget.text().strip()
 
+        if key.lower() == "order":
+            return val
         if val.lower() in ('none', 'null', ''):
             return None
         if val.lower() in ('true', 'false'):
@@ -342,24 +344,34 @@ class MosnaGUI(QMainWindow):
 
     def _on_save(self):
         new = {}
+        # Conserver éventuellement la clé "documentation"
         if 'documentation' in self.config_data:
             new['documentation'] = self.config_data['documentation']
+
         for sec, its in self.entries.items():
             if sec == '__general__':
+                # Pour les clés générales (non-nested)
                 for k, w in its.items():
-                    new[k] = self._parse_value(w)
+                    new[k] = self._parse_value(k, w)
             else:
+                # Pour les sections imbriquées, par ex "NAS__some_subsection"
                 keys = sec.split('__')
                 target = new
                 for key in keys[:-1]:
                     target = target.setdefault(key, {})
-                target[keys[-1]] = {k: self._parse_value(w) for k, w in its.items()}
-        self.config_data = new
+                # On construit le dict final pour cette sous-section
+                target[keys[-1]] = {
+                    k: self._parse_value(k, w)
+                    for k, w in its.items()
+                }
+
+        # Réassembler "documentation" en fin de fichier si nécessaire
         try:
-            doc = self.config_data.pop('documentation', None)
-            ordered = dict(self.config_data)
+            doc = new.pop('documentation', None)
+            ordered = dict(new)
             if doc is not None:
                 ordered['documentation'] = doc
+
             with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
                 yaml.safe_dump(
                     force_inline_lists(ordered),
