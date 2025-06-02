@@ -58,7 +58,7 @@ NAS:
   perform_NAS_all_sample: true
   nodes_aggregation:
     IF:
-      order: 1
+      order: '1'
       stat_funcs: np.mean,np.std
       stat_names: [mean, std]
       clusterer_type: gmm
@@ -73,7 +73,7 @@ NAS:
       k_cluster: 15
       normalize: niche
     IMC:
-      order: 2
+      order: '2'
       stat_funcs: np.mean,np.std
       stat_names: [mean, std]
       clusterer_type: gmm
@@ -88,7 +88,7 @@ NAS:
       k_cluster: 15
       normalize: niche
   IF:
-    order: 1
+    order: '1'
     stat_funcs: np.mean,np.std
     stat_names: [mean, std]
     clusterer_type: gmm
@@ -103,7 +103,7 @@ NAS:
     k_cluster: 15
     normalize: niche
   IMC:
-    order: 2
+    order: '2'
     stat_funcs: np.mean,np.std
     stat_names: [mean, std]
     clusterer_type: leiden

@@ -116,7 +116,63 @@ class MosnaGUI(QMainWindow):
             if value in options:
                 combo.setCurrentText(value)
             return combo
-
+        
+        elif lower_key in ['reducer_type'] and isinstance(value, str):
+            options = ['umap']
+            combo = QComboBox()
+            combo.addItems(options)
+            if value in options:
+                combo.setCurrentText(value)
+            return combo
+        
+        elif lower_key in ['clusterer_type'] and isinstance(value, str):
+            options = ['leiden','ecg','spectral','gmm']
+            combo = QComboBox()
+            combo.addItems(options)
+            if value in options:
+                combo.setCurrentText(value)
+            return combo
+        
+        elif lower_key in ['order'] and isinstance(value, str):
+            options = ['1','2']
+            combo = QComboBox()
+            combo.addItems(options)
+            if value in options:
+                combo.setCurrentText(value)
+            return combo
+        
+        elif lower_key in ['metrics'] and isinstance(value, str):
+            options = ['euclidean','minkowski']
+            combo = QComboBox()
+            combo.addItems(options)
+            if value in options:
+                combo.setCurrentText(value)
+            return combo
+        
+        elif lower_key in ['primary_metric_phenograph'] and isinstance(value, str):
+            options = ['minkowski']
+            combo = QComboBox()
+            combo.addItems(options)
+            if value in options:
+                combo.setCurrentText(value)
+            return combo
+        
+        elif lower_key in ['method_tysserand'] and isinstance(value, str):
+            options = ['delaunay','knn']
+            combo = QComboBox()
+            combo.addItems(options)
+            if value in options:
+                combo.setCurrentText(value)
+            return combo
+        
+        elif lower_key in ['stat_funcs'] and isinstance(value, str):
+            options = ['np.mean,np.std','np.mean']
+            combo = QComboBox()
+            combo.addItems(options)
+            if value in options:
+                combo.setCurrentText(value)
+            return combo
+        
         if isinstance(value, str) and ('\n' in value or '\t' in value):
             text_edit = QTextEdit()
             text_edit.setPlainText(value)
