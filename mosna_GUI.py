@@ -403,10 +403,10 @@ class MosnaGUI(QMainWindow):
                     else:
                         noms_types = expected_type.__name__
                     QMessageBox.warning(
-                        self, "Type incorrect",
-                        f"Pour la clé '{key}' :\n"
-                        f"on attendait un(e) {noms_types} mais reçu un(e) "
-                        f"{type(value).__name__}.\nValeur fournie : {value!r}"
+                        self, "Incorrect type",
+                        f"For the key '{key}' :\n"
+                        f"We wanted those types {noms_types} but you pick"
+                        f"{type(value).__name__}.\nFor this value : {value!r}"
                     )
                     return False
         return True
