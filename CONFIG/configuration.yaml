@@ -11,11 +11,11 @@ IF_import:
   columns_to_drop: null
   layer_columns: ROI_ID
   patient_columns: Patient_ID
-  phenotypes:
+  phenotypes: null
   marker_columns: '3:5'
   cell_id_columns: 0
   spatial_columns: '1:2'
-  normalize: false
+  normalize_data: false
   re_index: false
   there_is_duplicata: true
 IMC_import:
@@ -26,11 +26,11 @@ IMC_import:
   columns_to_drop: 'Unnamed: 0'
   layer_columns: null
   patient_columns: null
-  phenotypes:
+  phenotypes: null
   marker_columns: 0:19 21:33
   cell_id_columns: 20
   spatial_columns: '34:35'
-  normalize: true
+  normalize_data: true
   re_index: true
   there_is_duplicata: false
 tysserand:

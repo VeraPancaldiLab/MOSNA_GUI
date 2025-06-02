@@ -70,6 +70,54 @@ class MosnaGUI(QMainWindow):
 
         self._load_config()
         self._build_ui()
+        self.expected_types = {
+            "silent":        (bool, type(None)),
+            "phenograph":    (bool, type(None)),
+            "pheno_dir":     (str,  type(None)),
+            "add_pheno":     (bool, type(None)),
+            "present_in":          (bool,    type(None)),
+            "directory_path":      (str,     type(None)),
+            "path_encoding_patient": (str,   type(None)), 
+            "path_file_to_patient":  (str,   type(None)),
+            "phenotypes":            (str,  type(None)), 
+            "columns_to_drop":      (str,   type(None)),
+            "layer_columns":        (str,   type(None)),
+            "patient_columns":      (str,   type(None)),
+            "marker_columns":       (str,   type(None)),
+            "cell_id_columns":      (int,   type(None)),
+            "spatial_columns":      (str,   type(None)),
+            "normalize_data":            (bool,  type(None)),
+            "re_index":             (bool,  type(None)),
+            "there_is_duplicata":   (bool,  type(None)),
+            "cpu":                    (int,  type(None)),
+            "k_neighbors_phenograph": (int,  type(None)),
+            "panel": (str, type(None)),
+            "primary_metric_phenograph": (str, type(None)),
+            "method_tysserand":        (str, type(None)),
+            "min_neighbors":           (int, type(None)),
+            "IF_perform":            (bool, type(None)),
+            "IMC_perform":           (bool, type(None)),
+            "perform_batch":         (bool, type(None)),
+            "perform_clr_transfo":   (bool, type(None)),
+            "method":                (str,  type(None)),
+            "output_name_file":      (str,  type(None)),
+            "node_aggregation":      (bool, type(None)),
+            "perform_NAS_all_sample": (bool, type(None)),
+            "order":           (str,   type(None)),
+            "stat_funcs":      (str,   type(None)),
+            "stat_names":      (list,  type(None)),
+            "clusterer_type":  (str,   type(None)),
+            "n_clusters":      (int,   type(None)),
+            "reducer_type":    (str,   type(None)),
+            "metric":          (str,   type(None)),
+            "resolution":      (float, type(None)),
+            "n_neighbors":     (int,   type(None)),
+            "min_dist":        (float, type(None)),
+            "dim_clust":       (int,   type(None)),
+            "min_cluster_size":(int,   type(None)),
+            "k_cluster":       (int,   type(None)),
+            "normalize":       (str,   type(None)),
+        }
 
     def _on_script_finished(self, script, success, returncode):
         if success:
@@ -342,9 +390,32 @@ class MosnaGUI(QMainWindow):
 
         return val
 
+    def _simple_validate(self):
+        for section_key, widgets_dict in self.entries.items():
+            for key, widget in widgets_dict.items():
+                value = self._parse_value(key, widget)
+
+                expected_type = self.expected_types[key]
+
+                if not isinstance(value, expected_type):
+                    if isinstance(expected_type, tuple):
+                        noms_types = ", ".join(t.__name__ for t in expected_type)
+                    else:
+                        noms_types = expected_type.__name__
+                    QMessageBox.warning(
+                        self, "Type incorrect",
+                        f"Pour la clé '{key}' :\n"
+                        f"on attendait un(e) {noms_types} mais reçu un(e) "
+                        f"{type(value).__name__}.\nValeur fournie : {value!r}"
+                    )
+                    return False
+        return True
+
     def _on_save(self):
+        if not self._simple_validate():
+            return
+        
         new = {}
-        # Conserver éventuellement la clé "documentation"
         if 'documentation' in self.config_data:
             new['documentation'] = self.config_data['documentation']
 

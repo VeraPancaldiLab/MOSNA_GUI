@@ -95,7 +95,7 @@ You must fill **General**, **IF_import** and **IMC_import** sections.
   - marker_columns: 
   - cell_id_columns: 
   - spatial_columns: 
-  - normalize: 
+  - normalize_data: 
   - re_index: 
   - there_is_duplicata: 
 
@@ -110,7 +110,7 @@ You must fill **General**, **IF_import** and **IMC_import** sections.
   - marker_columns: 
   - cell_id_columns: 
   - spatial_columns: 
-  - normalize: 
+  - normalize_data: 
   - re_index: 
   - there_is_duplicata: 
 
