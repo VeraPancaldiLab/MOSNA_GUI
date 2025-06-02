@@ -72,15 +72,19 @@ The pre-processing step is required to generate temp file needed for the followi
 - sample_cell = patient and sample for each cell
 - markers = all biomarkers for each cell sort by sample and patient
 
+You must fill **General**, **IF_import** and **IMC_import** sections.
+
 ### Step 2: Draw Tysserand Spatial Networks
 
-This step generate Tysserand networks for each patient/sample
+This step generate Tysserand networks for each patient/sample. You must fill **Tysserand** section.
 
 ### Step 3: Generate Assortativity
 
+For this step you must fill **Assortativity** section. This step allow you to generate assortativity for each patient/sample networks and for an aggregate data of one type of data (all IF for one panel for exemple)
 
 ### Step 4: Plot Niches Analysis
 
+In this step you must fill **NAS** section. This step will generate for you niches composition and all networks recolored by niche for each patient/sample and also the niche composition for aggregated nodes for all images of one type. 
 
 # Exemple of using
 
