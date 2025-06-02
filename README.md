@@ -75,99 +75,99 @@ The pre-processing step is required to generate temp file needed for the followi
 You must fill **General**, **IF_import** and **IMC_import** sections.
 
 **General:**
-    save_file: 
-    silent: 
-    pheno_dir:
-    test: 
-    phenograph: 
-    add_pheno: 
+  - save_file: 
+  - silent: 
+  - pheno_dir:
+  - test: 
+  - phenograph: 
+  - add_pheno: 
 
 **IF_import:**
-  present_in: 
-  directory_path: 
-  panel: 
-  path_encoding_patient: 
-  path_file_to_patient: 
-  normalize: 
-  re_index: 
-  there_is_duplicata: 
-  columns_to_drop: 
-  marker_columns: 
-  cell_id_columns: 
-  spatial_columns: 
-  layer_columns: 
-  patient_columns: 
+  - present_in: 
+  - directory_path: 
+  - panel: 
+  - path_encoding_patient: 
+  - path_file_to_patient: 
+  - normalize: 
+  - re_index: 
+  - there_is_duplicata: 
+  - columns_to_drop: 
+  - marker_columns: 
+  - cell_id_columns: 
+  - spatial_columns: 
+  - layer_columns: 
+  - patient_columns: 
 
 **IMC_import:**
-  present_in: 
-  directory_path: 
-  path_encoding_patient: 
-  path_file_to_patient: 
-  normalize: 
-  re_index: 
-  there_is_duplicata: 
-  columns_to_drop: 
-  marker_columns: 
-  cell_id_columns: 
-  spatial_columns: 
-  layer_columns: 
-  patient_columns: 
+  - present_in: 
+  - directory_path: 
+  - path_encoding_patient: 
+  - path_file_to_patient: 
+  - normalize: 
+  - re_index: 
+  - there_is_duplicata: 
+  - columns_to_drop: 
+  - marker_columns: 
+  - cell_id_columns: 
+  - spatial_columns: 
+  - layer_columns: 
+  - patient_columns: 
 
 ### Step 2: Draw Tysserand Spatial Networks
 
 This step generate Tysserand networks for each patient/sample. You must fill **Tysserand** section.
 
 **tysserand:**
-  IF_perform: 
-  panel: 
-  IMC_perform: 
-  cpu: 
-  k_neighbors_phenograph: 
-  primary_metric_phenograph: 
-  method_tysserand: 
-  min_neighbors: 
+  - IF_perform: 
+  - panel: 
+  - IMC_perform: 
+  - cpu: 
+  - k_neighbors_phenograph: 
+  - primary_metric_phenograph: 
+  - method_tysserand: 
+  - min_neighbors: 
 
 ### Step 3: Generate Assortativity
 
 For this step you must fill **Assortativity** section. This step allow you to generate assortativity for each patient/sample networks and for an aggregate data of one type of data (all IF for one panel for exemple)
 
 **Assortativity:**
-  IF_perform: 
-  panel: 
-  IMC_perform: 
-  perform_batch: 
-  perform_clr_transfo: 
+  - IF_perform: 
+  - panel: 
+  - IMC_perform: 
+  - perform_batch: 
+  - perform_clr_transfo: 
 
 ### Step 4: Plot Niches Analysis
 
 In this step you must fill **NAS** section. This step will generate for you niches composition and all networks recolored by niche for each patient/sample and also the niche composition for aggregated nodes for all images of one type. 
 
 **NAS:**
-  method: 
-  output_name_file: 
-  IMC_perform: 
-  IF_perform: 
-  panel: 
-  node_aggregation: 
-  perform_NAS_all_sample: 
+  - method: 
+  - output_name_file: 
+  - IMC_perform: 
+  - IF_perform: 
+  - panel: 
+  - node_aggregation: 
+  - perform_NAS_all_sample: 
 
 And for each niche clustering and plotting (IF and IMC nodes aggregation, IF and IMC for each patient/sample):
 
 **Niche clustering parameters:**
-    order: 
-    stat_funcs: 
-    stat_names: 
-    clusterer_type: 
-    n_clusters: 
-    reducer_type: 
-    metric: 
-    resolution: 
-    n_neighbors: 
-    min_dist: 
-    dim_clust: 
-    min_cluster_size:
-    k_cluster: 
-    normalize: 
+  - order: 
+  - stat_funcs: 
+  - stat_names: 
+  - clusterer_type: 
+  - n_clusters: 
+  - reducer_type: 
+  - metric: 
+  - resolution: 
+  - n_neighbors: 
+  - min_dist: 
+  - dim_clust: 
+  - min_cluster_size:
+  - k_cluster: 
+  - normalize: 
 
 # Exemple of using
 
