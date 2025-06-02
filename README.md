@@ -11,9 +11,6 @@
     - [Assortativity](#assortativity)
     - [Niches Composition](#niches-composition)
 
-The purpose of this tool is to facilitate the using of MOSNA and Tysserand, two package made by PancaldiLAB to build spatial networks and to analyse them with statistics.
-This tool provide a GUI to generate easily the networks and other spatial analyse.
-
 # Installation
 
 First clone this repo :
@@ -51,9 +48,14 @@ clone my repo and run this:
 
 # Tool
 
+The purpose of this tool is to facilitate the using of MOSNA and Tysserand, two package made by PancaldiLAB to build spatial networks and to analyse them with statistics.
+This tool provide a GUI to generate easily the networks and other spatial analyse.
+
 ## Tool architecture 
 
-You must follow this architecture provided to make it works.
+You must follow this architecture provided to make it works:
+
+![Mon Image](images/Tool_architecture.png)
 
 ## Graphic Interface to control your using
 
