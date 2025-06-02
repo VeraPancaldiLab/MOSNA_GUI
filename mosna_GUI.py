@@ -9,17 +9,20 @@ from yaml.representer import SafeRepresenter
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QFileDialog, QMessageBox,
     QPushButton, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel, QLineEdit,
-    QTextEdit, QFormLayout, QScrollArea
+    QTextEdit, QFormLayout, QScrollArea, QComboBox
 )
 from PySide6.QtCore import Qt, QTimer, QThread, Signal
 from PySide6.QtGui import QTextCursor
+
 CONFIG_PATH = 'CONFIG/configuration.yaml'
 SCRIPTS = [
     'SCRIPT/pre_processing.sh',
     'SCRIPT/draw_tysserand_IMC_IF.sh',
     'SCRIPT/mosna_assortativity.sh',
-    'SCRIPT/mosna_NAS.sh'
+    'SCRIPT/mosna_NAS.sh',
+    'SCRIPT/clear_temporary_files.sh'
 ]
+
 class ScriptRunnerThread(QThread):
     output_signal = Signal(str)
     finished_signal = Signal(bool, int)  # success, returncode
@@ -98,6 +101,29 @@ class MosnaGUI(QMainWindow):
             return {k: self._normalize_config(_safe_eval(v)) for k, v in d.items()}
         return d
 
+    def _get_widget_for_value(self, key, value):
+        if isinstance(value, bool):
+            combo = QComboBox()
+            combo.addItems(['True', 'False'])
+            combo.setCurrentText(str(value))
+            return combo
+
+        lower_key = key.lower()
+        if lower_key in ['method'] and isinstance(value, str):
+            options = ['NAS']
+            combo = QComboBox()
+            combo.addItems(options)
+            if value in options:
+                combo.setCurrentText(value)
+            return combo
+
+        if isinstance(value, str) and ('\n' in value or '\t' in value):
+            text_edit = QTextEdit()
+            text_edit.setPlainText(value)
+            return text_edit
+
+        return QLineEdit(str(value))
+
     def _build_ui(self):
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
@@ -146,11 +172,7 @@ class MosnaGUI(QMainWindow):
 
         for k, v in data.items():
             label = QLabel(k)
-            if isinstance(v, str) and ('\n' in v or '\t' in v):
-                widget = QTextEdit()
-                widget.setPlainText(v)
-            else:
-                widget = QLineEdit(str(v))
+            widget = self._get_widget_for_value(k, v)
             form_layout.addRow(label, widget)
             self.entries.setdefault(section_key, {})[k] = widget
 
@@ -203,11 +225,7 @@ class MosnaGUI(QMainWindow):
         layout = QFormLayout(widget)
         for k, v in data.items():
             label = QLabel(k)
-            if isinstance(v, str) and ('\n' in v or '\t' in v):
-                widget_field = QTextEdit()
-                widget_field.setPlainText(v)
-            else:
-                widget_field = QLineEdit(str(v))
+            widget_field = self._get_widget_for_value(k, v)
             layout.addRow(label, widget_field)
             self.entries.setdefault(section_key, {})[k] = widget_field
         tab_widget.addTab(widget, name)
@@ -238,6 +256,8 @@ class MosnaGUI(QMainWindow):
     def _parse_value(self, widget):
         if isinstance(widget, QTextEdit):
             val = widget.toPlainText().strip()
+        elif isinstance(widget, QComboBox):
+            val = widget.currentText().strip()
         else:
             val = widget.text().strip()
 

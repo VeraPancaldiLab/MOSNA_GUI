@@ -169,6 +169,8 @@ And for each niche clustering and plotting (IF and IMC nodes aggregation, IF and
   - k_cluster: 
   - normalize: 
 
+### Step 5: Remove all temporary file in output_data file
+
 # Exemple of using
 
 In this part we will provide an example of this tool step by step
