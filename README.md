@@ -10,6 +10,7 @@
     - [Tysserand Network](#tysserand-network)
     - [Assortativity](#assortativity)
     - [Niches Composition](#niches-composition)
+
 The purpose of this tool is to facilitate the using of MOSNA and Tysserand, two package made by PancaldiLAB to build spatial networks and to analyse them with statistics.
 This tool provide a GUI to generate easily the networks and other spatial analyse.   
 
@@ -96,35 +97,53 @@ In this part we will provide an example of this tool step by step
 In this all part, different spatial networks plots are present
 
 ### IMC tysserand network
-![Mon Image](images/IMC_Tysserand_network_A_ROI_01.png)
+![Mon Image](images/network/IMC_Tysserand_network_A_ROI_01.png)
 
 ### IF first panel tysserand network
-![Mon Image](images/IF_C1_Tysserand_network_C_layer_1.png)
+![Mon Image](images/network/IF_C1_Tysserand_network_C_layer_1.png)
 
 ### IF second panel tysserand network
-![Mon Image](images/IF_C2_Tysserand_network_B_layer_3.png)
+![Mon Image](images/network/IF_C2_Tysserand_network_B_layer_3.png)
 
 ## Assortativity
 
 In this part, all different assortativity plots are present
 
-### IF assortativity for each patient/sample
+### IF assortativity for one patient/sample
+![Mon Image](images/assort/assortativity_z-scored_patient-A_layer-1.png)
 
-### IMC assortativity for each patient/sample
+### IMC assortativity for one patient/sample
+![mon image](images/assort/assortativity_z-scored_patient-A_ROI-01.png)
 
 ### IF assortativity aggregated by mean
-![Mon Image](images/assortativity_z-scored_IF_C1.png)
-![Mon Image](images/assortativity_z-scored_IF_C2.png)
+![Mon Image](images/assort/assortativity_z-scored_IF_C1.png)
+![Mon Image](images/assort/assortativity_z-scored_IF_C2.png)
 
 ### IMC assortativity aggregated by mean
-![Mon Image](images/assortativity_z-scored_IMC.png)
+![Mon Image](images/assort/assortativity_z-scored_IMC.png)
 In this image only the most important z-score (absolute values) are present to keep this plot visible
 
 Here the real barplot with all tuples of phenotypes.
-![Mon Image](images/Mean_Std_Assortativity_z-scored_IMC.png)
+![Mon Image](images/assort/Mean_Std_Assortativity_z-scored_IMC.png)
 
 ## Niches composition
 
 In this part, all different niche analysis plots are present
 
-### 
+### IF aggregated nodes
+![Mon image](images/niche/IF_C2_niche_composition_niche.png)
+
+### IMC aggregated nodes
+![Mon image](images/niche/IMC_niche_composition_niche.png)
+
+### IF for one patient/sample
+![Mon image](images/niche/IF_netniche_G1C2.png)
+
+and the associated network colored by niche
+![Mon image](images/niche/IF_netniche_G1C2.png)
+
+### IMC for one patient/sample
+![Mon image](images/niche/IMCnicheA1.png)
+
+and the associated network colored by niche
+![Mon image](images/niche/IMC_netnicheA1.png)
