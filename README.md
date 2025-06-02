@@ -51,6 +51,9 @@ clone my repo and run this:
 The purpose of this tool is to facilitate the using of MOSNA and Tysserand, two package made by PancaldiLAB to build spatial networks and to analyse them with statistics.
 This tool provide a GUI to generate easily the networks and other spatial analyse.
 
+  conda activate mosna
+  python mosna_GUI.py
+
 ## Tool architecture 
 
 You must follow this architecture provided to make it works:
