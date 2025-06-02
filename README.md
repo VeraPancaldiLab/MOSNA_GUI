@@ -137,7 +137,7 @@ In this part, all different niche analysis plots are present
 ![Mon image](images/niche/IMC_niche_composition_niche.png)
 
 ### IF for one patient/sample
-![Mon image](images/niche/IF_netniche_G1C2.png)
+![Mon image](images/niche/IFnicheG1C2.png)
 
 and the associated network colored by niche
 ![Mon image](images/niche/IF_netniche_G1C2.png)
