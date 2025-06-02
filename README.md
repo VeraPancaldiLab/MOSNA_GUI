@@ -2,8 +2,10 @@
 
 - [Installation](#installation)
 - [Tool](#tool)
+- [Tysserand Network](#tysserand-network)
 
-Using mosna to analyse IMC picture with niches analysis         ( WORK IN PROGRESS )
+The purpose of this tool is to facilitate the using of MOSNA and Tysserand, two package made by PancaldiLAB to build spatial networks and to analyse them with statistics.
+This tool provide a GUI to generate easily the networks and other spatial analyse.   
 
 ## Installation
 
@@ -50,30 +52,25 @@ clone my repo and run this scrip :
 
 ## Tool
 
-Mosna use tysserand to build networks to analyse them after. This image is a tysserand network of IMC data from one patient and one sample where each nodes are cells, colored by cluster and the clustering was found by using phenograp on 34 markers.
+### Tool architecture 
 
-### Tysserand Network
+You must follow this architecture provided to make it works.
 
-before to be able to obtain your tysserand network you must complete the associated config file in CONFIG/tysserand.yaml:
 
-![Mon Image](images/config_tysserand.png)
+
+before to be able to obtain your tysserand network you must complete first all parameters for the different, this parameters will be explained right after:
+
+![Mon Image](images/GUI.png)
 
 to have all tysserand networks of your IMC and IF csv files you must run this command:
 
     chmod u+x draw_tysserand.sh
     ./draw_tysserand.sh
 
-![Mon Image](images/IMC_network_A_01.png)
+## Tysserand Network
 
-![Mon Image](images/IF_network_A.png)
+![Mon Image](images/IMC_Tysserand_network_A_ROI_01.png)
 
-### Cell encounter
+![Mon Image](images/IF_C1_Tysserand_network_C_layer_1.png)
 
-before to be able to obtain a cell to cell correspondance between IF and IMC you must ensure that coordinates are the same for IF and IMC and also you must complete the associated config file in CONFIG/cell_encounter.yaml.
-
-to have your cell to cell encounter between your IMC and IF csv files you must run this command:
-
-    chmod u+x cell_encounter.sh
-    ./cell_encounter.sh
-
-![Mon Image](images/exemple_D.png)
+![Mon Image](images/IF_C2_Tysserand_network_B_layer_3.png)
