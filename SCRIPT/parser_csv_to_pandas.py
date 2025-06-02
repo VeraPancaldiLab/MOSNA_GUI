@@ -115,8 +115,6 @@ def concatenate_dataframes(files):
         raise ValueError("All files must have identical columns to concatenate.")
     return pd.concat(files.values(), ignore_index=True)
 
-####### Function to extract the 3 pandas ########
-
 def extract_sample_info(df, type=None,**kwargs):
     sample_info = pd.DataFrame()
     cell_id_columns = kwargs['cell_id_columns']
@@ -222,34 +220,33 @@ def main():
         print("DONE")
         
 
-    if config_file['save_file']:
-        print("\t[TASK] Saving pandas in parquet\t\t\t",end='')
-        if config_file['IMC_import']['present_in']:
-            IMC_cell_pos.to_parquet(Path('./output_data') / "IMC_cell_pos.parquet")
-            IMC_markers.to_parquet(Path('./output_data') / "IMC_markers.parquet")
-            IMC_sample_cell.to_parquet(Path('./output_data') / "IMC_sample_cell.parquet")
-            IMC_markers = IMC_markers.drop('CellID', axis=1)
-            IMC_markers.columns.to_series().to_csv(Path('./output_data') / "description/IMC_markers.csv",
+    print("\t[TASK] Saving pandas in parquet\t\t\t",end='')
+    if config_file['IMC_import']['present_in']:
+        IMC_cell_pos.to_parquet(Path('./output_data') / "IMC_cell_pos.parquet")
+        IMC_markers.to_parquet(Path('./output_data') / "IMC_markers.parquet")
+        IMC_sample_cell.to_parquet(Path('./output_data') / "IMC_sample_cell.parquet")
+        IMC_markers = IMC_markers.drop('CellID', axis=1)
+        IMC_markers.columns.to_series().to_csv(Path('./output_data') / "description/IMC_markers.csv",
                                                    index=False,
                                                    header=False)
-            IMC_sample_cell = IMC_sample_cell.drop('CellID', axis=1).drop_duplicates()
-            IMC_sample_cell.to_csv(Path('./output_data') / "description/IMC_file_description.csv",
+        IMC_sample_cell = IMC_sample_cell.drop('CellID', axis=1).drop_duplicates()
+        IMC_sample_cell.to_csv(Path('./output_data') / "description/IMC_file_description.csv",
                                   index=False,
                                   header=False)
             
-        if config_file['IF_import']['present_in']:
-            IF_cell_pos.to_parquet(Path('./output_data') / f"IF_{config_file['IF_import']['panel']}_cell_pos.parquet")
-            IF_markers.to_parquet(Path('./output_data') / f"IF_{config_file['IF_import']['panel']}_markers.parquet")
-            IF_sample_cell.to_parquet(Path('./output_data') / f"IF_{config_file['IF_import']['panel']}_sample_cell.parquet")
-            IF_markers = IF_markers.drop('CellID', axis=1)
-            IF_markers.columns.to_series().to_csv(Path('./output_data') / f"description/IF_{config_file['IF_import']['panel']}_markers.csv",
+    if config_file['IF_import']['present_in']:
+        IF_cell_pos.to_parquet(Path('./output_data') / f"IF_{config_file['IF_import']['panel']}_cell_pos.parquet")
+        IF_markers.to_parquet(Path('./output_data') / f"IF_{config_file['IF_import']['panel']}_markers.parquet")
+        IF_sample_cell.to_parquet(Path('./output_data') / f"IF_{config_file['IF_import']['panel']}_sample_cell.parquet")
+        IF_markers = IF_markers.drop('CellID', axis=1)
+        IF_markers.columns.to_series().to_csv(Path('./output_data') / f"description/IF_{config_file['IF_import']['panel']}_markers.csv",
                                                   index=False,
                                                   header=False)
-            IF_sample_cell = IF_sample_cell.drop('CellID', axis=1).drop_duplicates()
-            IF_sample_cell.to_csv(Path('./output_data') / f"description/IF_{config_file['IF_import']['panel']}_file_description.csv",
+        IF_sample_cell = IF_sample_cell.drop('CellID', axis=1).drop_duplicates()
+        IF_sample_cell.to_csv(Path('./output_data') / f"description/IF_{config_file['IF_import']['panel']}_file_description.csv",
                                   index=False,
                                   header=False)
-        print('DONE')
+    print('DONE')
 
 if __name__ == "__main__":
     main()

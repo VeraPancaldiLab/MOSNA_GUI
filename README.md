@@ -78,10 +78,8 @@ The pre-processing step is required to generate temp file needed for the followi
 You must fill **General**, **IF_import** and **IMC_import** sections.
 
 **General:**
-  - save_file: 
   - silent: 
   - pheno_dir:
-  - test: 
   - phenograph: 
   - add_pheno: 
 
@@ -91,30 +89,30 @@ You must fill **General**, **IF_import** and **IMC_import** sections.
   - panel: 
   - path_encoding_patient: 
   - path_file_to_patient: 
-  - normalize: 
-  - re_index: 
-  - there_is_duplicata: 
   - columns_to_drop: 
+  - layer_columns: 
+  - patient_columns: 
   - marker_columns: 
   - cell_id_columns: 
   - spatial_columns: 
-  - layer_columns: 
-  - patient_columns: 
+  - normalize: 
+  - re_index: 
+  - there_is_duplicata: 
 
 **IMC_import:**
   - present_in: 
   - directory_path: 
   - path_encoding_patient: 
   - path_file_to_patient: 
-  - normalize: 
-  - re_index: 
-  - there_is_duplicata: 
   - columns_to_drop: 
+  - layer_columns: 
+  - patient_columns: 
   - marker_columns: 
   - cell_id_columns: 
   - spatial_columns: 
-  - layer_columns: 
-  - patient_columns: 
+  - normalize: 
+  - re_index: 
+  - there_is_duplicata: 
 
 ### Step 2: Draw Tysserand Spatial Networks
 

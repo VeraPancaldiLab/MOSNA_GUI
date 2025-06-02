@@ -1,8 +1,6 @@
-save_file: true
 silent: false
-pheno_dir: data/processed/Bram_data/phenotypes
-test: false
 phenograph: false
+pheno_dir: data/processed/Bram_data/phenotypes
 add_pheno: true
 IF_import:
   present_in: true
@@ -10,29 +8,31 @@ IF_import:
   panel: C1
   path_encoding_patient: null
   path_file_to_patient: data/processed/Bram_data/file_to_patient/IF_file_to_patient.csv
-  normalize: false
-  re_index: false
-  there_is_duplicata: true
   columns_to_drop: null
+  layer_columns: ROI_ID
+  patient_columns: Patient_ID
+  phenotypes:
   marker_columns: '3:5'
   cell_id_columns: 0
   spatial_columns: '1:2'
-  layer_columns: ROI_ID
-  patient_columns: Patient_ID
+  normalize: false
+  re_index: false
+  there_is_duplicata: true
 IMC_import:
   present_in: true
   directory_path: data/processed/Bram_data/acquired_csv_files/
   path_encoding_patient: data/processed/Bram_data/alphabetical_encoding_patient_ID/IMC_patient_id_encoding.csv
   path_file_to_patient: data/processed/Bram_data/file_to_patient/IMC_file_to_patient.csv
-  normalize: true
-  re_index: true
-  there_is_duplicata: false
   columns_to_drop: 'Unnamed: 0'
+  layer_columns: null
+  patient_columns: null
+  phenotypes:
   marker_columns: 0:19 21:33
   cell_id_columns: 20
   spatial_columns: '34:35'
-  layer_columns: null
-  patient_columns: null
+  normalize: true
+  re_index: true
+  there_is_duplicata: false
 tysserand:
   IF_perform: true
   panel: C1
