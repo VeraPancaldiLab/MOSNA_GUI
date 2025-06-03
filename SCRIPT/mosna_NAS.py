@@ -42,6 +42,7 @@ mpl.rcParams["axes.facecolor"] = 'white'
 mpl.rcParams["savefig.facecolor"] = 'white'
 
 ########################################## Function ##########################################
+
 def verif_file(type, panel=None):
     if os.path.isfile(f"./output_data/{type}{panel}_cell_pos.parquet") and \
         os.path.isfile(f"./output_data/{type}{panel}_cell_pos_pheno.parquet") and \
@@ -135,8 +136,8 @@ def get_param_for_niches(nodes_df, edges_df, node_features_list,
 
     return features_NAS
 
-def clustering_NAS(features_NAS, 
-                   reducer_type, clusterer_type, n_neighbors, metric, min_dist, dim_clust,
+def clustering_NAS(features_NAS, reducer_type, clusterer_type, n_neighbors, 
+                   metric, min_dist, dim_clust,
                    min_cluster_size,k_cluster, resolution, n_clusters,
                    save_dir, patient, sample):
     
@@ -391,7 +392,6 @@ def main(IF, IMC, config_file):
                 
     except ValueError as e:
         print(f"\t[INFO] IF error: {e}")
-
 
 if __name__ == "__main__":
     print('\n\n[NAS]')
