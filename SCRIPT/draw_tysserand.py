@@ -381,7 +381,7 @@ def main(IF, IMC, config_file):
                           config_file['phenograph'],
                           config_file['tysserand']['k_neighbors_phenograph'],
                           config_file['tysserand']['primary_metric_phenograph'],
-                          tab_import['normalize_data'],
+                          tab_import['normalization_method'],
                           config_file['tysserand']['method_tysserand'],
                           config_file['tysserand']['min_neighbors'], cpu=config_file['tysserand']['cpu'])
         

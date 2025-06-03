@@ -86,7 +86,7 @@ class MosnaGUI(QMainWindow):
             "marker_columns":       (str,   type(None)),
             "cell_id_columns":      (int,   type(None)),
             "spatial_columns":      (str,   type(None)),
-            "normalize_data":            (bool,  type(None)),
+            "normalization_method":            (bool,  type(None)),
             "re_index":             (bool,  type(None)),
             "there_is_duplicata":   (bool,  type(None)),
             "cpu":                    (int,  type(None)),
@@ -174,7 +174,7 @@ class MosnaGUI(QMainWindow):
             return combo
         
         elif lower_key in ['clusterer_type'] and isinstance(value, str):
-            options = ['leiden','ecg','spectral','gmm']
+            options = ['leiden','ecg','spectral','gmm','hdbscan']
             combo = QComboBox()
             combo.addItems(options)
             if value in options:
@@ -190,7 +190,7 @@ class MosnaGUI(QMainWindow):
             return combo
         
         elif lower_key in ['metrics'] and isinstance(value, str):
-            options = ['euclidean','minkowski']
+            options = ['manhattan', 'euclidean', 'cosine']
             combo = QComboBox()
             combo.addItems(options)
             if value in options:
@@ -215,6 +215,14 @@ class MosnaGUI(QMainWindow):
         
         elif lower_key in ['stat_funcs'] and isinstance(value, str):
             options = ['np.mean,np.std','np.mean']
+            combo = QComboBox()
+            combo.addItems(options)
+            if value in options:
+                combo.setCurrentText(value)
+            return combo
+        
+        elif lower_key in ['normalize'] and isinstance(value, str):
+            options = ['total', 'niche', 'obs', 'clr', 'niche&obs']
             combo = QComboBox()
             combo.addItems(options)
             if value in options:

@@ -15,7 +15,7 @@ IF_import:
   marker_columns: '3:5'
   cell_id_columns: 0
   spatial_columns: '1:2'
-  normalize_data: false
+  normalization_method: false
   re_index: false
   there_is_duplicata: true
 IMC_import:
@@ -30,7 +30,7 @@ IMC_import:
   marker_columns: 0:19 21:33
   cell_id_columns: 20
   spatial_columns: '34:35'
-  normalize_data: true
+  normalization_method: true
   re_index: true
   there_is_duplicata: false
 tysserand:
