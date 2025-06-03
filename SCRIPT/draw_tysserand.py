@@ -379,8 +379,8 @@ def main(IF, IMC, config_file):
         
         tysserand_network(cell_pos, markers, sample_cell, tab_import['there_is_duplicata'], type,
                           config_file['phenograph'],
-                          config_file['tysserand']['k_neighbors_phenograph'],
-                          config_file['tysserand']['primary_metric_phenograph'],
+                          config_file['k_neighbors_phenograph'],
+                          config_file['primary_metric_phenograph'],
                           tab_import['normalization_method'],
                           config_file['tysserand']['method_tysserand'],
                           config_file['tysserand']['min_neighbors'], cpu=config_file['tysserand']['cpu'])

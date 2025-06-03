@@ -1,11 +1,13 @@
 silent: false
-phenograph: false
-pheno_dir: data/processed/Bram_data/phenotypes
 add_pheno: true
+pheno_dir: data/processed/Bram_data/phenotypes
+phenograph: false
+k_neighbors_phenograph: 30
+primary_metric_phenograph: minkowski
 IF_import:
   present_in: true
   directory_path: data/processed/Bram_data/IF_merged_by_patient/
-  panel: C1
+  panel: C2
   path_encoding_patient: null
   path_file_to_patient: data/processed/Bram_data/file_to_patient/IF_file_to_patient.csv
   columns_to_drop: null
@@ -35,11 +37,9 @@ IMC_import:
   there_is_duplicata: false
 tysserand:
   IF_perform: true
-  panel: C1
+  panel: C2
   IMC_perform: false
   cpu: 20
-  k_neighbors_phenograph: 30
-  primary_metric_phenograph: minkowski
   method_tysserand: delaunay
   min_neighbors: 3
 Assortativity:

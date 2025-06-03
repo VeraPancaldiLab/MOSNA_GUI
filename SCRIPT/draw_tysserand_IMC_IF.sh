@@ -1,7 +1,12 @@
 #!/bin/bash
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate mosna
+
 silent=$(yq -r '.silent' CONFIG/configuration.yaml)
+panel=$(yq -r '.IF_import.panel' CONFIG/configuration.yaml)
+
+mkdir -p output_data/IF_${panel}_networks_sample
+mkdir -p output_data/IMC_networks_sample
 
 if [[ "$silent" == "true" ]]; then
     export TF_CPP_MIN_LOG_LEVEL=3
