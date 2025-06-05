@@ -331,7 +331,7 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
                 executor.submit(network_parallelization_process_patient_and_sample, *args): args[0]
                 for args in args_list
             }
-            for future in tqdm(as_completed(futures), total=len(futures), desc=f"\t[PROCESS] └─ Processing {type} file"):
+            for future in tqdm(as_completed(futures), total=len(futures), desc=f"\t[MULTI PROCESS] └─ Processing {type} file"):
                 patient = futures[future]
                 try:
                     future.result()
@@ -366,8 +366,9 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
 ########################################## Main ##########################################
 
 def main(IF, IMC, config_file):
-
+    Path('output_data/Tysserand_network').mkdir(parents=True, exist_ok=True)
     def process(type):
+        Path(f'output_data/{type}{define_panel(type)}_networks_sample').mkdir(parents=True, exist_ok=True)
         tab_import = config_file[f'{type}_import']
 
         cell_pos, markers, sample_cell = import_data('./output_data', type)

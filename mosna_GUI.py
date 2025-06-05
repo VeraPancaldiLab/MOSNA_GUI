@@ -4,6 +4,7 @@ import yaml
 import ast
 import subprocess
 import io
+import shlex
 from yaml.representer import SafeRepresenter
 
 from PySide6.QtWidgets import (
@@ -17,39 +18,40 @@ from PySide6.QtGui import QTextCursor
 CONFIG_PATH = 'CONFIG/configuration.yaml'
 SCRIPTS = [
     'SCRIPT/pre_processing.sh',
-    'SCRIPT/draw_tysserand_IMC_IF.sh',
-    'SCRIPT/mosna_assortativity.sh',
-    'SCRIPT/mosna_NAS.sh',
+    'SCRIPT/draw_tysserand.py',
+    'SCRIPT/mosna_assortativity.py',
+    'SCRIPT/mosna_NAS.py',
     'SCRIPT/clear_temporary_files.sh'
 ]
 
 class ScriptRunnerThread(QThread):
     output_signal = Signal(str)
-    finished_signal = Signal(bool, int)  # success, returncode
+    finished_signal = Signal(bool, int)
 
-    def __init__(self, script_path):
+    def __init__(self, command):
         super().__init__()
-        self.script_path = script_path
+        self.command = command
 
     def run(self):
         try:
-            proc = subprocess.Popen(
-                ['bash', self.script_path],
+            process = subprocess.Popen(
+                self.command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                bufsize=1,
-                text=True
+                text=True,
+                bufsize=1
             )
-            for line in proc.stdout:
+            for line in process.stdout:
                 self.output_signal.emit(line)
-            proc.stdout.close()
-            returncode = proc.wait()
-            self.finished_signal.emit(returncode == 0, returncode)
+            code = process.wait()
+            self.finished_signal.emit(code == 0, code)
         except Exception as e:
-            self.output_signal.emit(f"[!] Error: {e}\n")
+            self.output_signal.emit(f"Error: {e}")
             self.finished_signal.emit(False, -1)
+
 class FlowStyleList(list):
     pass
+
 def represent_flow_style_list(dumper, data):
     return dumper.represent_sequence('tag:yaml.org,2002:seq', data, flow_style=True)
 yaml.add_representer(FlowStyleList, represent_flow_style_list, Dumper=yaml.SafeDumper)
@@ -131,6 +133,8 @@ class MosnaGUI(QMainWindow):
         try:
             with open(CONFIG_PATH, 'r') as f:
                 raw = yaml.safe_load(f) or {}
+                if not raw:
+                    QMessageBox.warning(self, "Empty Config", "The configuration file is empty. Please check the file.")
                 self.config_data = self._normalize_config(raw)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to load config:\n{e}")
@@ -189,7 +193,7 @@ class MosnaGUI(QMainWindow):
                 combo.setCurrentText(value)
             return combo
         
-        elif lower_key in ['metrics'] and isinstance(value, str):
+        elif lower_key in ['metric'] and isinstance(value, str):
             options = ['manhattan', 'euclidean', 'cosine']
             combo = QComboBox()
             combo.addItems(options)
@@ -262,7 +266,7 @@ class MosnaGUI(QMainWindow):
         layout.addLayout(btn_layout)
 
         for s in SCRIPTS:
-            b = QPushButton(f"Run {os.path.splitext(os.path.basename(s))[0].replace('_', ' ')}")
+            b = QPushButton(f"Run {os.path.splitext(os.path.basename(s))[0].replace('_', ' ').upper()}")
             b.clicked.connect(lambda _, sc=s: self._run_script(sc))
             btn_layout.addWidget(b)
 
@@ -469,9 +473,17 @@ class MosnaGUI(QMainWindow):
         if not os.path.isfile(script):
             QMessageBox.warning(self, "Missing", f"Script not found: {script}")
             return
-        self._append_console(f"\n$ bash {script}\n{'='*60}\n")
+        ext = os.path.splitext(script)[1].lower()
+        if ext == ".sh":
+            cmd = ["bash", script]
+        elif ext == ".py":
+            cmd = ["python", script, "--file", CONFIG_PATH]
+        else:
+            QMessageBox.warning(self, "Unsupported", f"Unsupported script type: {ext}")
+            return
 
-        self.script_thread = ScriptRunnerThread(script)
+        self._append_console(f"\n$ {' '.join(shlex.quote(arg) for arg in cmd)}\n{'=' * 60}\n")
+        self.script_thread = ScriptRunnerThread(cmd)
         self.script_thread.output_signal.connect(self._append_console)
         self.script_thread.finished_signal.connect(lambda success, code: self._on_script_finished(script, success, code))
         self.script_thread.start()

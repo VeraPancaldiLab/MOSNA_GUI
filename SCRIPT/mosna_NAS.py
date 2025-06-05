@@ -175,7 +175,6 @@ def plot_niches(counts, cluster_labels, save_dir, patient, sample, image_type, p
     axes[0] = mosna.plot_niches_histogram(cluster_labels, ax=axes[0])
     axes[0].set_title('Niches histogram')
 
-    fig.tight_layout()
     if sample == None and patient == None:
         fig.suptitle(f"For an {image_type}{panel} image and panel niches composition for with {normalize}_normalization")
         fig.savefig(save_dir / f'{image_type}{panel}_niche_composition_{normalize}.png', dpi=300, bbox_inches='tight')
