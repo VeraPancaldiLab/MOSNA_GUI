@@ -7,12 +7,11 @@ import random
 random.seed(42)
 np.random.seed(42)
 
-# --- 1. Charger les fichiers ---
-nodes_df = pd.read_parquet("nodes.parquet")
-edges_df = pd.read_parquet("edges.parquet")
-net_df = pd.read_parquet("net.parquet", index_col=0)
 
-# --- 2. Encoder les types cellulaires ---
+nodes_df = pd.read_parquet("output_data/IMC_networks_sample/nodes_patient-A_ROI-01.parquet")
+edges_df = pd.read_parquet("output_data/IMC_networks_sample/edges_patient-A_ROI-01.parquet")
+net_df = pd.read_parquet("output_data/assortativity/IMC_net_stat.parquet", index_col=0)
+
 cell_types = sorted(nodes_df['CellID'].unique())
 type_to_idx = {t: i for i, t in enumerate(cell_types)}
 idx_to_type = {i: t for t, i in type_to_idx.items()}
