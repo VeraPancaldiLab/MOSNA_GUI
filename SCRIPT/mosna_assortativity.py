@@ -218,6 +218,9 @@ def group_assort(net_stat, z_cols, save_dir, type, panel):
     mixmat_z_mean = mosna.series_to_mixmat(z_mean.loc[z_cols], discard=' Z').astype(float)
     mixmat_z_std = mosna.series_to_mixmat(z_std.loc[z_cols], discard=' Z').astype(float)
 
+    mixmat_z_mean.to_parquet(f"./output_data/synthetic_network_generation/data_to_build/mixmat_mean_{type}{panel}.parquet")
+    mixmat_z_std.to_parquet(f"./output_data/synthetic_network_generation/data_to_build/mixmat_std_{type}{panel}.parquet")
+
     data = []
     already_seen = set()
     for i in mixmat_z_mean.index:
