@@ -328,6 +328,8 @@ def main(IF, IMC, config_file):
     save_dir = Path("./output_data/assortativity")
     save_dir.mkdir(parents=True, exist_ok=True)
 
+    Path("./output_data/synthetic_network_generation/data_to_build").mkdir(parents=True, exist_ok=True)
+
     def process(type, config_file):
 
         panel = define_panel(type)
