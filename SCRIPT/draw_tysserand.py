@@ -137,7 +137,8 @@ def draw_tysserand_network(coords, clustering, patient, type, method='delaunay',
             plt.close(fig)
         if type == 'IF':
             plt.title(f"Draw an {type} Tysserand network for panel {config_file['tysserand']['panel']} and patient {patient} and {sample_name} {sample}", fontsize=30)
-            plt.savefig(f"output_data/Tysserand_network/{type}_{config_file['tysserand']['panel']}_Tysserand_network_{patient}_{sample_name}_{sample}.png", bbox_inches="tight")
+            plt.savefig(f"output_data/Tysserand_network/{type}_{config_file['tysserand']['panel']}_Tysserand_network_{patient}_{sample_name}_{sample}.png",
+                         bbox_inches="tight")
             plt.close(fig)
 
     del clusters_cmap, n_colors, celltypes_color_mapper, uniq, fig
