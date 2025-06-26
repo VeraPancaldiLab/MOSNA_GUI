@@ -232,7 +232,7 @@ And for each niche clustering and plotting (IF and IMC nodes aggregation, IF and
 
 This repository implements a pipeline to generate **synthetic spatial tissue-like networks** representing cell phenotypes, using **assortativity constraints** and a **Markov Random Field (MRF)** model.
 
-### 🧬 Overview
+### Overview
 
 The pipeline creates a 2D tissue-like structure with cells (nodes), connected by spatial proximity (edges), and assigns phenotypes to each cell such that:
 
@@ -242,25 +242,23 @@ The pipeline creates a 2D tissue-like structure with cells (nodes), connected by
   - A list of nodes with spatial coordinates and phenotypes
   - A list of spatial edges derived from Delaunay triangulation
 
-### 🧩 Step-by-step Pipeline
-
-### 1 - Generate Cell Positions
+### 🔄 Process 1 - Generate Cell Positions
 
 Cells are uniformly distributed in a 2D rectangular space
 
 This simulates a homogeneous tissue environment.
 
-### 2 - Build Spatial Edges via Delaunay Triangulation
+### 🔄 Process 2 - Build Spatial Edges via Delaunay Triangulation
 
 Using **Delaunay**, edges are formed between spatial neighbors.
 
 This provides biologically-plausible neighborhood relations.
 
-### 3 - Initialize Cell Phenotypes
+### 🔄 Process 3 - Initialize Cell Phenotypes
 
 Each node is assigned a random phenotype from a predefined list of your choice
 
-### 4 - Define the MRF Energy Function
+### 🔄 Process 4 - Define the MRF Energy Function
 
 The energy of the system is defined by the negative sum of Z-score interactions over edges:
 
@@ -272,7 +270,7 @@ Where:
 - $y_i$ and $y_j$ are the phenotypes of neighboring cells  
 - $Z_{y_i, y_j}$ is the Z-score measuring assortativity
 
-### 5 - Gibbs Sampling to Minimize Energy
+### 🔄 Process 5 - Gibbs Sampling to Minimize Energy
 
 For each node, we re-sample its phenotype to minimize local energy:
 
@@ -284,7 +282,7 @@ For a candidate phenotype \( t \), we define:
 
 The sampling is repeated over `n_iter` iterations to reach equilibrium.
 
-### 6 - Proportion Regularization
+### 🔄 Process 6 - Proportion Regularization
 
 After convergence, we correct global proportions by inserting additional points (cells) with minimal impact on the energy:
 
