@@ -79,9 +79,7 @@ This image explain how works the tool:
 | Cell 1 |         |         |        |            |            |            |
 | Cell 2 |         |         |        |            |            |            |
 | Cell 3 |         |         |        |            |            |            |
-|   .    |         |         |        |            |            |            |
-|   .    |         |         |        |            |            |            |
-|   .    |         |         |        |            |            |            |
+|   ...  |         |         |        |            |            |            |
 | Cell N |         |         |        |            |            |            |
 
 
