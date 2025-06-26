@@ -231,7 +231,7 @@ For each node, we re-sample its phenotype to minimize local energy:
 For a candidate phenotype \( t \), we define:
 
 ```math
-P(y_i = t) \propto \exp\left(-\sum_{j \in \mathcal{N}(i)} Z_{t, y_j}\right)
+\Huge P(y_i = t) \propto \exp\left(-\sum_{j \in \mathcal{N}(i)} Z_{t, y_j}\right)
 ```
 
 The sampling is repeated over `n_iter` iterations to reach equilibrium.
@@ -243,7 +243,7 @@ After convergence, we correct global proportions by inserting additional points 
 For phenotype \( t \), the position \( x \) is selected to minimize:
 
 ```math
-\Delta E(x, t) = -\sum_{j \in \mathcal{N}(x)} Z_{t, y_j}
+\Huge \Delta E(x, t) = -\sum_{j \in \mathcal{N}(x)} Z_{t, y_j}
 ```
 
 A new cell is added if:
