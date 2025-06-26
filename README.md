@@ -65,7 +65,7 @@ This tool provide a GUI to generate easily the networks and other spatial analys
 
 ![Mon Image](images/Tool_architecture.png)
 
-### This image explain how works the tool:
+### This image explain how works the tool:
 
 Image qui explique le fonctionnement
 
