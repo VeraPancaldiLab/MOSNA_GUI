@@ -71,8 +71,21 @@ This image explain how works the tool:
 
 ❗ You can directly use Tysserand tool of my own tool instead of run pre-processing if you respect this the following format of your data 
 
-[image de format des données de base]
+❗ Those file are Pandas DataFrame convert into parquet with df.to_parquet(), here type could be IF_panel or IMC, panel need to have the same name than in your data file.
 
+- type_cell_pos_pheno.parquet
+| Index | CellID | patient | sample | X_position | Y_position | Phenotypes |
+|------|------|------|------|------|------|------|
+|Cell 1| | | | | | |
+|Cell 2| | | | | | |
+|Cell 3| | | | | | |
+|  .  | | | | | | |
+|  .  | | | | | | |
+|  .  | | | | | | |
+|  .  | | | | | | |
+|Cell N| | | | | | |
+
+- 
 ## Graphic Interface to control your using
 
 before to be able to obtain your tysserand network you must complete first all parameters for the different, this parameters will be explained right after:
