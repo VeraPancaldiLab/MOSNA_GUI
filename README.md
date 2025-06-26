@@ -82,42 +82,39 @@ The pre-processing step is required to generate temp file needed for the followi
 
 You must fill **General**, **IF_import** and **IMC_import** sections.
 
-**General:**
-  - silent: 
-  - pheno_dir:
-  - phenograph: 
-  - add_pheno: 
-
-**IF_import:**
-  - present_in: 
-  - directory_path: 
-  - panel: 
-  - path_encoding_patient: 
-  - path_file_to_patient: 
-  - columns_to_drop: 
-  - layer_columns: 
-  - patient_columns: 
-  - marker_columns: 
-  - cell_id_columns: 
-  - spatial_columns: 
-  - normalize_data: 
-  - re_index: 
-  - there_is_duplicata: 
-
-**IMC_import:**
-  - present_in: 
-  - directory_path: 
-  - path_encoding_patient: 
-  - path_file_to_patient: 
-  - columns_to_drop: 
-  - layer_columns: 
-  - patient_columns: 
-  - marker_columns: 
-  - cell_id_columns: 
-  - spatial_columns: 
-  - normalize_data: 
-  - re_index: 
-  - there_is_duplicata: 
+| Section     | Clé                   | Descripton        |
+|-------------|-----------------------|-------------------|
+| General     | silent                |                   |
+|             | pheno_dir             |                   |
+|             | phenograph            |                   |
+|             | add_pheno             |                   |
+| IF_import   | present_in            |                   |
+|             | directory_path        |                   |
+|             | panel                 |                   |
+|             | path_encoding_patient |                   |
+|             | path_file_to_patient  |                   |
+|             | columns_to_drop       |                   |
+|             | layer_columns         |                   |
+|             | patient_columns       |                   |
+|             | marker_columns        |                   |
+|             | cell_id_columns       |                   |
+|             | spatial_columns       |                   |
+|             | normalize_data        |                   |
+|             | re_index              |                   |
+|             | there_is_duplicata    |                   |
+| IMC_import  | present_in            |                   |
+|             | directory_path        |                   |
+|             | path_encoding_patient |                   |
+|             | path_file_to_patient  |                   |
+|             | columns_to_drop       |                   |
+|             | layer_columns         |                   |
+|             | patient_columns       |                   |
+|             | marker_columns        |                   |
+|             | cell_id_columns       |                   |
+|             | spatial_columns       |                   |
+|             | normalize_data        |                   |
+|             | re_index              |                   |
+|             | there_is_duplicata    |                   |
 
 ## Step 2: Draw Tysserand Spatial Networks
 
@@ -191,7 +188,7 @@ The pipeline creates a 2D tissue-like structure with cells (nodes), connected by
 
 ### 🧩 Step-by-step Pipeline
 
-#### 1. Generate Cell Positions
+### 1 - Generate Cell Positions
 
 Cells are uniformly distributed in a 2D rectangular space:
 
@@ -201,17 +198,17 @@ positions = np.random.rand(n_cells, 2)
 
 This simulates a homogeneous tissue environment.
 
-#### 2. Build Spatial Edges via Delaunay Triangulation
+### 2 - Build Spatial Edges via Delaunay Triangulation
 
 Using `scipy.spatial.Delaunay`, edges are formed between spatial neighbors:
 
 This provides biologically-plausible neighborhood relations.
 
-#### 3. Initialize Cell Phenotypes
+### 3 - Initialize Cell Phenotypes
 
 Each node is assigned a random phenotype from a predefined list:
 
-#### 4. Define the MRF Energy Function
+### 4 - Define the MRF Energy Function
 
 The energy of the system is defined by the negative sum of Z-score interactions over edges:
 
@@ -223,7 +220,7 @@ Where:
 - \( y_i \) and \( y_j \) are the phenotypes of neighboring cells
 - \( Z_{y_i, y_j} \) is the Z-score measuring assortativity
 
-#### 5. Gibbs Sampling to Minimize Energy
+### 5 - Gibbs Sampling to Minimize Energy
 
 For each node, we re-sample its phenotype to minimize local energy:
 
@@ -235,7 +232,7 @@ P(y_i = t) \propto \exp\left(-\sum_{j \in \mathcal{N}(i)} Z_{t, y_j}\right)
 
 The sampling is repeated over `n_iter` iterations to reach equilibrium.
 
-#### 6. Proportion Regularization
+### 6 - Proportion Regularization
 
 After convergence, we correct global proportions by inserting additional points (cells) with minimal impact on the energy:
 
@@ -248,7 +245,7 @@ For phenotype \( t \), the position \( x \) is selected to minimize:
 A new cell is added if:
 
 ```python
-abs(current_prop[p] - target_prop[p]) > tolerance
+abs(current_proportion[phenotype] - target_proportion[phenotype]) > tolerance_threshold
 ```
 
 This step ensures final phenotype distributions match biological constraints.
