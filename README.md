@@ -114,7 +114,11 @@ replace the name of bio-marker 1 to n by the real name of yours bio-makers
 |  ...   |         |         |        |
 | Cell N |         |         |        |
 
-## Graphic Interface to control your using
+## Graphic Interfaces to control your using
+
+**2 GUI :** 
+- 1 for pre-processing
+- 1 for Tysserand and MOSNA analysis
 
 before to be able to obtain your tysserand network you must complete first all parameters for the different, this parameters will be explained right after:
 

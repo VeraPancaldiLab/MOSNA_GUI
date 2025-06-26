@@ -1,40 +1,7 @@
 silent: false
-add_pheno: true
-pheno_dir: data/processed/Bram_data/phenotypes
 phenograph: false
 k_neighbors_phenograph: 30
 primary_metric_phenograph: minkowski
-IF_import:
-  present_in: true
-  directory_path: data/processed/Bram_data/IF_merged_by_patient/
-  panel: C1
-  path_encoding_patient: null
-  path_file_to_patient: data/processed/Bram_data/file_to_patient/IF_file_to_patient.csv
-  columns_to_drop: null
-  layer_columns: ROI_ID
-  patient_columns: Patient_ID
-  phenotypes: null
-  marker_columns: '3:5'
-  cell_id_columns: 0
-  spatial_columns: '1:2'
-  normalization_method: false
-  re_index: false
-  there_is_duplicata: true
-IMC_import:
-  present_in: true
-  directory_path: data/processed/Bram_data/acquired_csv_files/
-  path_encoding_patient: data/processed/Bram_data/alphabetical_encoding_patient_ID/IMC_patient_id_encoding.csv
-  path_file_to_patient: data/processed/Bram_data/file_to_patient/IMC_file_to_patient.csv
-  columns_to_drop: 'Unnamed: 0'
-  layer_columns: null
-  patient_columns: null
-  phenotypes: null
-  marker_columns: 0:19 21:33
-  cell_id_columns: 20
-  spatial_columns: '34:35'
-  normalization_method: true
-  re_index: true
-  there_is_duplicata: false
 tysserand:
   IF_perform: false
   panel: C1
