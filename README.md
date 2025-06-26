@@ -302,6 +302,8 @@ This step ensures final phenotype distributions match biological constraints.
 
 ## Step 6: Remove all temporary file in output_data file
 
+Clear all temp file to keep only analysed data
+
 # Exemple of using
 
 In this part we will provide an example of this tool step by step
