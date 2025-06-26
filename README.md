@@ -216,7 +216,7 @@ Each node is assigned a random phenotype from a predefined list of your choice
 The energy of the system is defined by the negative sum of Z-score interactions over edges:
 
 ```math
-E = -\sum_{(i, j) \in \text{Edges}} Z_{y_i, y_j}
+\Huge E = -\sum_{(i, j) \in \text{Edges}} Z_{y_i, y_j}
 ```
 
 Where:  
