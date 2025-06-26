@@ -220,10 +220,14 @@ E = -\sum_{(i, j) \in \text{Edges}} Z_{y_i, y_j}
 ```
 
 Where:
-```math
-- \( y_i \) and \( y_j \) are the phenotypes of neighboring cells
-- \( Z_{y_i, y_j} \) is the Z-score measuring assortativity
+- ```math 
+y_i and y_j 
+``` 
+are the phenotypes of neighboring cells
+- ```math 
+Z_{y_i, y_j}
 ```
+is the Z-score measuring assortativity
 
 ### 5 - Gibbs Sampling to Minimize Energy
 
