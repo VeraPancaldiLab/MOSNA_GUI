@@ -300,3 +300,5 @@ and the associated network colored by niche:
 ![Mon image](images/niche/IF_netniche_G1C2.png) ![Mon image](images/niche/IMC_netnicheA1.png)
 
 ### Synthetic Network Generation
+
+
