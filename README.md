@@ -83,7 +83,7 @@ This image explain how works the tool:
 Tab for the following file format:
 - type_cell_pos_pheno.parquet
 
-| Index  | CellID  | Patient | Sample | X_position | Y_position | Phenotypes |
+| Index  | CellID  | patient | Sample | X_position | Y_position | Phenotypes |
 |--------|---------|---------|--------|------------|------------|------------|
 | Cell 1 |         |         |        |            |            |            |
 |  ...   |         |         |        |            |            |            |
@@ -91,13 +91,14 @@ Tab for the following file format:
 
 - type_cell_pos.parquet
 
-| Index  | CellID  | Patient | Sample | X_position | Y_position |
+| Index  | CellID  | patient | Sample | X_position | Y_position |
 |--------|---------|---------|--------|------------|------------|
 | Cell 1 |         |         |        |            |            |
 |  ...   |         |         |        |            |            |
 | Cell N |         |         |        |            |            |
 
 - type_markers.parquet
+replace the name of bio-marker 1 to n by the real name of yours bio-makers
 
 | Index  | CellID  | Maker 1 | ... | Marker N   |
 |--------|---------|---------|--------|------------|
@@ -107,7 +108,7 @@ Tab for the following file format:
 
 - type_sample_cell.parquet
 
-| Index  | CellID  | Patient | Sample |
+| Index  | CellID  | patient | Sample |
 |--------|---------|---------|--------|
 | Cell 1 |         |         |        |
 |  ...   |         |         |        |
