@@ -223,7 +223,6 @@ Where:
 - $y_i$ and $y_j$ are the phenotypes of neighboring cells  
 - $Z_{y_i, y_j}$ is the Z-score measuring assortativity
 
-
 ### 5 - Gibbs Sampling to Minimize Energy
 
 For each node, we re-sample its phenotype to minimize local energy:
@@ -267,27 +266,19 @@ In this all part, different spatial networks plots are present
 #### IMC tysserand network
 ![Mon Image](images/network/IMC_Tysserand_network_A_ROI_01.png)
 
-#### IF first panel tysserand network
-![Mon Image](images/network/IF_C1_Tysserand_network_C_layer_1.png)
-
-#### IF second panel tysserand network
-![Mon Image](images/network/IF_C2_Tysserand_network_B_layer_3.png)
+#### IF first panel 1 and 2 tysserand network
+![Mon Image](images/network/IF_C1_Tysserand_network_C_layer_1.png) ![Mon Image](images/network/IF_C2_Tysserand_network_B_layer_3.png)
 
 ### Assortativity
 
 In this part, all different assortativity plots are present
 
-#### IF assortativity for one patient/sample
-![Mon Image](images/assort/assortativity_z-scored_patient-A_layer-1.png)
+#### IF and IMC assortativity for one patient/sample
+![Mon Image](images/assort/assortativity_z-scored_patient-A_layer-1.png) ![mon image](images/assort/assortativity_z-scored_patient-A_ROI-01.png)
 
-#### IMC assortativity for one patient/sample
-![mon image](images/assort/assortativity_z-scored_patient-A_ROI-01.png)
+#### IF and IMC assortativity aggregated by mean
+![Mon Image](images/assort/assortativity_z-scored_IF_C1.png) ![Mon Image](images/assort/assortativity_z-scored_IF_C2.png)
 
-#### IF assortativity aggregated by mean
-![Mon Image](images/assort/assortativity_z-scored_IF_C1.png)
-![Mon Image](images/assort/assortativity_z-scored_IF_C2.png)
-
-#### IMC assortativity aggregated by mean
 ![Mon Image](images/assort/assortativity_z-scored_IMC.png)
 In this image only the most important z-score (absolute values) are present to keep this plot visible
 
@@ -298,24 +289,14 @@ Here the real barplot with all tuples of phenotypes.
 
 In this part, all different niche analysis plots are present
 
-#### IF aggregated nodes
-![Mon image](images/niche/IF_C2_niche_composition_niche.png)
+#### IF and IMC aggregated nodes
+![Mon image](images/niche/IF_C2_niche_composition_niche.png) ![Mon image](images/niche/IMC_niche_composition_niche.png)
 
-#### IMC aggregated nodes
-![Mon image](images/niche/IMC_niche_composition_niche.png)
-
-#### IF for one patient/sample
-![Mon image](images/niche/IFnicheG1C2.png)
+#### IF and IMC for one patient/sample
+![Mon image](images/niche/IFnicheG1C2.png) ![Mon image](images/niche/IMCnicheA1.png)
 
 and the associated network colored by niche:
 
-![Mon image](images/niche/IF_netniche_G1C2.png)
-
-#### IMC for one patient/sample
-![Mon image](images/niche/IMCnicheA1.png)
-
-and the associated network colored by niche: 
-
-![Mon image](images/niche/IMC_netnicheA1.png)
+![Mon image](images/niche/IF_netniche_G1C2.png) ![Mon image](images/niche/IMC_netnicheA1.png)
 
 ### Synthetic Network Generation
