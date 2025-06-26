@@ -36,7 +36,7 @@ IMC_import:
   re_index: true
   there_is_duplicata: false
 tysserand:
-  IF_perform: true
+  IF_perform: false
   panel: C1
   IMC_perform: false
   cpu: 20
@@ -45,7 +45,7 @@ tysserand:
 Assortativity:
   IF_perform: false
   panel: C1
-  IMC_perform: true
+  IMC_perform: false
   perform_batch: false
   perform_clr_transfo: false
 NAS:
