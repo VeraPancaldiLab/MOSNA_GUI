@@ -1,13 +1,10 @@
-# Synthetic spatial network generation using MRF and assortativity
 import numpy as np
 import pandas as pd
 from scipy.spatial import Delaunay
 
-
 def generate_cell_positions(n_cells, domain_size=(1.0, 1.0)):
     positions = np.random.rand(n_cells, 2) * domain_size
     return positions
-
 
 def build_edges_from_positions(positions):
     tri = Delaunay(positions)
@@ -21,10 +18,8 @@ def build_edges_from_positions(positions):
     edge_df = pd.DataFrame(edge_list, columns=['source', 'target'])
     return edge_df
 
-
 def initialize_phenotypes(n_nodes, phenotype_list):
     return [np.random.choice(phenotype_list) for _ in range(n_nodes)]
-
 
 def compute_energy(edges, phenotypes, zscore_matrix, phenotype_to_index):
     energy = 0
@@ -34,7 +29,6 @@ def compute_energy(edges, phenotypes, zscore_matrix, phenotype_to_index):
         idx_v = phenotype_to_index[phenotypes[v]]
         energy -= zscore_matrix[idx_u, idx_v]
     return energy
-
 
 def gibbs_sampling(positions, edges, zscore_matrix, phenotype_list, phenotype_to_index, n_iter=1000):
     phenotypes = initialize_phenotypes(len(positions), phenotype_list)
@@ -60,7 +54,6 @@ def gibbs_sampling(positions, edges, zscore_matrix, phenotype_list, phenotype_to
             phenotypes[node] = np.random.choice(phenotype_list, p=probs)
 
     return phenotypes
-
 
 def adjust_proportions(positions, phenotypes, zscore_matrix, phenotype_list, phenotype_to_index, target_proportions, tolerance=0.01):
     from collections import Counter
@@ -98,7 +91,6 @@ def adjust_proportions(positions, phenotypes, zscore_matrix, phenotype_list, phe
                 deficit[p] -= 1
 
     return positions, phenotypes
-
 
 if __name__ == '__main__':
     phenotypes_list = ['A', 'B', 'C']
