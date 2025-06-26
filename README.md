@@ -74,16 +74,16 @@ This image explain how works the tool:
 ❗ Those file are Pandas DataFrame convert into parquet with df.to_parquet(), here type could be IF_panel or IMC, panel need to have the same name than in your data file.
 
 - type_cell_pos_pheno.parquet
-| Index | CellID | patient | sample | X_position | Y_position | Phenotypes |
-|------|------|------|------|------|------|------|
-|Cell 1| | | | | | |
-|Cell 2| | | | | | |
-|Cell 3| | | | | | |
-|  .  | | | | | | |
-|  .  | | | | | | |
-|  .  | | | | | | |
-|  .  | | | | | | |
-|Cell N| | | | | | |
+| Index  | CellID  | Patient | Sample | X_position | Y_position | Phenotypes |
+|--------|---------|---------|--------|------------|------------|------------|
+| Cell 1 |         |         |        |            |            |            |
+| Cell 2 |         |         |        |            |            |            |
+| Cell 3 |         |         |        |            |            |            |
+|   .    |         |         |        |            |            |            |
+|   .    |         |         |        |            |            |            |
+|   .    |         |         |        |            |            |            |
+| Cell N |         |         |        |            |            |            |
+
 
 - 
 ## Graphic Interface to control your using
