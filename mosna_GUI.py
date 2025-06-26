@@ -324,7 +324,6 @@ class MosnaGUI(QMainWindow):
         cursor = self.console_output.textCursor()
         cursor.movePosition(QTextCursor.End)
 
-        # Si le texte commence par retour chariot, on écrase la dernière ligne
         if text.startswith('\r'):
             cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)
             cursor.removeSelectedText()
