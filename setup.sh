@@ -1,5 +1,6 @@
 #!/bin/bash
 
+mkdir -p output_data
 set -e  # Quitter en cas d'erreur
 
 # === Étape 0 : Vérification de Conda ===

@@ -71,22 +71,48 @@ This image explain how works the tool:
 
 ❗ You can directly use Tysserand tool of my own tool instead of run pre-processing if you respect this the following format of your data 
 
-❗ Those file are Pandas DataFrame convert into parquet with df.to_parquet(), here type could be IF_panel or IMC, panel need to have the same name than in your data file.
+❗ You must respect few things: 
 
+- file are Pandas DataFrame convert into parquet with df.to_parquet()
+- here type could be IF_panel or IMC, panel need to have the same name than in your data file
+- 'Sample' in the following tab must replace by 'ROI' for IMC or 'layer' for IF images
+- This files must be put in 'output_data' folder
+
+❗ All this file contains all your data, if you have 30 IMC images from a same dataset you can concatenate in this files
+
+Tab for the following file format:
 - type_cell_pos_pheno.parquet
 
 | Index  | CellID  | Patient | Sample | X_position | Y_position | Phenotypes |
 |--------|---------|---------|--------|------------|------------|------------|
 | Cell 1 |         |         |        |            |            |            |
-| Cell 2 |         |         |        |            |            |            |
-| Cell 3 |         |         |        |            |            |            |
-|   .    |         |         |        |            |            |            |
-|   .    |         |         |        |            |            |            |
-|   .    |         |         |        |            |            |            |
+|  ...   |         |         |        |            |            |            |
 | Cell N |         |         |        |            |            |            |
 
+- type_cell_pos.parquet
 
-- 
+| Index  | CellID  | Patient | Sample | X_position | Y_position |
+|--------|---------|---------|--------|------------|------------|
+| Cell 1 |         |         |        |            |            |
+|  ...   |         |         |        |            |            |
+| Cell N |         |         |        |            |            |
+
+- type_markers.parquet
+
+| Index  | CellID  | Maker 1 | ... | Marker N   |
+|--------|---------|---------|--------|------------|
+| Cell 1 |         |         |        |            |
+|  ...   |         |         |        |            |
+| Cell N |         |         |        |            |
+
+- type_sample_cell.parquet
+
+| Index  | CellID  | Patient | Sample |
+|--------|---------|---------|--------|
+| Cell 1 |         |         |        |
+|  ...   |         |         |        |
+| Cell N |         |         |        |
+
 ## Graphic Interface to control your using
 
 before to be able to obtain your tysserand network you must complete first all parameters for the different, this parameters will be explained right after:
