@@ -67,9 +67,9 @@ This tool provide a GUI to generate easily the networks and other spatial analys
 
 ### This image explain how works the tool:
 
-[image qui explique le fonctionnement]
+Image qui explique le fonctionnement
 
-### ❗ You can directly use Tysserand tool of my own tool instead of run pre-processing if you respect this the following format of your data 
+### ❗ You can directly use Tysserand tool of my own tool instead of run pre-processing if you respect this the following format of your data:
 
 ❗ You must respect few things: 
 
