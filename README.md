@@ -84,11 +84,11 @@ You must fill **General**, **IF_import** and **IMC_import** sections.
 
 | Section     | Clé                   | Descripton        |
 |-------------|-----------------------|-------------------|
-| General     | silent                |                   |
+|**General**  | silent                |                   |
 |             | pheno_dir             |                   |
 |             | phenograph            |                   |
 |             | add_pheno             |                   |
-| IF_import   | present_in            |                   |
+|**IF_import**| present_in            |                   |
 |             | directory_path        |                   |
 |             | panel                 |                   |
 |             | path_encoding_patient |                   |
@@ -102,7 +102,7 @@ You must fill **General**, **IF_import** and **IMC_import** sections.
 |             | normalize_data        |                   |
 |             | re_index              |                   |
 |             | there_is_duplicata    |                   |
-| IMC_import  | present_in            |                   |
+|**IMC_import**| present_in           |                   |
 |             | directory_path        |                   |
 |             | path_encoding_patient |                   |
 |             | path_file_to_patient  |                   |
@@ -120,7 +120,7 @@ You must fill **General**, **IF_import** and **IMC_import** sections.
 
 This step generate Tysserand networks for each patient/sample. You must fill **Tysserand** section.
 
-| Clé                      | Valeur par défaut |
+| Clé                      | Description       |
 |--------------------------|-------------------|
 | IF_perform               |                   |
 | panel                    |                   |
@@ -197,23 +197,19 @@ The pipeline creates a 2D tissue-like structure with cells (nodes), connected by
 
 ### 1 - Generate Cell Positions
 
-Cells are uniformly distributed in a 2D rectangular space:
-
-```python
-positions = np.random.rand(n_cells, 2)
-```
+Cells are uniformly distributed in a 2D rectangular space
 
 This simulates a homogeneous tissue environment.
 
 ### 2 - Build Spatial Edges via Delaunay Triangulation
 
-Using `scipy.spatial.Delaunay`, edges are formed between spatial neighbors:
+Using **Delaunay**, edges are formed between spatial neighbors.
 
 This provides biologically-plausible neighborhood relations.
 
 ### 3 - Initialize Cell Phenotypes
 
-Each node is assigned a random phenotype from a predefined list:
+Each node is assigned a random phenotype from a predefined list of your choice
 
 ### 4 - Define the MRF Energy Function
 
@@ -224,8 +220,10 @@ E = -\sum_{(i, j) \in \text{Edges}} Z_{y_i, y_j}
 ```
 
 Where:
+```math
 - \( y_i \) and \( y_j \) are the phenotypes of neighboring cells
 - \( Z_{y_i, y_j} \) is the Z-score measuring assortativity
+```
 
 ### 5 - Gibbs Sampling to Minimize Energy
 
