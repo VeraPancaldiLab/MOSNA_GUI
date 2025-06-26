@@ -65,6 +65,14 @@ You must follow this architecture provided to make it works:
 
 ![Mon Image](images/Tool_architecture.png)
 
+This image explain how works the tool:
+
+[image qui explique le fonctionnement]
+
+❗ You can directly use Tysserand tool of my own tool instead of run pre-processing if you respect this the following format of your data 
+
+[image de format des données de base]
+
 ## Graphic Interface to control your using
 
 before to be able to obtain your tysserand network you must complete first all parameters for the different, this parameters will be explained right after:
