@@ -61,15 +61,15 @@ This tool provide a GUI to generate easily the networks and other spatial analys
 
 ## Tool architecture 
 
-You must follow this architecture provided to make it works:
+### You must follow this architecture provided to make it works:
 
 ![Mon Image](images/Tool_architecture.png)
 
-This image explain how works the tool:
+### This image explain how works the tool:
 
 [image qui explique le fonctionnement]
 
-❗ You can directly use Tysserand tool of my own tool instead of run pre-processing if you respect this the following format of your data 
+### ❗ You can directly use Tysserand tool of my own tool instead of run pre-processing if you respect this the following format of your data 
 
 ❗ You must respect few things: 
 
