@@ -68,15 +68,24 @@ def reposition_nodes_by_MRF_vectorized(
     omega: pd.DataFrame,
     iterations: int = 100,
     learning_rate: float = 0.01,
-    center: bool = True,
+    center: bool = False,
     decay: bool = True
 ) -> pd.DataFrame:
+    
     """
     Vectorized version of MRF node repositioning with adaptive learning rate.
     """
     # Index mapping: node ID -> row index
-    node_id_to_index = {node_id: idx for idx, node_id in enumerate(nodes_df.index)}
+    node_id_to_index = {node_id: idx for idx, node_id in enumerate(nodes_df['CellID'])}
     n_nodes = len(nodes_df)
+
+    ids = list(node_id_to_index.values())
+    src_idx, tgt_idx = [], []
+    for id in ids:
+        target_tab = [x for x in ids if x != id]
+        for id_target in target_tab:
+            src_idx.append(id)
+            tgt_idx.append(id_target)
 
     # Position and type arrays
     pos = nodes_df[['X_position', 'Y_position']].values.astype(np.float64).copy()
@@ -96,7 +105,7 @@ def reposition_nodes_by_MRF_vectorized(
         tgt_idx = np.array(tgt_idx)
         return src_idx, tgt_idx
 
-    src_idx, tgt_idx = generate_source_target_from_edges(edges_df)
+    #src_idx, tgt_idx = generate_source_target_from_edges(edges_df)
     # Prepare omega matrix access (convert to 2D array + lookup dict)
     phenos = nodes_df['Phenotypes'].unique()
     pheno_to_idx = {p: i for i, p in enumerate(phenos)}
@@ -105,8 +114,8 @@ def reposition_nodes_by_MRF_vectorized(
 
     for t in trange(1, iterations + 1, desc="[PROCESSING] MRF vectorized"):
         grads = np.zeros_like(pos)
-
-        diff = abs(pos[src_idx] - pos[tgt_idx])
+        
+        diff = pos[src_idx] - pos[tgt_idx]
         type_u = type_idx[src_idx]
         type_v = type_idx[tgt_idx]
         w = omega_array[type_u, type_v].reshape(-1, 1)
@@ -118,8 +127,14 @@ def reposition_nodes_by_MRF_vectorized(
         eta = learning_rate / np.sqrt(t) if decay else learning_rate
         pos -= eta * grads
 
-        edges_df = generate_delaunay_edges(pos)
-        src_idx, tgt_idx = generate_source_target_from_edges(edges_df)
+        """
+        print("Gradient norm:", grads.max())
+        print(omega_array[type_u, type_v].mean())
+        print(diff.mean())
+        print(forces.max(), forces.min())
+        """
+        #edges_df = generate_delaunay_edges(pos)
+        #src_idx, tgt_idx = generate_source_target_from_edges(edges_df)
 
     if center:
         pos -= pos.mean(axis=0)
@@ -209,9 +224,9 @@ def main(iterations, learning_rate, nb_cell):
     return nodes, nodes_initial
 
 if __name__ == "__main__":
-    iterations = 100
-    learning_rate = 0.005
-    nb_cell = 1000
+    iterations = 1000
+    learning_rate = 0.00005
+    nb_cell = 500
 
     nodes, nodes_initial = main(iterations=iterations, learning_rate=learning_rate, nb_cell=nb_cell)
     plotting(nodes, nodes_initial)
