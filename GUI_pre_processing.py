@@ -15,12 +15,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QTimer, QThread, Signal
 from PySide6.QtGui import QTextCursor
 
-CONFIG_PATH = 'CONFIG/configuration.yaml'
+CONFIG_PATH = 'CONFIG/configuration_pre_process.yaml'
 SCRIPTS = [
     'SCRIPT/pre_processing.sh',
-    'SCRIPT/draw_tysserand.py',
-    'SCRIPT/mosna_assortativity.py',
-    'SCRIPT/mosna_NAS.py',
     'SCRIPT/clear_temporary_files.sh'
 ]
 
@@ -324,7 +321,6 @@ class MosnaGUI(QMainWindow):
         cursor = self.console_output.textCursor()
         cursor.movePosition(QTextCursor.End)
 
-        # Si le texte commence par retour chariot, on écrase la dernière ligne
         if text.startswith('\r'):
             cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)
             cursor.removeSelectedText()

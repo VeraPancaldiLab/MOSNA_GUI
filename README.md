@@ -2,14 +2,19 @@
 
 - [Installation](#installation)
 - [Tool](#tool)
+    - [Tool Architecture](#tool-architecture)
+    - [GUI](#graphic-interface-to-control-your-using)
     - [Step 1](#step-1-pre-processing)
     - [Step 2](#step-2-draw-tysserand-spatial-networks)
     - [Step 3](#step-3-generate-assortativity)
     - [Step 4](#step-4-plot-niches-analysis)
+    - [Step 5](#step-5-synthetic-spatial-network-generation-using-mrf-and-assortativity)
+    - [Step 6](#step-6-remove-all-temporary-file-in-output_data-file)
 - [Exemple of Using](#exemple-of-using)
     - [Tysserand Network](#tysserand-network)
     - [Assortativity](#assortativity)
     - [Niches Composition](#niches-composition)
+    - [Network Generation](#synthetic-network-generation)
 
 # Installation
 
@@ -56,17 +61,70 @@ This tool provide a GUI to generate easily the networks and other spatial analys
 
 ## Tool architecture 
 
-You must follow this architecture provided to make it works:
+### You must follow this architecture provided to make it works:
 
 ![Mon Image](images/Tool_architecture.png)
 
-## Graphic Interface to control your using
+### This image explain how works the tool:
+
+Image qui explique le fonctionnement
+
+### ❗You can directly use Tysserand tool of my own tool instead of run pre-processing if you respect this the following format of your data:
+
+❗ You must respect few things: 
+
+- file are Pandas DataFrame convert into parquet with df.to_parquet()
+- here type could be IF_panel or IMC, panel need to have the same name than in your data file
+- 'Sample' in the following tab must replace by 'ROI' for IMC or 'layer' for IF images
+- This files must be put in 'output_data' folder
+
+❗ All this file contains all your data, if you have 30 IMC images from a same dataset you can concatenate in this files
+
+Tab for the following file format:
+- type_cell_pos_pheno.parquet
+
+| Index  | CellID  | patient | Sample | X_position | Y_position | Phenotypes |
+|--------|---------|---------|--------|------------|------------|------------|
+| Cell 1 |         |         |        |            |            |            |
+|  ...   |         |         |        |            |            |            |
+| Cell N |         |         |        |            |            |            |
+
+- type_cell_pos.parquet
+
+| Index  | CellID  | patient | Sample | X_position | Y_position |
+|--------|---------|---------|--------|------------|------------|
+| Cell 1 |         |         |        |            |            |
+|  ...   |         |         |        |            |            |
+| Cell N |         |         |        |            |            |
+
+- type_markers.parquet
+replace the name of bio-marker 1 to n by the real name of yours bio-makers
+
+| Index  | CellID  | Maker 1 | ... | Marker N   |
+|--------|---------|---------|--------|------------|
+| Cell 1 |         |         |        |            |
+|  ...   |         |         |        |            |
+| Cell N |         |         |        |            |
+
+- type_sample_cell.parquet
+
+| Index  | CellID  | patient | Sample |
+|--------|---------|---------|--------|
+| Cell 1 |         |         |        |
+|  ...   |         |         |        |
+| Cell N |         |         |        |
+
+## Graphic Interfaces to control your using
+
+**2 GUI :** 
+- 1 for pre-processing
+- 1 for Tysserand and MOSNA analysis
 
 before to be able to obtain your tysserand network you must complete first all parameters for the different, this parameters will be explained right after:
 
 ![Mon Image](images/GUI.png)
 
-### Step 1: Pre-processing
+## Step 1: Pre-processing
 
 The pre-processing step is required to generate temp file needed for the following steps. 4 files will be created by type of data (IF's panel and IMC)
 
@@ -77,159 +135,223 @@ The pre-processing step is required to generate temp file needed for the followi
 
 You must fill **General**, **IF_import** and **IMC_import** sections.
 
-**General:**
-  - silent: 
-  - pheno_dir:
-  - phenograph: 
-  - add_pheno: 
+| Section     | Clé                   | Descripton        |
+|-------------|-----------------------|-------------------|
+|**General**  | silent                |                   |
+|             | pheno_dir             |                   |
+|             | phenograph            |                   |
+|             | add_pheno             |                   |
+|**IF_import**| present_in            |                   |
+|             | directory_path        |                   |
+|             | panel                 |                   |
+|             | path_encoding_patient |                   |
+|             | path_file_to_patient  |                   |
+|             | columns_to_drop       |                   |
+|             | layer_columns         |                   |
+|             | patient_columns       |                   |
+|             | marker_columns        |                   |
+|             | cell_id_columns       |                   |
+|             | spatial_columns       |                   |
+|             | normalize_data        |                   |
+|             | re_index              |                   |
+|             | there_is_duplicata    |                   |
+|**IMC_import**| present_in           |                   |
+|             | directory_path        |                   |
+|             | path_encoding_patient |                   |
+|             | path_file_to_patient  |                   |
+|             | columns_to_drop       |                   |
+|             | layer_columns         |                   |
+|             | patient_columns       |                   |
+|             | marker_columns        |                   |
+|             | cell_id_columns       |                   |
+|             | spatial_columns       |                   |
+|             | normalize_data        |                   |
+|             | re_index              |                   |
+|             | there_is_duplicata    |                   |
 
-**IF_import:**
-  - present_in: 
-  - directory_path: 
-  - panel: 
-  - path_encoding_patient: 
-  - path_file_to_patient: 
-  - columns_to_drop: 
-  - layer_columns: 
-  - patient_columns: 
-  - marker_columns: 
-  - cell_id_columns: 
-  - spatial_columns: 
-  - normalize_data: 
-  - re_index: 
-  - there_is_duplicata: 
-
-**IMC_import:**
-  - present_in: 
-  - directory_path: 
-  - path_encoding_patient: 
-  - path_file_to_patient: 
-  - columns_to_drop: 
-  - layer_columns: 
-  - patient_columns: 
-  - marker_columns: 
-  - cell_id_columns: 
-  - spatial_columns: 
-  - normalize_data: 
-  - re_index: 
-  - there_is_duplicata: 
-
-### Step 2: Draw Tysserand Spatial Networks
+## Step 2: Draw Tysserand Spatial Networks
 
 This step generate Tysserand networks for each patient/sample. You must fill **Tysserand** section.
 
-**tysserand:**
-  - IF_perform: 
-  - panel: 
-  - IMC_perform: 
-  - cpu: 
-  - k_neighbors_phenograph: 
-  - primary_metric_phenograph: 
-  - method_tysserand: 
-  - min_neighbors: 
+| Clé                      | Description       |
+|--------------------------|-------------------|
+| IF_perform               |                   |
+| panel                    |                   |
+| IMC_perform              |                   |
+| cpu                      |                   |
+| k_neighbors_phenograph   |                   |
+| primary_metric_phenograph|                   |
+| method_tysserand         |                   |
+| min_neighbors            |                   | 
 
-### Step 3: Generate Assortativity
+## Step 3: Generate Assortativity
 
 For this step you must fill **Assortativity** section. This step allow you to generate assortativity for each patient/sample networks and for an aggregate data of one type of data (all IF for one panel for exemple)
 
-**Assortativity:**
-  - IF_perform: 
-  - panel: 
-  - IMC_perform: 
-  - perform_batch: 
-  - perform_clr_transfo: 
+| Clé                   | Description       |
+|-----------------------|-------------------|
+|IF_perform             |                   |
+|panel                  |                   |
+|IMC_perform            |                   |
+|perform_batch          |                   |
+|perform_clr_transfo    |                   |
 
-### Step 4: Plot Niches Analysis
+## Step 4: Plot Niches Analysis
 
 In this step you must fill **NAS** section. This step will generate for you niches composition and all networks recolored by niche for each patient/sample and also the niche composition for aggregated nodes for all images of one type. 
 
-**NAS:**
-  - method: 
-  - output_name_file: 
-  - IMC_perform: 
-  - IF_perform: 
-  - panel: 
-  - node_aggregation: 
-  - perform_NAS_all_sample: 
+| Clé                   | Description       |
+|-----------------------|-------------------|
+|method                 |                   |
+|output_name_file       |                   |
+|IMC_perform            |                   |
+|IF_perform             |                   |
+|panel                  |                   |
+|node_aggregation       |                   | 
+|perform_NAS_all_sample |                   |
 
 And for each niche clustering and plotting (IF and IMC nodes aggregation, IF and IMC for each patient/sample):
 
 **Niche clustering parameters:**
-  - order: 
-  - stat_funcs: 
-  - stat_names: 
-  - clusterer_type: 
-  - n_clusters: 
-  - reducer_type: 
-  - metric: 
-  - resolution: 
-  - n_neighbors: 
-  - min_dist: 
-  - dim_clust: 
-  - min_cluster_size:
-  - k_cluster: 
-  - normalize: 
 
-### Step 5: Remove all temporary file in output_data file
+| Clé               | Description       |
+|-------------------|-------------------|
+| order             |                   |
+| stat_funcs        |                   |
+| stat_names        |                   |
+| clusterer_type    |                   |
+| n_clusters        |                   |
+| reducer_type      |                   |
+| metric            |                   |
+| resolution        |                   |
+| n_neighbors       |                   |
+| min_dist          |                   |
+| dim_clust         |                   |
+| min_cluster_size  |                   |
+| k_cluster         |                   |
+| normalize         |                   |
+
+
+## Step 5: Synthetic Spatial Network Generation using MRF and Assortativity
+
+This repository implements a pipeline to generate **synthetic spatial tissue-like networks** representing cell phenotypes, using **assortativity constraints** and a **Markov Random Field (MRF)** model.
+
+### Overview
+
+The pipeline creates a 2D tissue-like structure with cells (nodes), connected by spatial proximity (edges), and assigns phenotypes to each cell such that:
+
+- **Phenotype-Phenotype assortativity** (given as Z-scores) is respected
+- **Global phenotype proportions** are enforced with a tunable tolerance
+- The final output includes:
+  - A list of nodes with spatial coordinates and phenotypes
+  - A list of spatial edges derived from Delaunay triangulation
+
+### 🔄 Process 1 - Generate Cell Positions
+
+Cells are uniformly distributed in a 2D rectangular space
+
+This simulates a homogeneous tissue environment.
+
+### 🔄 Process 2 - Build Spatial Edges via Delaunay Triangulation
+
+Using **Delaunay**, edges are formed between spatial neighbors.
+
+This provides biologically-plausible neighborhood relations.
+
+### 🔄 Process 3 - Initialize Cell Phenotypes
+
+Each node is assigned a random phenotype from a predefined list of your choice
+
+### 🔄 Process 4 - Define the MRF Energy Function
+
+The energy of the system is defined by the negative sum of Z-score interactions over edges:
+
+```math
+\Huge E = -\sum_{(i, j) \in \text{Edges}} Z_{y_i, y_j}
+```
+
+Where:  
+- $y_i$ and $y_j$ are the phenotypes of neighboring cells  
+- $Z_{y_i, y_j}$ is the Z-score measuring assortativity
+
+### 🔄 Process 5 - Gibbs Sampling to Minimize Energy
+
+For each node, we re-sample its phenotype to minimize local energy:
+
+For a candidate phenotype \( t \), we define:
+
+```math
+\Huge P(y_i = t) \propto \exp\left(-\sum_{j \in \mathcal{N}(i)} Z_{t, y_j}\right)
+```
+
+The sampling is repeated over `n_iter` iterations to reach equilibrium.
+
+### 🔄 Process 6 - Proportion Regularization
+
+After convergence, we correct global proportions by inserting additional points (cells) with minimal impact on the energy:
+
+For phenotype \( t \), the position \( x \) is selected to minimize:
+
+```math
+\Huge \Delta E(x, t) = -\sum_{j \in \mathcal{N}(x)} Z_{t, y_j}
+```
+
+A new cell is added if:
+
+```python
+abs(current_proportion[phenotype] - target_proportion[phenotype]) > tolerance_threshold
+```
+
+This step ensures final phenotype distributions match biological constraints.
+
+## Step 6: Remove all temporary file in output_data file
+
+Clear all temp file to keep only analysed data
 
 # Exemple of using
 
 In this part we will provide an example of this tool step by step
 
-## Tysserand Network 
+### Tysserand Network 
 
 In this all part, different spatial networks plots are present
 
-### IMC tysserand network
+#### IMC tysserand network
 ![Mon Image](images/network/IMC_Tysserand_network_A_ROI_01.png)
 
-### IF first panel tysserand network
-![Mon Image](images/network/IF_C1_Tysserand_network_C_layer_1.png)
+#### IF first panel 1 and 2 tysserand network
+![Mon Image](images/network/IF_C1_Tysserand_network_C_layer_1.png) ![Mon Image](images/network/IF_C2_Tysserand_network_B_layer_3.png)
 
-### IF second panel tysserand network
-![Mon Image](images/network/IF_C2_Tysserand_network_B_layer_3.png)
-
-## Assortativity
+### Assortativity
 
 In this part, all different assortativity plots are present
 
-### IF assortativity for one patient/sample
-![Mon Image](images/assort/assortativity_z-scored_patient-A_layer-1.png)
+#### IF and IMC assortativity for one patient/sample
+![Mon Image](images/assort/assortativity_z-scored_patient-A_layer-1.png) ![mon image](images/assort/assortativity_z-scored_patient-A_ROI-01.png)
 
-### IMC assortativity for one patient/sample
-![mon image](images/assort/assortativity_z-scored_patient-A_ROI-01.png)
+#### IF and IMC assortativity aggregated by mean
+![Mon Image](images/assort/assortativity_z-scored_IF_C1.png) ![Mon Image](images/assort/assortativity_z-scored_IF_C2.png)
 
-### IF assortativity aggregated by mean
-![Mon Image](images/assort/assortativity_z-scored_IF_C1.png)
-![Mon Image](images/assort/assortativity_z-scored_IF_C2.png)
-
-### IMC assortativity aggregated by mean
 ![Mon Image](images/assort/assortativity_z-scored_IMC.png)
 In this image only the most important z-score (absolute values) are present to keep this plot visible
 
 Here the real barplot with all tuples of phenotypes.
 ![Mon Image](images/assort/Mean_Std_Assortativity_z-scored_IMC.png)
 
-## Niches composition
+### Niches composition
 
 In this part, all different niche analysis plots are present
 
-### IF aggregated nodes
-![Mon image](images/niche/IF_C2_niche_composition_niche.png)
+#### IF and IMC aggregated nodes
+![Mon image](images/niche/IF_C2_niche_composition_niche.png) ![Mon image](images/niche/IMC_niche_composition_niche.png)
 
-### IMC aggregated nodes
-![Mon image](images/niche/IMC_niche_composition_niche.png)
-
-### IF for one patient/sample
-![Mon image](images/niche/IFnicheG1C2.png)
+#### IF and IMC for one patient/sample
+![Mon image](images/niche/IFnicheG1C2.png) ![Mon image](images/niche/IMCnicheA1.png)
 
 and the associated network colored by niche:
 
-![Mon image](images/niche/IF_netniche_G1C2.png)
+![Mon image](images/niche/IF_netniche_G1C2.png) ![Mon image](images/niche/IMC_netnicheA1.png)
 
-### IMC for one patient/sample
-![Mon image](images/niche/IMCnicheA1.png)
+### Synthetic Network Generation
 
-and the associated network colored by niche: 
 
-![Mon image](images/niche/IMC_netnicheA1.png)
