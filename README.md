@@ -85,34 +85,34 @@ Tab for the following file format:
 
 | Index  | CellID  | patient | Sample | X_position | Y_position | Phenotypes |
 |--------|---------|---------|--------|------------|------------|------------|
-| Cell 1 |         |         |        |            |            |            |
-|  ...   |         |         |        |            |            |            |
-| Cell N |         |         |        |            |            |            |
+| Cell 1 |    ...     |    ...     |     ...   |     ...       |   ...         |    ...        |
+|  ...   |    ...     |      ...   |     ...   |     ...       |   ...         |     ...       |
+| Cell N |    ...     |     ...    |    ...    |    ...        |     ...       |    ...        |
 
 - type_cell_pos.parquet
 
 | Index  | CellID  | patient | Sample | X_position | Y_position |
 |--------|---------|---------|--------|------------|------------|
-| Cell 1 |         |         |        |            |            |
-|  ...   |         |         |        |            |            |
-| Cell N |         |         |        |            |            |
+| Cell 1 |    ...     |  ...       |     ...   |   ...         |    ...        |
+|  ...   |      ...   |      ...   |    ...    |      ...      |    ...        |
+| Cell N |    ...     |     ...    |      ...  |      ...      |    ...        |
 
 - type_markers.parquet
 replace the name of bio-marker 1 to n by the real name of yours bio-makers
 
 | Index  | CellID  | Maker 1 | ... | Marker N   |
 |--------|---------|---------|--------|------------|
-| Cell 1 |         |         |        |            |
-|  ...   |         |         |        |            |
-| Cell N |         |         |        |            |
+| Cell 1 |    ...     |   ...      |  ...      |    ...       |
+|  ...   |     ...    |     ...    |    ...    |      ...      |
+| Cell N |     ...    |     ...    |   ...     |      ...      |
 
 - type_sample_cell.parquet
 
 | Index  | CellID  | patient | Sample |
 |--------|---------|---------|--------|
-| Cell 1 |         |         |        |
-|  ...   |         |         |        |
-| Cell N |         |         |        |
+| Cell 1 |    ...     |   ...      |   ...     |
+|  ...   |    ...     |     ...    |    ...    |
+| Cell N |     ...    |    ...     |    ...    |
 
 ## Graphic Interfaces to control your using
 
