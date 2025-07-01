@@ -169,6 +169,7 @@ def plot_mix_mat(save_dir, net_stats, sample_id, type, panel):
     z_cols = [x for x in net_stats.columns if x.endswith('Z') and not x.startswith('assort')]
 
     mixmat_z = mosna.series_to_mixmat(net_stats.loc[sample_id, z_cols], discard=' Z').astype(float)
+    mixmat_z.to_parquet(f"output_data/synthetic_network_generation/mixmat_IF_IMC/{type}{panel}_{sample_id}_mixmat.parquet")
     assort_z = net_stats.loc[sample_id, "assort Z"]
     
     sns.set_context("notebook")
@@ -218,8 +219,8 @@ def group_assort(net_stat, z_cols, save_dir, type, panel):
     mixmat_z_mean = mosna.series_to_mixmat(z_mean.loc[z_cols], discard=' Z').astype(float)
     mixmat_z_std = mosna.series_to_mixmat(z_std.loc[z_cols], discard=' Z').astype(float)
 
-    mixmat_z_mean.to_parquet(f"./output_data/synthetic_network_generation/data_to_build/mixmat_mean_{type}{panel}.parquet")
-    mixmat_z_std.to_parquet(f"./output_data/synthetic_network_generation/data_to_build/mixmat_std_{type}{panel}.parquet")
+    mixmat_z_mean.to_parquet(f"./output_data/synthetic_network_generation/mixmat_mean_{type}{panel}.parquet")
+    mixmat_z_std.to_parquet(f"./output_data/synthetic_network_generation/mixmat_std_{type}{panel}.parquet")
 
     data = []
     already_seen = set()
@@ -321,14 +322,14 @@ def group_assort(net_stat, z_cols, save_dir, type, panel):
         df_plot = df_plot.sort_values(by="mean")
         plotting(df_plot)
 
-########################################## Main #######################################
+########################################## MAIN #######################################
 
 def main(IF, IMC, config_file):
 
     save_dir = Path("./output_data/assortativity")
     save_dir.mkdir(parents=True, exist_ok=True)
 
-    Path("./output_data/synthetic_network_generation/data_to_build").mkdir(parents=True, exist_ok=True)
+    Path("./output_data/synthetic_network_generation/mixmat_IF_IMC").mkdir(parents=True, exist_ok=True)
 
     def process(type, config_file):
 
@@ -371,20 +372,18 @@ def main(IF, IMC, config_file):
         z_net_stat = group_assort(net_stat, z_cols, save_dir, type, panel)
     
     try:
-        if IMC:
-            if ((config_file['IMC_import']['present_in'] and config_file['tysserand']['IMC_perform']) or verif_file('IMC', define_panel('IMC'))):
-                process('IMC', config_file)
-            else:
-                raise ValueError("There is no IMC in your data or the Tysserand networks were not generated")
+        if IMC and verif_file('IMC', define_panel('IMC')):
+            process('IMC', config_file)
+        else:
+            raise ValueError("There is no IMC in your data or the Tysserand networks were not generated")
     except ValueError as e:
         print(f"\t[INFO] IMC error: {e}")
 
     try:
-        if IF:
-            if ((config_file['IF_import']['present_in'] and config_file['tysserand']['IF_perform']) or verif_file('IF', define_panel('IF'))):
-                process('IF', config_file)
-            else:
-                raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
+        if IF and verif_file('IF', define_panel('IF')):
+            process('IF', config_file)
+        else:
+            raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
                 
     except ValueError as e:
         print(f"\t[INFO] IF error: {e}")

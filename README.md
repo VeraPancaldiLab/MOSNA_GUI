@@ -116,7 +116,7 @@ replace the name of bio-marker 1 to n by the real name of yours bio-makers
 
 ## Graphic Interfaces to control your using
 
-**2 GUI :** 
+**2 GUI :**
 - 1 for pre-processing
 - 1 for Tysserand and MOSNA analysis
 

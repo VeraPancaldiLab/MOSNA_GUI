@@ -389,21 +389,19 @@ def main(IF, IMC, config_file):
         
 
     try:
-        if IMC:
-            if config_file['IMC_import']['present_in'] or verif_file('IMC', define_panel('IMC')):
-                process('IMC')
-            else:
-                raise ValueError("There is no IMC in your data")
+        if IMC and verif_file('IMC', define_panel('IMC')):
+            process('IMC')
+        else:
+            raise ValueError("There is no IMC in your data")
     except ValueError as e:
         print(f"IMC error: {e}")
 
     try:
-        if IF:
-            if config_file['IF_import']['present_in'] or verif_file('IF', define_panel('IF')):
-                print(f"\t[INFO] process on {config_file['tysserand']['panel']} panel")
-                process('IF')
-            else:
-                raise ValueError("There is no IF in your data")
+        if IF and verif_file('IF', define_panel('IF')):
+            print(f"\t[INFO] process on {config_file['tysserand']['panel']} panel")
+            process('IF')
+        else:
+            raise ValueError("There is no IF in your data")
 
     except ValueError as e:
         print(f"IF error: {e}")

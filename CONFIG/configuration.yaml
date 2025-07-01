@@ -3,16 +3,16 @@ phenograph: false
 k_neighbors_phenograph: 30
 primary_metric_phenograph: minkowski
 tysserand:
-  IF_perform: false
+  IF_perform: true
   panel: C1
-  IMC_perform: false
+  IMC_perform: true
   cpu: 20
   method_tysserand: delaunay
   min_neighbors: 3
 Assortativity:
-  IF_perform: false
+  IF_perform: true
   panel: C1
-  IMC_perform: false
+  IMC_perform: true
   perform_batch: false
   perform_clr_transfo: false
 NAS:

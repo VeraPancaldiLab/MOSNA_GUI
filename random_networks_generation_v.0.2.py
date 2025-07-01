@@ -5,7 +5,7 @@ from mosna import mosna
 from tysserand import tysserand as ty
 import matplotlib.pyplot as plt
 from tqdm import tqdm, trange
-
+import seaborn as sns
 ######################################################### HELPER FUNCTION #################################################################
 def generate_node(positions, phenotypes):
     if phenotypes != None:
@@ -24,13 +24,14 @@ def generate_node(positions, phenotypes):
         })
     return nodes
 
-def plotting(nodes, axes, title):
+def plotting(nodes, axes, title, pairs=None):
     axes.clear()
     clustering = nodes['Phenotypes']
     coords = nodes[['X_position', 'Y_position']]
     celltypes_color_mapper = cluster_to_cmap(clustering.copy())
     coords = np.array(coords.values.tolist())
-    pairs = coords_to_pairs(coords)
+    if pairs is None:
+        pairs = coords_to_pairs(coords)
 
     ty.plot_network(
         coords.copy(), pairs.copy(),labels=clustering.copy(),
@@ -91,8 +92,11 @@ def compute_energy(edges, phenotypes, zscore_matrix, phenotype_to_index):
         energy -= zscore_matrix[idx_u, idx_v]
     return energy
 
-def gibbs_sampling(positions, edges, zscore_matrix, phenotype_list, phenotype_to_index, target_proportions, n_iter=1000):
+def gibbs_sampling(positions, edges, zscore_matrix, phenotype_list, phenotype_to_index, target_proportions, axes, n_iter=1000):
     phenotypes = initialize_phenotypes(len(positions), phenotype_list, target_proportions)
+
+    nodes = generate_node(positions, phenotypes)
+    plotting(nodes, axes[0,0],f"initial network with {len(nodes)} cells")
 
     neighbors = {i: [] for i in range(len(positions))}
     for _, row in edges.iterrows():
@@ -100,7 +104,7 @@ def gibbs_sampling(positions, edges, zscore_matrix, phenotype_list, phenotype_to
         neighbors[u].append(v)
         neighbors[v].append(u)
 
-    for _ in tqdm(range(n_iter), desc='[PROCESS] GIBBS Sampling'):
+    for _ in tqdm(range(n_iter), desc=f'[PROCESS] GIBBS Sampling for {len(positions)} cells '):
         for node in range(len(positions)):
             energy_list = []
             for candidate_type in phenotype_list:
@@ -146,8 +150,6 @@ def adjust_proportions(
         current_props = {p: current_counts[p] / total for p in phenotype_list}
         deficit = compute_deficit(current_props)
 
-
-
         weights = np.array([deficit[p] for p in phenotype_list], dtype=float)
         """
         if np.all(weights < tolerance):
@@ -156,9 +158,8 @@ def adjust_proportions(
         weights /= weights.sum()
         chosen_type = np.random.choice(phenotype_list, p=weights)
 
+        pos_candidates = np.random.rand(20, 2) * domain_size
 
-
-        pos_candidates = np.random.rand(100, 2) * domain_size
         best_pos = None
         best_energy = float('inf')
 
@@ -177,9 +178,6 @@ def adjust_proportions(
         if best_pos is not None:
             positions = np.vstack([positions, best_pos])
             phenotypes.append(chosen_type)
-    
-    nodes = generate_node(positions, phenotypes)
-    plotting(nodes, axes[1,0],"post completion with proportion")
 
 
     # Étape 2 — Ajustement final via boucle `while`
@@ -193,8 +191,9 @@ def adjust_proportions(
         for p in phenotype_list:
             if deficit[p] <= tolerance * total:
                 continue
+                        
+            pos_candidates = np.random.rand(20, 2) * domain_size
 
-            pos_candidates = np.random.rand(100, 2) * domain_size
             best_pos = None
             best_energy = float('inf')
 
@@ -218,19 +217,50 @@ def adjust_proportions(
 
     return positions, phenotypes
 
-def main(SEED, patient, sample, iteration, domain_size, nb_cells):
+def compute_assort(nodes, edges):
+    nodes_onehot = nodes.join(pd.get_dummies(nodes['Phenotypes'], prefix='', prefix_sep=''))
+
+    cell_types = nodes['Phenotypes'].unique().tolist()
+
+    """
+    mixmat = mosna.mixing_matrix(nodes_onehot, edges, cell_types)
+    assort = mosna.attribute_ac(mixmat)
+    mixmat_rand, assort_rand = mosna.randomized_mixmat(
+        nodes_onehot, edges, cell_types, 
+        n_shuffle=50, 
+        parallel='max', 
+        memory_limit='10GB',
+        verbose=0)
+    
+    mixmat_mean, mixmat_std, mixmat_zscore = mosna.zscore(mixmat, mixmat_rand, return_stats=True)
+    assort_mean, assort_std, assort_zscore = mosna.zscore(assort, assort_rand, return_stats=True)
+    """
+    mixmat_zscore = mosna.sample_assort_mixmat(nodes_onehot, edges, attributes=cell_types, sample_id=None, n_shuffle=50)
+    z_cols = [x for x in mixmat_zscore.columns if x.endswith('Z') and not x.startswith('assort')]
+    mixmat_z = mosna.series_to_mixmat(mixmat_zscore.loc[0, z_cols], discard=' Z').astype(float)
+    return mixmat_z
+
+def main(SEED, type_of_data, panel, patient, sample, iteration, domain_size, nb_cells, RUN_TEST):
     np.random.seed(SEED)
-    nodes_types = pd.read_parquet(f"./output_data/IMC_networks_sample/nodes_patient-{patient}_" 
-                        f"ROI-{sample}.parquet")[['Phenotypes','CellID']]
+
+    if type_of_data == 'IMC':
+        panel = ''
+        sample_type = 'ROI'
+    elif type_of_data == 'IF':
+        panel = '_' + panel
+        sample_type = 'layer'
+    
+    nodes_types = pd.read_parquet(f"./output_data/{type_of_data}{panel}_networks_sample/nodes_patient-{patient}_" 
+                        f"{sample_type}-{sample}.parquet")[['Phenotypes','CellID']]
     
     cell_types = nodes_types['Phenotypes'].unique()
     target_proportions = nodes_types['Phenotypes'].value_counts(normalize=True).to_dict()
     phenotype_to_index = {p: i for i, p in enumerate(cell_types)}
 
-    df = pd.read_parquet('output_data/synthetic_network_generation/data_to_build/mixmat_mean_IMC.parquet')
+    df = pd.read_parquet(f'output_data/synthetic_network_generation/mixmat_IF_IMC/{type_of_data}{panel}_patient-{patient}_{sample_type}-{sample}_mixmat.parquet')
     zscore_matrix = df.values
 
-    fig, axes = plt.subplots(2, 2, figsize=(40, 30))
+    fig, axes = plt.subplots(3, 2, figsize=(40, 30))
 
     ###### initial network ######
 
@@ -238,15 +268,12 @@ def main(SEED, patient, sample, iteration, domain_size, nb_cells):
     positions = generate_cell_positions(initial_add, domain=domain_size)
     edges = build_edges_from_positions(positions)
 
-    nodes = generate_node(positions, None)
-    plotting(nodes, axes[0,0],"initial network")
-
     ###### post Gibbs sampling network ######
 
-    phenotypes = gibbs_sampling(positions, edges, zscore_matrix, cell_types, phenotype_to_index, target_proportions, n_iter=iteration)
+    phenotypes = gibbs_sampling(positions, edges, zscore_matrix, cell_types, phenotype_to_index, target_proportions, axes ,n_iter=iteration)
 
     nodes = generate_node(positions, phenotypes)
-    plotting(nodes, axes[0,1], "post Gibbs sampling network")
+    plotting(nodes, axes[1,0], f"post Gibbs sampling network with {len(nodes)} cells")
 
     ###### post adding cell network ######
 
@@ -255,18 +282,34 @@ def main(SEED, patient, sample, iteration, domain_size, nb_cells):
                                                tolerance=0.01, n_following_add=nb_cells-initial_add)
 
     nodes = generate_node(positions, phenotypes)
-    plotting(nodes, axes[1,1], "post adjust proportion")
+    if RUN_TEST:
+        edges = build_edges_from_positions(positions)
+        mixmat_z = compute_assort(nodes, edges)
+        mixmat_z.to_parquet('test_assort.parquet')
+        sns.heatmap(mixmat_z, center=0, cmap="vlag", annot=False, linewidths=.5, ax=axes[0,1])
+        axes[0,1].set_title("assortativity")
+        plt.xticks(rotation=45, ha='right')
 
+        ecart_mixmat = (mixmat_z - df).abs()
+        sns.heatmap(ecart_mixmat, center=0, cmap="vlag", annot=False, linewidths=.5, ax=axes[2,1])
+        axes[2,1].set_title("assortativity")
+        plt.xticks(rotation=45, ha='right')
+
+    plotting(nodes, axes[2,0], f"post adjust proportion with {len(nodes)} cells")
     plt.tight_layout()
     plt.savefig(f'TEST_NETWORK_V2/test_{nb_cells}_{iteration}.png', dpi=300)
 
-if __name__ == '__main__':  
-    patient = 'A'
-    sample = '01'
+if __name__ == '__main__':
+    type_of_data = 'IF' 
+    panel = 'C2'
+    patient = 'B'
+    sample = '3'
     SEED = 42  
+    RUN_TEST = True
 
-    nb_cells = 1000
-    iteration_MRF = 1
-    domain_size = (250,250)
 
-    main(SEED, patient, sample, iteration_MRF, domain_size, nb_cells)
+    nb_cells = 2000
+    iteration_MRF = [1]
+    domain_size = (1000,1000)
+    for i in iteration_MRF:
+        main(SEED, type_of_data, panel, patient, sample, i, domain_size, nb_cells, RUN_TEST)
