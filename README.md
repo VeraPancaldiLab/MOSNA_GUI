@@ -289,10 +289,10 @@ The sampling is repeated over `n_iter` iterations to reach equilibrium.
 ### 🔄 Process 6 - Proportion Regularization
 
 After convergence, we correct global proportions by inserting additional points (cells) with minimal impact on the energy:
+$N(x)$ is the set of source cells for the cell x
 
 For phenotype \( t \), the position \( x \) is selected to minimize:
 
-$N(x)$ is the set of source cells for the cell x
 ```math
 \Huge \Delta E(x, t) = -\sum_{j \in \mathcal{N}(x)} Z_{t, y_j}
 ```
