@@ -293,6 +293,7 @@ After convergence, we correct global proportions by inserting additional points 
 For phenotype \( t \), the position \( x \) is selected to minimize:
 
 ```math
+\mathcal{N}{x} is the set of source cells for the cell x
 \Huge \Delta E(x, t) = -\sum_{j \in \mathcal{N}(x)} Z_{t, y_j}
 ```
 
