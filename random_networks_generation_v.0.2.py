@@ -6,6 +6,7 @@ from tysserand import tysserand as ty
 import matplotlib.pyplot as plt
 from tqdm import tqdm, trange
 import seaborn as sns
+import matplotlib.gridspec as gridspec
 ######################################################### HELPER FUNCTION #################################################################
 def generate_node(positions, phenotypes):
     if phenotypes != None:
@@ -92,11 +93,7 @@ def compute_energy(edges, phenotypes, zscore_matrix, phenotype_to_index):
         energy -= zscore_matrix[idx_u, idx_v]
     return energy
 
-def gibbs_sampling(positions, edges, zscore_matrix, phenotype_list, phenotype_to_index, target_proportions, axes, n_iter=1000):
-    phenotypes = initialize_phenotypes(len(positions), phenotype_list, target_proportions)
-
-    nodes = generate_node(positions, phenotypes)
-    plotting(nodes, axes[0,0],f"initial network with {len(nodes)} cells")
+def gibbs_sampling(positions, edges, zscore_matrix, phenotypes, phenotype_list, phenotype_to_index, n_iter=1000):
 
     neighbors = {i: [] for i in range(len(positions))}
     for _, row in edges.iterrows():
@@ -129,7 +126,6 @@ def adjust_proportions(
     phenotype_to_index,
     target_proportions,
     domain_size,
-    axes,
     tolerance=0.01,
     n_following_add=50
 ):
@@ -240,8 +236,11 @@ def compute_assort(nodes, edges):
     mixmat_z = mosna.series_to_mixmat(mixmat_zscore.loc[0, z_cols], discard=' Z').astype(float)
     return mixmat_z
 
-def main(SEED, type_of_data, panel, patient, sample, iteration, domain_size, nb_cells, RUN_TEST):
+def main(panel):
+
     np.random.seed(SEED)
+
+    ############## INITIALIZE DATA ##############
 
     if type_of_data == 'IMC':
         panel = ''
@@ -260,7 +259,7 @@ def main(SEED, type_of_data, panel, patient, sample, iteration, domain_size, nb_
     df = pd.read_parquet(f'output_data/synthetic_network_generation/mixmat_IF_IMC/{type_of_data}{panel}_patient-{patient}_{sample_type}-{sample}_mixmat.parquet')
     zscore_matrix = df.values
 
-    fig, axes = plt.subplots(3, 2, figsize=(40, 30))
+    ############## GENERATE NETWORK ##############
 
     ###### initial network ######
 
@@ -269,47 +268,72 @@ def main(SEED, type_of_data, panel, patient, sample, iteration, domain_size, nb_
     edges = build_edges_from_positions(positions)
 
     ###### post Gibbs sampling network ######
-
-    phenotypes = gibbs_sampling(positions, edges, zscore_matrix, cell_types, phenotype_to_index, target_proportions, axes ,n_iter=iteration)
-
+    phenotypes = initialize_phenotypes(len(positions), cell_types, target_proportions)
     nodes = generate_node(positions, phenotypes)
-    plotting(nodes, axes[1,0], f"post Gibbs sampling network with {len(nodes)} cells")
+    plotting(nodes, ax_network_1, f"Initial Network")
+
+    phenotypes = gibbs_sampling(positions, edges, zscore_matrix, phenotypes, cell_types, phenotype_to_index, n_iter=iteration_MRF_run1)
+    nodes['Phenotypes'] = phenotypes
+    plotting(nodes, ax_network_2, f"post Gibbs sampling network with {len(nodes)} cells")
 
     ###### post adding cell network ######
 
     positions, phenotypes = adjust_proportions(positions, phenotypes, zscore_matrix, cell_types, 
-                                               phenotype_to_index, target_proportions, domain_size, axes, 
+                                               phenotype_to_index, target_proportions, domain_size, 
                                                tolerance=0.01, n_following_add=nb_cells-initial_add)
+    
 
-    nodes = generate_node(positions, phenotypes)
+    if gibbs_sampling_ENDING_RUN:
+        edges = build_edges_from_positions(positions)
+        phenotypes = gibbs_sampling(positions, edges, zscore_matrix, phenotypes, cell_types, phenotype_to_index, n_iter=iteration_MRF_run2)
+        nodes = generate_node(positions, phenotypes)
+    else:
+        nodes = generate_node(positions, phenotypes)
+
+
     if RUN_TEST:
         edges = build_edges_from_positions(positions)
         mixmat_z = compute_assort(nodes, edges)
-        mixmat_z.to_parquet('test_assort.parquet')
-        sns.heatmap(mixmat_z, center=0, cmap="vlag", annot=False, linewidths=.5, ax=axes[0,1])
-        axes[0,1].set_title("assortativity")
+        sns.heatmap(mixmat_z, center=0, cmap="vlag", annot=False, linewidths=.5, ax=ax_assortativity)
+        ax_assortativity.set_title("generated network assorativity")
         plt.xticks(rotation=45, ha='right')
 
         ecart_mixmat = (mixmat_z - df).abs()
-        sns.heatmap(ecart_mixmat, center=0, cmap="vlag", annot=False, linewidths=.5, ax=axes[2,1])
-        axes[2,1].set_title("assortativity")
+        sns.heatmap(ecart_mixmat, center=0, cmap="vlag", annot=False, linewidths=.5, ax=ax_ecart)
+        ax_ecart.set_title("delta assortativity ground truth and generated network assorativity")
         plt.xticks(rotation=45, ha='right')
 
-    plotting(nodes, axes[2,0], f"post adjust proportion with {len(nodes)} cells")
+    plotting(nodes, ax_network_3, f"post adjust proportion with {len(nodes)} cells")
     plt.tight_layout()
-    plt.savefig(f'TEST_NETWORK_V2/test_{nb_cells}_{iteration}.png', dpi=300)
+    plt.savefig(f'TEST_NETWORK_V2/test_{nb_cells}_GB1-{iteration_MRF_run1}_GB2-{iteration_MRF_run2}.png', dpi=300)
 
 if __name__ == '__main__':
+
+    ############## INITIALIZE PLOT ##############
+
+    fig = plt.figure(figsize=(40, 30))
+    gs = gridspec.GridSpec(2, 3, height_ratios=[1, 1])
+
+    ax_network_1 = fig.add_subplot(gs[0, 0])
+    ax_network_2 = fig.add_subplot(gs[0, 1])
+    ax_network_3 = fig.add_subplot(gs[0, 2])
+
+    ax_assortativity = fig.add_subplot(gs[1, 0:2])
+    ax_ecart = fig.add_subplot(gs[1, 2])
+
+    ############## INPUT PARAMETERS ##############
+    
     type_of_data = 'IF' 
     panel = 'C2'
     patient = 'B'
     sample = '3'
     SEED = 42  
     RUN_TEST = True
-
+    gibbs_sampling_ENDING_RUN = False
 
     nb_cells = 2000
-    iteration_MRF = [1]
+    iteration_MRF_run1 = 0
+    iteration_MRF_run2 = 0
     domain_size = (1000,1000)
-    for i in iteration_MRF:
-        main(SEED, type_of_data, panel, patient, sample, i, domain_size, nb_cells, RUN_TEST)
+
+    main(panel)
