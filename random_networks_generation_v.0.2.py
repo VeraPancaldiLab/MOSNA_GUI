@@ -93,40 +93,45 @@ def compute_energy(edges, phenotypes, zscore_matrix, phenotype_to_index):
         energy -= zscore_matrix[idx_u, idx_v]
     return energy
 
-def gibbs_sampling(positions, edges, zscore_matrix, phenotypes, phenotype_list, phenotype_to_index, n_iter=1000):
+def gibbs_sampling(nodes, edges, zscore_matrix, phenotype, n_iter=10, temperature=2.0, update_fraction=0.3):
 
-    neighbors = {i: [] for i in range(len(positions))}
-    for _, row in edges.iterrows():
-        u, v = row['source'], row['target']
-        neighbors[u].append(v)
-        neighbors[v].append(u)
-
-    for _ in tqdm(range(n_iter), desc=f'[PROCESS] GIBBS Sampling for {len(positions)} cells '):
-        for node in range(len(positions)):
-            energy_list = []
-            for candidate_type in phenotype_list:
+    positions = nodes[["X_position", "Y_position"]].values
+    types = nodes["Phenotypes"].values
+    for _ in tqdm(range(n_iter), desc=f'[PROCESS] Gibbs Sampling iterations = {len(nodes)}'):
+        nodes_to_update = np.random.choice(len(positions), size=int(update_fraction * len(positions)), replace=False)
+        for i in nodes_to_update:
+            current_type = types[i]
+            neighbor_indices = np.where((edges["source"] == i) | (edges["target"] == i))[0]
+            if len(neighbor_indices) == 0:
+                continue
+            neighbors = []
+            for idx in neighbor_indices:
+                row = edges.iloc[idx]
+                neighbor = row["target"] if row["source"] == i else row["source"]
+                neighbors.append(neighbor)
+            neighbor_types = types[neighbors]
+            energy_array = []
+            for t in phenotype:
                 e = 0
-                for neighbor in neighbors[node]:
-                    idx_c = phenotype_to_index[candidate_type]
-                    idx_n = phenotype_to_index[phenotypes[neighbor]]
+                for nt in neighbor_types:
+                    idx_c = phenotype.index(t)
+                    idx_n = phenotype.index(nt)
                     e -= zscore_matrix[idx_c, idx_n]
-                energy_list.append(e)  
-            energy_array = np.array(energy_list)
-            probs = np.exp(-(energy_array - energy_array.min()))  # stabilisation numérique
+                energy_array.append(e)
+            energy_array = np.array(energy_array)
+            # Softmax with temperature
+            probs = np.exp(-energy_array / temperature)
             probs /= probs.sum()
-            phenotypes[node] = np.random.choice(phenotype_list, p=probs)
-
-    return phenotypes
+            types[i] = np.random.choice(phenotype, p=probs)
+    nodes["Phenotypes"] = types
+    return nodes
 
 def adjust_proportions(
-    positions,
-    phenotypes,
+    nodes,
     zscore_matrix,
     phenotype_list,
-    phenotype_to_index,
+    phenotype_index,
     target_proportions,
-    domain_size,
-    tolerance=0.01,
     n_following_add=50
 ):
     from collections import Counter
@@ -136,101 +141,48 @@ def adjust_proportions(
             p: max(0, float((target_proportions[p] - current.get(p, 0))))
             for p in phenotype_list
         }
+    
+    positions = nodes[["X_position", "Y_position"]].values
+    phenotypes = nodes["Phenotypes"].values
+
+    target_counts = {ct: int(prop * (len(nodes) + n_following_add)) for ct, prop in target_proportions.items()}
 
     # Étape 1 — Ajout initial de n_initial_add cellules
-    for _ in tqdm(range(n_following_add), desc='[PROCESS] Adding cells with assortivity gradient'):
-
-
-        total = len(phenotypes)
-        current_counts = Counter(phenotypes)
-        current_props = {p: current_counts[p] / total for p in phenotype_list}
-        deficit = compute_deficit(current_props)
-
-        weights = np.array([deficit[p] for p in phenotype_list], dtype=float)
-        """
-        if np.all(weights < tolerance):
-            break  
-        """
-        weights /= weights.sum()
-        chosen_type = np.random.choice(phenotype_list, p=weights)
-
-        pos_candidates = np.random.rand(20, 2) * domain_size
-
-        best_pos = None
-        best_energy = float('inf')
-
-        for pos in pos_candidates:
-            e = 0
-            for i, pos_i in enumerate(positions):
-                dist = np.linalg.norm(pos - pos_i)
-                if dist < 0.1:
-                    idx_c = phenotype_to_index[chosen_type]
-                    idx_n = phenotype_to_index[phenotypes[i]]
-                    e -= zscore_matrix[idx_c, idx_n]
-            if e < best_energy:
-                best_energy = e
-                best_pos = pos
-
-        if best_pos is not None:
-            positions = np.vstack([positions, best_pos])
-            phenotypes.append(chosen_type)
-
-
-    # Étape 2 — Ajustement final via boucle `while`
-    total = len(phenotypes)
-    current_counts = Counter(phenotypes)
-    current_props = {p: current_counts[p] / total for p in phenotype_list}
-    deficit = compute_deficit(current_props)
-
-    tqdm.write("[PROCESS] adding cell through phenotype proportion")
-    while any(deficit[p] > tolerance * total for p in phenotype_list):
-        for p in phenotype_list:
-            if deficit[p] <= tolerance * total:
-                continue
-                        
-            pos_candidates = np.random.rand(20, 2) * domain_size
-
+    for ct, target_count in target_counts.items():
+        current_count = (nodes["Phenotypes"] == ct).sum()
+        to_add = target_count - current_count
+        
+        if to_add <= 0:
+            continue
+        for _ in tqdm(range(to_add), desc=f'[PROCESS] adding {to_add} {ct} in network'):
             best_pos = None
-            best_energy = float('inf')
-
-            for pos in pos_candidates:
+            best_energy = np.inf
+            for _ in range(100):  # Plus de candidats
+                pos = np.random.rand(2)
                 e = 0
                 for i, pos_i in enumerate(positions):
                     dist = np.linalg.norm(pos - pos_i)
-                    if dist < 0.1:
-                        idx_c = phenotype_to_index[p]
-                        idx_n = phenotype_to_index[phenotypes[i]]
-                        e -= zscore_matrix[idx_c, idx_n]
+                    if dist > 0.2:  # Ignore voisins trop éloignés
+                        continue
+                    weight = np.exp(-dist / 0.05)  # pondération gaussienne
+                    neighbor_type = nodes.iloc[i]["Phenotypes"]
+                    idx_c = phenotype_index[ct]
+                    idx_n = phenotype_index[neighbor_type]
+                    e -= weight * zscore_matrix[idx_c, idx_n]
                 if e < best_energy:
                     best_energy = e
                     best_pos = pos
+            # Ajout de la cellule avec la meilleure position trouvée
+            new_node = {"X_position": best_pos[0], "Y_position": best_pos[1], "Phenotypes": ct}
+            nodes = pd.concat([nodes, pd.DataFrame([new_node])], ignore_index=True)
+            positions = np.vstack([positions, best_pos])
 
-            if best_pos is not None:
-                positions = np.vstack([positions, best_pos])
-                phenotypes.append(p)
-                total += 1
-                deficit[p] -= 1
-
-    return positions, phenotypes
+    return nodes
 
 def compute_assort(nodes, edges):
     nodes_onehot = nodes.join(pd.get_dummies(nodes['Phenotypes'], prefix='', prefix_sep=''))
-
     cell_types = nodes['Phenotypes'].unique().tolist()
 
-    """
-    mixmat = mosna.mixing_matrix(nodes_onehot, edges, cell_types)
-    assort = mosna.attribute_ac(mixmat)
-    mixmat_rand, assort_rand = mosna.randomized_mixmat(
-        nodes_onehot, edges, cell_types, 
-        n_shuffle=50, 
-        parallel='max', 
-        memory_limit='10GB',
-        verbose=0)
-    
-    mixmat_mean, mixmat_std, mixmat_zscore = mosna.zscore(mixmat, mixmat_rand, return_stats=True)
-    assort_mean, assort_std, assort_zscore = mosna.zscore(assort, assort_rand, return_stats=True)
-    """
     mixmat_zscore = mosna.sample_assort_mixmat(nodes_onehot, edges, attributes=cell_types, sample_id=None, n_shuffle=50)
     z_cols = [x for x in mixmat_zscore.columns if x.endswith('Z') and not x.startswith('assort')]
     mixmat_z = mosna.series_to_mixmat(mixmat_zscore.loc[0, z_cols], discard=' Z').astype(float)
@@ -252,13 +204,12 @@ def main(panel):
     nodes_types = pd.read_parquet(f"./output_data/{type_of_data}{panel}_networks_sample/nodes_patient-{patient}_" 
                         f"{sample_type}-{sample}.parquet")[['Phenotypes','CellID']]
     
-    cell_types = nodes_types['Phenotypes'].unique()
     target_proportions = nodes_types['Phenotypes'].value_counts(normalize=True).to_dict()
-    phenotype_to_index = {p: i for i, p in enumerate(cell_types)}
-
+    
     df = pd.read_parquet(f'output_data/synthetic_network_generation/mixmat_IF_IMC/{type_of_data}{panel}_patient-{patient}_{sample_type}-{sample}_mixmat.parquet')
+    cell_types = df.columns
+    phenotype_to_index = {p: i for i, p in enumerate(cell_types)}
     zscore_matrix = df.values
-
     ############## GENERATE NETWORK ##############
 
     ###### initial network ######
@@ -272,27 +223,18 @@ def main(panel):
     nodes = generate_node(positions, phenotypes)
     plotting(nodes, ax_network_1, f"Initial Network")
 
-    phenotypes = gibbs_sampling(positions, edges, zscore_matrix, phenotypes, cell_types, phenotype_to_index, n_iter=iteration_MRF_run1)
-    nodes['Phenotypes'] = phenotypes
+    nodes = gibbs_sampling(nodes, edges, zscore_matrix, cell_types, n_iter=iteration_MRF_run1)
     plotting(nodes, ax_network_2, f"post Gibbs sampling network with {len(nodes)} cells")
 
     ###### post adding cell network ######
 
-    positions, phenotypes = adjust_proportions(positions, phenotypes, zscore_matrix, cell_types, 
-                                               phenotype_to_index, target_proportions, domain_size, 
-                                               tolerance=0.01, n_following_add=nb_cells-initial_add)
-    
+    nodes = adjust_proportions(nodes, zscore_matrix, cell_types, phenotype_to_index, target_proportions,n_following_add=nb_cells-initial_add)
+    edges = build_edges_from_positions(nodes[['X_position','Y_position']])  
 
     if gibbs_sampling_ENDING_RUN:
-        edges = build_edges_from_positions(positions)
-        phenotypes = gibbs_sampling(positions, edges, zscore_matrix, phenotypes, cell_types, phenotype_to_index, n_iter=iteration_MRF_run2)
-        nodes = generate_node(positions, phenotypes)
-    else:
-        nodes = generate_node(positions, phenotypes)
-
+        nodes = gibbs_sampling(nodes, edges, zscore_matrix, cell_types, n_iter=iteration_MRF_run2)
 
     if RUN_TEST:
-        edges = build_edges_from_positions(positions)
         mixmat_z = compute_assort(nodes, edges)
         sns.heatmap(mixmat_z, center=0, cmap="vlag", annot=False, linewidths=.5, ax=ax_assortativity)
         ax_assortativity.set_title("generated network assorativity")
@@ -307,33 +249,36 @@ def main(panel):
     plt.tight_layout()
     plt.savefig(f'TEST_NETWORK_V2/test_{nb_cells}_GB1-{iteration_MRF_run1}_GB2-{iteration_MRF_run2}.png', dpi=300)
 
-if __name__ == '__main__':
+if __name__ == '__main__':    
+    SEED = 42  
+    RUN_TEST = False
+    gibbs_sampling_ENDING_RUN = False
 
     ############## INITIALIZE PLOT ##############
+    
+    if RUN_TEST:
+        fig = plt.figure(figsize=(40, 30))
+        gs = gridspec.GridSpec(2, 3, height_ratios=[1, 1])
 
-    fig = plt.figure(figsize=(40, 30))
-    gs = gridspec.GridSpec(2, 3, height_ratios=[1, 1])
-
+        ax_assortativity = fig.add_subplot(gs[1, 0:2])
+        ax_ecart = fig.add_subplot(gs[1, 2])
+    else:
+        fig = plt.figure(figsize=(30, 15))
+        gs = gridspec.GridSpec(1, 3, height_ratios=[1])
     ax_network_1 = fig.add_subplot(gs[0, 0])
     ax_network_2 = fig.add_subplot(gs[0, 1])
     ax_network_3 = fig.add_subplot(gs[0, 2])
 
-    ax_assortativity = fig.add_subplot(gs[1, 0:2])
-    ax_ecart = fig.add_subplot(gs[1, 2])
-
     ############## INPUT PARAMETERS ##############
-    
     type_of_data = 'IF' 
     panel = 'C2'
     patient = 'B'
     sample = '3'
-    SEED = 42  
-    RUN_TEST = True
-    gibbs_sampling_ENDING_RUN = False
+
 
     nb_cells = 2000
-    iteration_MRF_run1 = 0
-    iteration_MRF_run2 = 0
+    iteration_MRF_run1 = 5
+    iteration_MRF_run2 = 2
     domain_size = (1000,1000)
 
     main(panel)
