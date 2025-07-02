@@ -58,7 +58,7 @@ def cluster_to_cmap(clustering):
 ######################################################### MRF TOOL FUNCTION #################################################################
 
 def estimate_correlation_length(nodes, edges):
-    positions = nodes.set_index('CellID')[['X_position', 'Y_position']]
+    positions = nodes[['X_position', 'Y_position']]
     distances = []
     for _, row in edges.iterrows():
         p1 = positions.loc[row['source']]
@@ -194,7 +194,7 @@ def main(panel):
 
     else:
         plotting(nodes, None, f"Synthetic Network with {len(nodes)} cells")
-        
+
     plt.tight_layout()
     plt.savefig(f'TEST_NETWORK_V2/test_{nb_cells}.png', dpi=300)
 
@@ -206,14 +206,13 @@ def main(panel):
         axes_fields = [axes_fields]
     for ax, ct in zip(axes_fields, cell_types):
         im = ax.imshow(fields[ct], cmap='viridis')
-        ax.set_title(f'Field: {ct}')
+        ax.set_title(f'Correlated Field: {ct}')
         ax.axis('off')
         fig_fields.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     plt.savefig(f'TEST_NETWORK_V2/CorrelatedField.png', dpi=300)
 
-
 if __name__ == '__main__':
-
+ 
     SEED = 42  
     RUN_TEST = True  # active pour afficher les heatmaps
     type_of_data = 'IF' 
@@ -221,17 +220,18 @@ if __name__ == '__main__':
     patient = 'B'
     sample = '3'
 
-    nb_cells = 2000
+    nb_cells = 5000
     domain_size = (1000,1000)
 
     if RUN_TEST:
-        fig = plt.figure(figsize=(40, 30))
-        gs = gridspec.GridSpec(1, 2, height_ratios=[1, 1])
+        fig = plt.figure(figsize=(30, 20))
+        gs = gridspec.GridSpec(2, 2, height_ratios=[1,1])
 
         ax_network = fig.add_subplot(gs[0, 0:1])
         ax_assortativity = fig.add_subplot(gs[1, 0])
         ax_ecart = fig.add_subplot(gs[1, 1])
     else:
-        fig = plt.figure(figsize=(30, 15))
-
+        fig = plt.figure(figsize=(20, 15))
+        
+    print('\n')
     main(panel)
