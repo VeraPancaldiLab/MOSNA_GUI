@@ -269,7 +269,7 @@ def gibbs_sampling_potts_field(
 
     for it in tqdm(range(n_iter), desc='[PROCESS] Gibbs Sampling to balance phenotypes'):
 
-        J_effective = J * (1 + 2 * (it / n_iter))
+        J_effective = J * (1 + 10 * (it / n_iter))
 
         old_labels = labels_int.copy()
         for idx in np.random.permutation(n_cells):
