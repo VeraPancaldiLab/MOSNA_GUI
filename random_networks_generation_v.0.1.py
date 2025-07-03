@@ -280,10 +280,9 @@ if __name__ == '__main__':
     patient = 'B'
     sample = '3'
 
-
-    nb_cells = 2000
+    nb_cells = 1000
     iteration_MRF_run1 = 5
     iteration_MRF_run2 = 2
-    domain_size = (1000,1000)
+    domain_size = (5000,5000)
 
     main(panel)
