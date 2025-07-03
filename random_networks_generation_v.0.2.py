@@ -268,6 +268,9 @@ def gibbs_sampling_potts_field(
         neighbor_map[row['target']].append(row['source'])
 
     for it in tqdm(range(n_iter), desc='[PROCESS] Gibbs Sampling to balance phenotypes'):
+
+        J_effective = J * (1 + 2 * (it / n_iter))
+
         old_labels = labels_int.copy()
         for idx in np.random.permutation(n_cells):
             neighbors = neighbor_map[idx]
@@ -275,7 +278,7 @@ def gibbs_sampling_potts_field(
 
             log_probs = np.zeros(n_types)
             for k in range(n_types):
-                interaction_energy = -J * np.sum(neighbor_labels == k)
+                interaction_energy = -J_effective * np.sum(neighbor_labels == k)
                 x, y = xs[idx], ys[idx]
                 field_energy = -beta * field_stack[x, y, k]
                 log_probs[k] = interaction_energy + field_energy
@@ -287,7 +290,7 @@ def gibbs_sampling_potts_field(
 
         if verbose:
             changes = np.sum(old_labels != labels_int)
-            tqdm.write(f"[Gibbs iteration {it+1}] Number of label changes: {changes}")
+            tqdm.write(f"[Gibbs iteration {it+1}] Changes: {changes} | J_effective = {J_effective:.2f}")
 
     final_labels = np.array([cell_types[i] for i in labels_int])
     return final_labels
@@ -493,7 +496,7 @@ if __name__ == '__main__':
     domain_size = (2000,2000)
 
     J = 3.0
-    beta = 0.3
+    beta = 0.6
     iter_Gibbs = 50
     verbose = True
 
