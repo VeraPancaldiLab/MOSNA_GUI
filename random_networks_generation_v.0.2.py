@@ -248,7 +248,8 @@ def gibbs_sampling_potts_field(
     beta,
     J,
     n_iter,
-    cell_types
+    cell_types,
+    verbose=False
 ):
     shape = next(iter(fields.values())).shape
     n_types = len(cell_types)
@@ -260,13 +261,14 @@ def gibbs_sampling_potts_field(
 
     field_stack = np.stack([fields[ct] for ct in cell_types], axis=-1)
 
-    # --- Construction du voisinage basé sur le graphe ---
+    # --- Construire la carte des voisins à partir du graphe ---
     neighbor_map = defaultdict(list)
     for _, row in edges.iterrows():
         neighbor_map[row['source']].append(row['target'])
         neighbor_map[row['target']].append(row['source'])
 
-    for _ in tqdm(range(n_iter), desc='[PROCESS] Gibbs Sampling to balance phenotypes'):
+    for it in tqdm(range(n_iter), desc='[PROCESS] Gibbs Sampling to balance phenotypes'):
+        old_labels = labels_int.copy()
         for idx in np.random.permutation(n_cells):
             neighbors = neighbor_map[idx]
             neighbor_labels = labels_int[neighbors] if neighbors else []
@@ -283,6 +285,10 @@ def gibbs_sampling_potts_field(
 
             labels_int[idx] = np.random.choice(n_types, p=probs)
 
+        if verbose:
+            changes = np.sum(old_labels != labels_int)
+            tqdm.write(f"[Gibbs iteration {it+1}] Number of label changes: {changes}")
+
     final_labels = np.array([cell_types[i] for i in labels_int])
     return final_labels
 
@@ -296,7 +302,8 @@ def generate_synthetic_network_potts_field(
     J=1.0,    # interaction entre voisins
     amplitude=1000,
     oversample_factor=5,
-    n_iter=5
+    n_iter=5,
+    verbose=False
 ):
     shape = (domain_size[1], domain_size[0])
     correlation_length = estimate_correlation_length(nodes_initial)
@@ -378,7 +385,8 @@ def generate_synthetic_network_potts_field(
         beta=beta,
         J=J,
         n_iter=n_iter,
-        cell_types=cell_types
+        cell_types=cell_types,
+        verbose=verbose
     )
 
     nodes = pd.DataFrame({
@@ -434,7 +442,8 @@ def main(panel):
             cell_types=cell_types,
             beta=beta,
             J=J,
-            n_iter=iter_Gibbs
+            n_iter=iter_Gibbs,
+            verbose=verbose
         )
 
     if RUN_TEST:
@@ -486,6 +495,7 @@ if __name__ == '__main__':
     J = 3.0
     beta = 0.3
     iter_Gibbs = 50
+    verbose = True
 
     if RUN_TEST:
         fig = plt.figure(figsize=(40, 30))
