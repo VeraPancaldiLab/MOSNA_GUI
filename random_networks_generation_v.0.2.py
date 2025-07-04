@@ -198,48 +198,6 @@ def build_lattice_indices(xs, ys, shape):
     lattice[ys, xs] = np.arange(len(xs))
     return lattice
 
-def gibbs_sampling_potts_field_beta(
-    labels_init,
-    fields,
-    lattice_indices,
-    beta,
-    J,
-    n_iter,
-    cell_types
-):
-    shape = next(iter(fields.values())).shape
-    n_types = len(cell_types)
-    inv_cell_types = {ct: i for i, ct in enumerate(cell_types)}
-    labels_int = np.array([inv_cell_types[label] for label in labels_init])
-    xs, ys = np.where(lattice_indices != -1)
-    n_cells = len(xs)
-
-    field_stack = np.stack([fields[ct] for ct in cell_types], axis=-1)
-
-    for _ in tqdm(range(n_iter), desc='[PROCESS] Gibbs Sampling to balance phenotypes'):
-        for idx in np.random.permutation(n_cells):
-            x, y = xs[idx], ys[idx]
-            neighbors = [
-                (x + dx, y + dy)
-                for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]
-                if 0 <= x + dx < shape[0] and 0 <= y + dy < shape[1]
-            ]
-            neighbor_idxs = [lattice_indices[nx, ny] for nx, ny in neighbors if lattice_indices[nx, ny] != -1]
-            neighbor_labels = labels_int[neighbor_idxs]
-
-            log_probs = np.zeros(n_types)
-            for k in range(n_types):
-                interaction_energy = -J * np.sum(neighbor_labels == k)
-                field_energy = -beta * field_stack[x, y, k]
-                log_probs[k] = interaction_energy + field_energy
-            probs = np.exp(log_probs - np.max(log_probs))
-            probs /= np.sum(probs)
-
-            labels_int[idx] = np.random.choice(n_types, p=probs)
-
-    final_labels = np.array([cell_types[i] for i in labels_int])
-    return final_labels
-
 def gibbs_sampling_potts_field(
     labels_init,
     fields,
@@ -249,29 +207,34 @@ def gibbs_sampling_potts_field(
     J,
     n_iter,
     cell_types,
-    verbose=False
+    verbose=False,
+    apply_gibbs=True
 ):
     shape = next(iter(fields.values())).shape
     n_types = len(cell_types)
     inv_cell_types = {ct: i for i, ct in enumerate(cell_types)}
     labels_int = np.array([inv_cell_types[label] for label in labels_init])
-    
+
     xs, ys = np.where(lattice_indices != -1)
     n_cells = len(xs)
 
     field_stack = np.stack([fields[ct] for ct in cell_types], axis=-1)
 
-    # --- Construire la carte des voisins à partir du graphe ---
+    if not apply_gibbs:
+        if verbose:
+            print("[INFO] Gibbs sampling skipped — returning initial labels.")
+        return np.array(labels_init)
+
+    # --- Carte des voisins basée sur les arêtes du graphe ---
     neighbor_map = defaultdict(list)
     for _, row in edges.iterrows():
         neighbor_map[row['source']].append(row['target'])
         neighbor_map[row['target']].append(row['source'])
 
     for it in tqdm(range(n_iter), desc='[PROCESS] Gibbs Sampling to balance phenotypes'):
-
-        J_effective = J * (1 + 10 * (it / n_iter))
-
+        J_effective = J * (1 + 10 * (it / n_iter))  # Refroidissement simulé
         old_labels = labels_int.copy()
+
         for idx in np.random.permutation(n_cells):
             neighbors = neighbor_map[idx]
             neighbor_labels = labels_int[neighbors] if neighbors else []
@@ -306,7 +269,8 @@ def generate_synthetic_network_potts_field(
     amplitude=1000,
     oversample_factor=5,
     n_iter=5,
-    verbose=False
+    verbose=False,
+    gibbs_sampling=True
 ):
     shape = (domain_size[1], domain_size[0])
     correlation_length = estimate_correlation_length(nodes_initial)
@@ -325,7 +289,7 @@ def generate_synthetic_network_potts_field(
     target_counts = {ct: int(p * n_cells) for ct, p in target_proportions.items()}
     remaining_indices = set(range(n_points))
 
-    for i, ct in enumerate(tqdm(cell_types, desc='[PROCESS] adding cells through Ising field by phenotypes ')):
+    for i, ct in enumerate(tqdm(cell_types, desc='[PROCESS] ')):
         count = target_counts.get(ct, 0)
         if not remaining_indices or count == 0:
             continue
@@ -389,7 +353,8 @@ def generate_synthetic_network_potts_field(
         J=J,
         n_iter=n_iter,
         cell_types=cell_types,
-        verbose=verbose
+        verbose=verbose,
+        apply_gibbs=gibbs_sampling
     )
 
     nodes = pd.DataFrame({
@@ -446,7 +411,8 @@ def main(panel):
             beta=beta,
             J=J,
             n_iter=iter_Gibbs,
-            verbose=verbose
+            verbose=verbose,
+            gibbs_sampling=True
         )
 
     if RUN_TEST:

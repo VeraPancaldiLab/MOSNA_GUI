@@ -25,11 +25,14 @@ def generate_node(positions, phenotypes):
         })
     return nodes
 
-def plotting(nodes, axes, title, pairs=None):
+def plotting(nodes, axes, title, pairs=None, cmap=None):
     axes.clear()
     clustering = nodes['Phenotypes']
     coords = nodes[['X_position', 'Y_position']]
-    celltypes_color_mapper = cluster_to_cmap(clustering.copy())
+    if cmap is None:
+        celltypes_color_mapper = cluster_to_cmap(clustering.copy())
+    else:
+        celltypes_color_mapper = cmap
     coords = np.array(coords.values.tolist())
     if pairs is None:
         pairs = coords_to_pairs(coords)
@@ -43,6 +46,7 @@ def plotting(nodes, axes, title, pairs=None):
         ax=axes
         )
     axes.set_title(title)
+    return celltypes_color_mapper
 
 def coords_to_pairs(coords):
     pairs = ty.build_delaunay(coords)
@@ -124,7 +128,6 @@ def gibbs_sampling(nodes, edges, zscore_matrix, cell_types, phenotype_to_index, 
             logits -= np.max(logits)
             probs = np.exp(logits)
             probs /= probs.sum()
-            print(probs)
             types[i] = np.random.choice(cell_types, p=probs)
     nodes["Phenotypes"] = types
     return nodes
@@ -150,6 +153,8 @@ def adjust_proportions(
 
     target_counts = {ct: int(prop * (len(nodes) + n_following_add)) for ct, prop in target_proportions.items()}
 
+    if n_following_add == 0:
+        exit
     # Étape 1 — Ajout initial de n_initial_add cellules
     for ct, target_count in target_counts.items():
         current_count = (nodes["Phenotypes"] == ct).sum()
@@ -219,21 +224,21 @@ def main(panel):
 
     ###### initial network ######
 
-    initial_add = int(nb_cells * 0.2)
+    initial_add = int(nb_cells)
     positions = generate_cell_positions(initial_add, domain=domain_size)
     edges = build_edges_from_positions(positions)
 
     ###### post Gibbs sampling network ######
     phenotypes = initialize_phenotypes(len(positions), cell_types, target_proportions)
     nodes = generate_node(positions, phenotypes)
-    plotting(nodes, ax_network_1, f"Initial Network")
+    cmap = plotting(nodes, ax_network_1, f"Initial Network")
 
     nodes = gibbs_sampling(nodes, edges, zscore_matrix, cell_types, phenotype_to_index, n_iter=iteration_MRF_run1)
-    plotting(nodes, ax_network_2, f"post Gibbs sampling network with {len(nodes)} cells")
+    plotting(nodes, ax_network_2, f"post Gibbs sampling network with {len(nodes)} cells", cmap=cmap)
 
     ###### post adding cell network ######
 
-    nodes = adjust_proportions(nodes, zscore_matrix, cell_types, phenotype_to_index, target_proportions,n_following_add=nb_cells-initial_add)
+    #nodes = adjust_proportions(nodes, zscore_matrix, cell_types, phenotype_to_index, target_proportions,n_following_add=0)
     edges = build_edges_from_positions(nodes[['X_position','Y_position']])  
 
     if gibbs_sampling_ENDING_RUN:
@@ -280,9 +285,9 @@ if __name__ == '__main__':
     patient = 'B'
     sample = '3'
 
-    nb_cells = 1000
-    iteration_MRF_run1 = 5
-    iteration_MRF_run2 = 2
+    nb_cells = 400
+    iteration_MRF_run1 = 50
+    iteration_MRF_run2 = 0
     domain_size = (5000,5000)
 
     main(panel)
