@@ -13,7 +13,44 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.gridspec as gridspec
+print('\n')
+
 ######################################################### HELPER FUNCTION #################################################################
+
+def generate_plotting_figure(RUN_TEST):
+    if RUN_TEST:
+        fig = plt.figure(figsize=(40, 30))
+        gs = gridspec.GridSpec(2, 2, height_ratios=[1,1], wspace=0.4, hspace=0.5)
+
+        ax_network = fig.add_subplot(gs[0, 0:1])
+        ax_assortativity = fig.add_subplot(gs[1, 0])
+        ax_ecart = fig.add_subplot(gs[1, 1])
+
+        return ax_network, ax_assortativity, ax_ecart
+    else:
+        fig = plt.figure(figsize=(20, 15))
+
+def define_panel(type_of_data, panel):
+    if type_of_data == 'IMC':
+        panel = ''
+        sample_type = 'ROI'
+    elif type_of_data == 'IF':
+        panel = '_' + panel
+        sample_type = 'layer'
+    return panel, sample_type
+
+def plot_field(fields, cell_types, title):
+    n_types = len(cell_types)
+    fig_fields, axes_fields = plt.subplots(1, n_types, figsize=(4 * n_types, 4))
+    if n_types == 1:
+        axes_fields = [axes_fields]
+    for ax, ct in zip(axes_fields, cell_types):
+        im = ax.imshow(fields[ct], cmap='viridis')
+        ax.set_title(f'Correlated Field: {ct}')
+        ax.axis('off')
+        fig_fields.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    plt.tight_layout()
+    plt.savefig(f'TEST_NETWORK_V2/{title}.png', dpi=300)
 
 def plotting(nodes, axes, title, pairs=None):
     clustering = nodes['Phenotypes']
@@ -61,22 +98,14 @@ def cluster_to_cmap(clustering):
 
 ######################################################### USING FUNCTION #################################################################
 
-def estimate_correlation_length_naive(nodes, edges):
-    positions = nodes[['X_position', 'Y_position']]
-    distances = []
-    for _, row in edges.iterrows():
-        p1 = positions.loc[row['source']]
-        p2 = positions.loc[row['target']]
-        dist = np.linalg.norm(p1.values - p2.values)
-        distances.append(dist)
-    return np.mean(distances)
-
-def estimate_correlation_length(nodes, max_distance=600, nb_bins=30, sample_size=80000):
+def estimate_correlation_length(nodes, nb_bins=100, sample_size=80000):
     rng = np.random.default_rng(SEED)
 
     coords = nodes[['X_position', 'Y_position']].values
     labels = pd.get_dummies(nodes['Phenotypes']).values
     n = len(coords)
+
+    max_distance = ((coords[:][0].max()-coords[:][0].min())**2+(coords[:][1].max()-coords[:][1].min())**2)**(1/2)
 
     dists = []
     sims = []
@@ -104,9 +133,9 @@ def estimate_correlation_length(nodes, max_distance=600, nb_bins=30, sample_size
     stat = np.nan_to_num(stat, nan=0.0)
     try:
         decay_index = np.where(stat < (stat[0] / np.e))[0][0]
-        return (bins[decay_index] + bins[decay_index - 1]) / 2
+        return (bins[decay_index] + bins[decay_index - 1]) / 2, max_distance
     except IndexError:
-        return np.mean(bins)
+        return np.mean(bins), max_distance
 
 def compute_assort(nodes, edges):
     nodes_onehot = nodes.join(pd.get_dummies(nodes['Phenotypes'], prefix='', prefix_sep=''))
@@ -135,63 +164,6 @@ def generate_correlated_field(shape, correlation_length):
     return field
 
 ######################################################### FUNCTION CORE #################################################################
-
-def generate_synthetic_network_from_field(
-    nodes_initial,
-    edges_initial,
-    n_cells,
-    domain_size,
-    target_proportions,
-    cell_types,
-    oversample_factor=5,
-):
-    shape = (domain_size[1], domain_size[0])
-    correlation_length = estimate_correlation_length_naive(nodes_initial, edges_initial)
-    
-    # Générer un champ corrélé par type cellulaire (pour affichage + diversité)
-    fields = {}
-    for ct in tqdm(cell_types, desc='[PROCESS] Generate all fields'):
-        fields[ct] = generate_correlated_field(shape, correlation_length)
-
-    n_points = n_cells * oversample_factor
-    xs = np.random.uniform(0, domain_size[0], n_points).astype(int)
-    ys = np.random.uniform(0, domain_size[1], n_points).astype(int)
-
-    # Construire matrice score (n_points x n_types)
-    scores = np.vstack([fields[ct][ys, xs] for ct in cell_types]).T
-
-    assigned_types = np.full(n_points, fill_value=None, dtype=object)
-    target_counts = {ct: int(p * n_cells) for ct, p in target_proportions.items()}
-    remaining_indices = set(range(n_points))
-
-    for i, ct in enumerate(tqdm(cell_types, desc="[PROCESS] Assigning cell types through fields")):
-        count = target_counts.get(ct, 0)
-        if not remaining_indices or count == 0:
-            continue
-        subset = np.array(list(remaining_indices))
-        subset_scores = scores[subset, i]
-        if len(subset_scores) < count:
-            count = len(subset_scores)
-        top_idx_local = np.argsort(subset_scores)[-count:]
-        top_idx_global = subset[top_idx_local]
-        assigned_types[top_idx_global] = ct
-        remaining_indices -= set(top_idx_global)
-
-    keep_indices = np.where(assigned_types != None)[0]
-    if len(keep_indices) > n_cells:
-        keep_indices = keep_indices[:n_cells]
-
-    nodes = pd.DataFrame({
-        'CellID': range(len(keep_indices)),
-        'X_position': xs[keep_indices],
-        'Y_position': ys[keep_indices],
-        'Phenotypes': assigned_types[keep_indices]
-    })
-
-    positions = nodes[['X_position', 'Y_position']].values
-    edges = build_edges_from_positions(positions)
-
-    return nodes, edges, fields
 
 def build_lattice_indices(xs, ys, shape):
     lattice = -np.ones(shape, dtype=int)
@@ -232,7 +204,7 @@ def gibbs_sampling_potts_field(
         neighbor_map[row['target']].append(row['source'])
 
     for it in tqdm(range(n_iter), desc='[PROCESS] Gibbs Sampling to balance phenotypes'):
-        J_effective = J * (1 + 10 * (it / n_iter))  # Refroidissement simulé
+        #J_effective = J * (1 + 10 * (it / n_iter))
         old_labels = labels_int.copy()
 
         for idx in np.random.permutation(n_cells):
@@ -241,19 +213,17 @@ def gibbs_sampling_potts_field(
 
             log_probs = np.zeros(n_types)
             for k in range(n_types):
-                interaction_energy = -J_effective * np.sum(neighbor_labels == k)
+                interaction_energy = -J * np.sum(neighbor_labels == k)
                 x, y = xs[idx], ys[idx]
                 field_energy = -beta * field_stack[x, y, k]
                 log_probs[k] = interaction_energy + field_energy
-
-            probs = np.exp(log_probs - np.max(log_probs))
+            probs = np.exp(log_probs)
             probs /= np.sum(probs)
-
             labels_int[idx] = np.random.choice(n_types, p=probs)
 
         if verbose:
             changes = np.sum(old_labels != labels_int)
-            tqdm.write(f"[Gibbs iteration {it+1}] Changes: {changes} | J_effective = {J_effective:.2f}")
+            tqdm.write(f"[Gibbs iteration {it+1}] Changes: {changes} | J = {J:.2f}")
 
     final_labels = np.array([cell_types[i] for i in labels_int])
     return final_labels
@@ -264,16 +234,18 @@ def generate_synthetic_network_potts_field(
     domain_size,
     target_proportions,
     cell_types,
-    beta=1.0, # intensité du champ externe
-    J=1.0,    # interaction entre voisins
-    amplitude=1000,
+    max_dist_domain,
+    beta=1.0,
+    J=1.0,
+    amplitude=1,
     oversample_factor=5,
     n_iter=5,
     verbose=False,
     gibbs_sampling=True
 ):
     shape = (domain_size[1], domain_size[0])
-    correlation_length = estimate_correlation_length(nodes_initial)
+    non_corrected_correlation_length, max_distances = estimate_correlation_length(nodes_initial)
+    correlation_length = max_dist_domain/max_distances*non_corrected_correlation_length
     tqdm.write(f"Correlation Lentgh Estimated = {correlation_length}")
 
     fields = {}
@@ -289,7 +261,7 @@ def generate_synthetic_network_potts_field(
     target_counts = {ct: int(p * n_cells) for ct, p in target_proportions.items()}
     remaining_indices = set(range(n_points))
 
-    for i, ct in enumerate(tqdm(cell_types, desc='[PROCESS] ')):
+    for i, ct in enumerate(tqdm(cell_types, desc='[PROCESS] Cell Assignation')):
         count = target_counts.get(ct, 0)
         if not remaining_indices or count == 0:
             continue
@@ -306,7 +278,7 @@ def generate_synthetic_network_potts_field(
             probabilities = scaled_scores / scaled_scores.sum()
 
         # Choix principal par scores pondérés
-        num_main = int(count * 0.9)
+        num_main = int(count * 1.0)
         num_random = count - num_main
 
         chosen_main = np.random.choice(subset, size=min(num_main, len(subset)), replace=False, p=probabilities)
@@ -328,18 +300,8 @@ def generate_synthetic_network_potts_field(
     xs_final = xs[keep_indices]
     ys_final = ys[keep_indices]
     assigned_types = np.array(assigned_types)[keep_indices]
-    """
-    lattice_indices = build_lattice_indices(xs_final, ys_final, shape)
-    updated_labels = gibbs_sampling_potts_field_beta(
-        assigned_types,
-        fields,
-        lattice_indices,
-        beta=beta,
-        J=J,
-        n_iter=n_iter,
-        cell_types=cell_types
-    )
-    """
+
+
     lattice_indices = build_lattice_indices(xs_final, ys_final, shape)
     positions = np.vstack((xs_final, ys_final)).T
     edges = build_edges_from_positions(positions)
@@ -371,14 +333,13 @@ def generate_synthetic_network_potts_field(
 
 ######################################################### MAIN #################################################################
 
-def main(panel):
+def main():
+    global panel
+    max_dist_domain = (domain_size[0]**2+domain_size[1]**2)**(1/2)
     np.random.seed(SEED)
-    if type_of_data == 'IMC':
-        panel = ''
-        sample_type = 'ROI'
-    elif type_of_data == 'IF':
-        panel = '_' + panel
-        sample_type = 'layer'
+    panel, sample_type = define_panel(type_of_data, panel)
+
+    ################################### Import Data ###########################
 
     nodes_types = pd.read_parquet(f"./output_data/{type_of_data}{panel}_networks_sample/nodes_patient-{patient}_" 
                         f"{sample_type}-{sample}.parquet")
@@ -390,32 +351,35 @@ def main(panel):
     df = pd.read_parquet(f'output_data/synthetic_network_generation/mixmat_IF_IMC/{type_of_data}{panel}_patient-{patient}_{sample_type}-{sample}_mixmat.parquet')
     cell_types = df.columns.tolist()
 
-    if NAIVE:
-        nodes, edges, fields = generate_synthetic_network_from_field(
-        nodes_initial=nodes_types,
-        edges_initial=edges_types,
-        n_cells=nb_cells,
-        domain_size=domain_size,
-        target_proportions=target_proportions,
-        cell_types=cell_types,
-        oversample_factor=10
-        )
+    ################################### RUN ###################################
 
-    else:
-        nodes, edges, fields = generate_synthetic_network_potts_field(
+    nodes, edges, fields = generate_synthetic_network_potts_field(
             nodes_initial=nodes_types,
             n_cells=nb_cells,
             domain_size=domain_size,
             target_proportions=target_proportions,
             cell_types=cell_types,
+            max_dist_domain=max_dist_domain,
             beta=beta,
             J=J,
             n_iter=iter_Gibbs,
             verbose=verbose,
-            gibbs_sampling=True
+            gibbs_sampling=gibbs_sampling
         )
+    if FIELD_PLOT:
+        plot_field(fields, cell_types, 'original_field')
+    
+        cor_l_before_process = estimate_correlation_length(nodes, nb_bins=100, sample_size=80000)[0]
+        print(cor_l_before_process)
+        fields = {}
+        for ct in tqdm(cell_types, desc="[PROCESS] Generating correlated fields"):
+            fields[ct] = generate_correlated_field(domain_size, cor_l_before_process)
+        
+        plot_field(fields, cell_types, 'reconstruct_field')
 
     if RUN_TEST:
+        ax_network, ax_assortativity, ax_ecart = generate_plotting_figure(RUN_TEST)
+
         mixmat_z = compute_assort(nodes, edges)
         sns.heatmap(mixmat_z, center=0, cmap="vlag", annot=False, linewidths=.5, ax=ax_assortativity)
         ax_assortativity.set_title("Generated network assortativity")
@@ -429,52 +393,35 @@ def main(panel):
         plotting(nodes, ax_network, f"Synthetic Network with {len(nodes)} cells")
 
     else:
+        generate_plotting_figure(RUN_TEST)
         plotting(nodes, None, f"Synthetic Network with {len(nodes)} cells")
 
     plt.tight_layout()
     plt.savefig(f'TEST_NETWORK_V2/test_{nb_cells}.png', dpi=300)
 
-    # --- Affichage des champs par type ---
-
-    n_types = len(cell_types)
-    fig_fields, axes_fields = plt.subplots(1, n_types, figsize=(4 * n_types, 4))
-    if n_types == 1:
-        axes_fields = [axes_fields]
-    for ax, ct in zip(axes_fields, cell_types):
-        im = ax.imshow(fields[ct], cmap='viridis')
-        ax.set_title(f'Correlated Field: {ct}')
-        ax.axis('off')
-        fig_fields.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    plt.tight_layout()
-    plt.savefig(f'TEST_NETWORK_V2/CorrelatedField.png', dpi=300)
-
 if __name__ == '__main__':
- 
+
+    ###### Global parameter ######
     SEED = 42  
     RUN_TEST = False
-    NAIVE = False
+    FIELD_PLOT = True
+    verbose = True
+    gibbs_sampling = True
+
+    ###### Data parameter ######
     type_of_data = 'IF' 
     panel = 'C2'
     patient = 'B'
     sample = '3'
 
+    ###### Network parameter ######
     nb_cells = 1000
     domain_size = (2000,2000)
-
-    J = 3.0
-    beta = 0.6
+    
+    ###### Gibbs and Pott parameter ######
+    J = 200
+    beta = 0.2
     iter_Gibbs = 50
-    verbose = True
 
-    if RUN_TEST:
-        fig = plt.figure(figsize=(40, 30))
-        gs = gridspec.GridSpec(2, 2, height_ratios=[1,1], wspace=0.4, hspace=0.5)
+    main()
 
-        ax_network = fig.add_subplot(gs[0, 0:1])
-        ax_assortativity = fig.add_subplot(gs[1, 0])
-        ax_ecart = fig.add_subplot(gs[1, 1])
-    else:
-        fig = plt.figure(figsize=(20, 15))
-        
-    print('\n')
-    main(panel)
