@@ -11,6 +11,10 @@ from pathlib import Path
 import copy
 
 #################### Main Function ####################
+def list_folders(config):
+    path = config["IF_import"]['directory_path']
+    return [f.name for f in Path(path).iterdir() if f.is_dir()]
+
 def get_arguments():
 
     parser = argparse.ArgumentParser(description = "Draw tysserand for IMC / IF")
@@ -214,22 +218,7 @@ def main():
             IMC_markers['CellID'] = IMC_markers.index
             IMC_sample_cell['CellID'] = IMC_sample_cell.index
         print("DONE")
-
-    if config_file['IF_import']['present_in']:
-        print(f"\t[TASK] Import IF {config_file['IF_import']['panel']} panel data\t\t\t", end="")
-        IF_params = config_file['IF_import'].copy()
-        IF_params.update({'layer_name': 'layer', 'type': 'IF'})
-
-        IF_markers, IF_sample_cell, IF_cell_pos = import_data(**IF_params)
-        
-        
-        if config_file['IF_import']['re_index']:
-            IF_cell_pos['CellID'] = IF_cell_pos.index
-            IF_markers['CellID'] = IF_markers.index
-            IF_sample_cell['CellID'] = IF_sample_cell.index
-        print("DONE")
-    print("\t[TASK] Saving pandas in parquet\t\t\t",end='')
-    if config_file['IMC_import']['present_in']:
+        print("\t[TASK] Saving pandas in parquet\t\t\t",end='')
         IMC_cell_pos.to_parquet(Path('./OUTPUT_DATA/temp') / "IMC_cell_pos.parquet")
         IMC_markers.to_parquet(Path('./OUTPUT_DATA/temp') / "IMC_markers.parquet")
         IMC_sample_cell.to_parquet(Path('./OUTPUT_DATA/temp') / "IMC_sample_cell.parquet")
@@ -241,20 +230,63 @@ def main():
         IMC_sample_cell.to_csv(Path('./OUTPUT_DATA') / "temp/description/IMC_file_description.csv",
                                   index=False,
                                   header=False)
-            
+        print("DONE")
+                
     if config_file['IF_import']['present_in']:
-        IF_cell_pos.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{config_file['IF_import']['panel']}_cell_pos.parquet")
-        IF_markers.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{config_file['IF_import']['panel']}_markers.parquet")
-        IF_sample_cell.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{config_file['IF_import']['panel']}_sample_cell.parquet")
-        IF_markers = IF_markers.drop('CellID', axis=1)
-        IF_markers.columns.to_series().to_csv(Path('./OUTPUT_DATA') / f"temp/description/IF_{config_file['IF_import']['panel']}_markers.csv",
-                                                  index=False,
-                                                  header=False)
-        IF_sample_cell = IF_sample_cell.drop('CellID', axis=1).drop_duplicates()
-        IF_sample_cell.to_csv(Path('./OUTPUT_DATA') / f"temp/description/IF_{config_file['IF_import']['panel']}_file_description.csv",
-                                  index=False,
-                                  header=False)
-    print('DONE')
+        if config_file['IF_import']['panel'] == "all":
+            list_panel = list_folders(config_file)
+            for panel in list_panel:
+                print(f"\t[TASK] Import IF {panel} panel data\t\t\t", end="")
+                IF_params = config_file['IF_import'].copy()
+                IF_params.update({'layer_name': 'layer', 'type': 'IF', 'panel':panel})
 
+                IF_markers, IF_sample_cell, IF_cell_pos = import_data(**IF_params)
+                print("DONE")
+                if config_file['IF_import']['re_index']:
+                    IF_cell_pos['CellID'] = IF_cell_pos.index
+                    IF_markers['CellID'] = IF_markers.index
+                    IF_sample_cell['CellID'] = IF_sample_cell.index
+
+                print("\t[TASK] Saving pandas in parquet\t\t\t",end='')
+                IF_cell_pos.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{panel}_cell_pos.parquet")
+                IF_markers.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{panel}_markers.parquet")
+                IF_sample_cell.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{panel}_sample_cell.parquet")
+                IF_markers = IF_markers.drop('CellID', axis=1)
+                IF_markers.columns.to_series().to_csv(Path('./OUTPUT_DATA') / f"temp/description/IF_{panel}_markers.csv",
+                                                index=False,
+                                                header=False)
+                IF_sample_cell = IF_sample_cell.drop('CellID', axis=1).drop_duplicates()
+                IF_sample_cell.to_csv(Path('./OUTPUT_DATA') / f"temp/description/IF_{panel}_file_description.csv",
+                                                index=False,
+                                                header=False)
+                print("DONE")
+
+        else:
+            panel=config_file['IF_import']['panel']
+            print(f"\t[TASK] Import IF {panel} panel data\t\t\t", end="")
+            IF_params = config_file['IF_import'].copy()
+            IF_params.update({'layer_name': 'layer', 'type': 'IF'})
+
+            IF_markers, IF_sample_cell, IF_cell_pos = import_data(**IF_params)
+            print("DONE")
+            if config_file['IF_import']['re_index']:
+                    IF_cell_pos['CellID'] = IF_cell_pos.index
+                    IF_markers['CellID'] = IF_markers.index
+                    IF_sample_cell['CellID'] = IF_sample_cell.index
+            
+            print("\t[TASK] Saving pandas in parquet\t\t\t",end='')
+            IF_cell_pos.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{panel}_cell_pos.parquet")
+            IF_markers.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{panel}_markers.parquet")
+            IF_sample_cell.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{panel}_sample_cell.parquet")
+            IF_markers = IF_markers.drop('CellID', axis=1)
+            IF_markers.columns.to_series().to_csv(Path('./OUTPUT_DATA') / f"temp/description/IF_{panel}_markers.csv",
+                                                index=False,
+                                                header=False)
+            IF_sample_cell = IF_sample_cell.drop('CellID', axis=1).drop_duplicates()
+            IF_sample_cell.to_csv(Path('./OUTPUT_DATA') / f"temp/description/IF_{panel}_file_description.csv",
+                                                index=False,
+                                                header=False)
+            print("DONE")
+        
 if __name__ == "__main__":
     main()

@@ -41,6 +41,9 @@ mpl.rcParams["axes.facecolor"] = 'white'
 mpl.rcParams["savefig.facecolor"] = 'white'
 
 ########################################## Function ##########################################
+def list_folders(path):
+    return [f.name for f in Path(path).iterdir() if f.is_dir()]
+
 def verif_file(type, panel=None):
     if os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos.parquet") and \
         os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos_pheno.parquet") and \
@@ -353,11 +356,11 @@ def main(IF, IMC, config_file):
         if not (save_dir / f"{type}{panel}_net_stat.parquet").exists():
             t = time()
             print(f"\t[INFO] Processing Assortativity for {type} data\t\t\t", end='')
-            net_stat = mix_mat_assortativity(f"./OUTPUT_DATA/{type}{panel}_networks_sample", 
+            net_stat = mix_mat_assortativity(f"./OUTPUT_DATA/temp/{type}{panel}_networks_sample", 
                                                 "Phenotypes", 
                                                 type=type)
             net_stat.to_parquet(save_dir / f"{type}{panel}_net_stat.parquet")
-            print(f"DONE\n\t[INFO] Assortativity for IMC took {time()-t} s")
+            print(f"DONE\n\t[INFO] Assortativity for {type} took {time()-t} s")
             del net_stat, t
             gc.collect()
         

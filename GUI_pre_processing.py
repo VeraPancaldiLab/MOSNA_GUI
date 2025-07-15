@@ -5,6 +5,7 @@ import ast
 import subprocess
 import io
 import shlex
+from pathlib import Path
 from yaml.representer import SafeRepresenter
 
 from PySide6.QtWidgets import (
@@ -20,6 +21,9 @@ SCRIPTS = [
     'SCRIPT/pre_processing.sh',
     'SCRIPT/clear_temporary_files.sh'
 ]
+def list_folders(config):
+    path = config["IF_import"]['directory_path']
+    return [f.name for f in Path(path).iterdir() if f.is_dir()]
 
 class ScriptRunnerThread(QThread):
     output_signal = Signal(str)
@@ -192,6 +196,15 @@ class MosnaGUI(QMainWindow):
         
         elif lower_key in ['metric'] and isinstance(value, str):
             options = ['manhattan', 'euclidean', 'cosine']
+            combo = QComboBox()
+            combo.addItems(options)
+            if value in options:
+                combo.setCurrentText(value)
+            return combo
+    
+        elif lower_key in ['panel'] and isinstance(value, str):
+            options = list_folders(self.config_data)
+            options.append('all')
             combo = QComboBox()
             combo.addItems(options)
             if value in options:

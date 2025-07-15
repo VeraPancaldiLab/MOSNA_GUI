@@ -3,6 +3,7 @@ import pandas as pd
 from mosna import mosna
 from tysserand import tysserand as ty
 from collections import defaultdict
+import os
 
 from math import sqrt
 from scipy.ndimage import gaussian_filter
@@ -98,7 +99,7 @@ def cluster_to_cmap(clustering):
     return celltypes_color_mapper
 
 ######################################################### USING FUNCTION #################################################################
-def estimate_correlation_length(nodes, nb_bins=100, sample_size=80000):
+def estimate_correlation_length(nodes, nb_bins=100, sample_size="max"):
     rng = np.random.default_rng(SEED)
 
     coords = nodes[['X_position', 'Y_position']].values
@@ -111,18 +112,33 @@ def estimate_correlation_length(nodes, nb_bins=100, sample_size=80000):
     sims = []
     seen_pairs = set()
 
-    while len(dists) < sample_size:
-        i = rng.integers(0, n)
-        j = rng.integers(0, n)
-        if i == j or (i, j) in seen_pairs or (j, i) in seen_pairs:
-            continue
-        seen_pairs.add((i, j))
+    if sample_size == 'max':
+        for i in range(n):
+            for j in range(i + 1, n):
+                if i == j or (i, j) in seen_pairs or (j, i) in seen_pairs:
+                    continue
+                seen_pairs.add((i, j))
 
-        dist = np.linalg.norm(coords[i] - coords[j])
-        sim = np.dot(labels[i], labels[j])  # peut être 0 ou 1 (ou plus si multi-labels)
-        dists.append(dist)
-        sims.append(sim)
+                dist = np.linalg.norm(coords[i] - coords[j])
+                sim = np.dot(labels[i], labels[j])
+                dists.append(dist)
+                sims.append(sim)
 
+    elif isinstance(sample_size, int):
+        while len(dists) < sample_size:
+            i = rng.integers(0, n)
+            j = rng.integers(0, n)
+            if i == j or (i, j) in seen_pairs or (j, i) in seen_pairs:
+                continue
+            seen_pairs.add((i, j))
+
+            dist = np.linalg.norm(coords[i] - coords[j])
+            sim = np.dot(labels[i], labels[j])  # peut être 0 ou 1 (ou plus si multi-labels)
+            dists.append(dist)
+            sims.append(sim)
+    else:
+        raise "Sample_size must be an integer or 'max'"
+    
     dists = np.array(dists)
     sims = np.array(sims)
 
@@ -136,6 +152,12 @@ def estimate_correlation_length(nodes, nb_bins=100, sample_size=80000):
         return (bins[decay_index] + bins[decay_index - 1]) / 2, max_distance
     except IndexError:
         return np.mean(bins), max_distance
+
+def J_normalization(mixmat):
+    return np.tanh(mixmat)+1
+
+def compute_J(mixmat, pheno_1, pheno_2):
+    return mixmat.loc[pheno_1, pheno_2]
 
 def compute_assort(nodes, edges):
     nodes_onehot = nodes.join(pd.get_dummies(nodes['Phenotypes'], prefix='', prefix_sep=''))
@@ -179,6 +201,7 @@ def gibbs_sampling_potts_field(
     J,
     n_iter,
     cell_types,
+    mixmat,
     verbose=False,
     apply_gibbs=True
 ):
@@ -203,8 +226,10 @@ def gibbs_sampling_potts_field(
         neighbor_map[row['source']].append(row['target'])
         neighbor_map[row['target']].append(row['source'])
 
+    mixmat = J_normalization(mixmat)
+
     for it in tqdm(range(n_iter), desc='[PROCESS] Gibbs Sampling to balance phenotypes'):
-        #J_effective = J * (1 + 10 * (it / n_iter))
+
         old_labels = labels_int.copy()
 
         for idx in np.random.permutation(n_cells):
@@ -213,7 +238,7 @@ def gibbs_sampling_potts_field(
 
             log_probs = np.zeros(n_types)
             for k in range(n_types):
-                interaction_energy = -J * np.sum(neighbor_labels == k)
+                interaction_energy = -compute_J(mixmat, k, k) * np.sum(neighbor_labels == k)
                 x, y = xs[idx], ys[idx]
                 field_energy = -beta * field_stack[x, y, k]
                 log_probs[k] = interaction_energy + field_energy
@@ -250,7 +275,11 @@ def generate_synthetic_network_potts_field(
 
     fields = {}
     for ct in tqdm(cell_types, desc="[PROCESS] Generating correlated fields"):
-        fields[ct] = amplitude * generate_correlated_field(shape, correlation_length)
+        if os.path.isfile(f"{ct}_field_{correlation_length}.npy"):
+            fields[ct]=np.load(f"{ct}_field_{correlation_length}.npy")
+        else:
+            fields[ct] = amplitude * generate_correlated_field(shape, correlation_length)
+            np.save(f"{ct}_field_{correlation_length}.npy", fields[ct])
 
     n_points = n_cells * oversample_factor
     xs = np.random.randint(0, domain_size[0], size=n_points)
@@ -340,15 +369,15 @@ def main():
 
     ################################### Import Data ###########################
 
-    nodes_types = pd.read_parquet(f"./output_data/{type_of_data}{panel}_networks_sample/nodes_patient-{patient}_" 
+    nodes_types = pd.read_parquet(f"./OUTPUT_DATA/{type_of_data}{panel}_networks_sample/nodes_patient-{patient}_" 
                         f"{sample_type}-{sample}.parquet")
-    edges_types = pd.read_parquet(f"./output_data/{type_of_data}{panel}_networks_sample/edges_patient-{patient}_" 
+    edges_types = pd.read_parquet(f"./OUTPUT_DATA/{type_of_data}{panel}_networks_sample/edges_patient-{patient}_" 
                         f"{sample_type}-{sample}.parquet")
 
     target_proportions = nodes_types['Phenotypes'].value_counts(normalize=True).to_dict()
 
-    df = pd.read_parquet(f'output_data/synthetic_network_generation/mixmat_IF_IMC/{type_of_data}{panel}_patient-{patient}_{sample_type}-{sample}_mixmat.parquet')
-    cell_types = df.columns.tolist()
+    mixmat_inital = pd.read_parquet(f'OUTPUT_DATA/synthetic_network_generation/mixmat_IF_IMC/{type_of_data}{panel}_patient-{patient}_{sample_type}-{sample}_mixmat.parquet')
+    cell_types = mixmat_inital.columns.tolist()
 
     ################################### RUN ###################################
 
@@ -368,7 +397,7 @@ def main():
     if FIELD_PLOT:
         plot_field(fields, cell_types, 'original_field')
     
-        cor_l_before_process = estimate_correlation_length(nodes, nb_bins=100, sample_size=80000)[0]
+        cor_l_before_process = estimate_correlation_length(nodes, nb_bins=100, sample_size=sample_size)[0]
         print(cor_l_before_process)
         fields = {}
         for ct in tqdm(cell_types, desc="[PROCESS] Generating correlated fields"):
@@ -384,7 +413,7 @@ def main():
         ax_assortativity.set_title("Generated network assortativity")
         plt.xticks(rotation=45, ha='right')
 
-        ecart_mixmat = (mixmat_z - df).abs()
+        ecart_mixmat = (mixmat_z - mixmat_inital).abs()
         sns.heatmap(ecart_mixmat, center=0, cmap="vlag", annot=False, linewidths=.5, ax=ax_ecart)
         ax_ecart.set_title("Delta assortativity ground truth vs generated network")
         plt.xticks(rotation=45, ha='right')
@@ -416,7 +445,7 @@ if __name__ == '__main__':
     ###### Network parameter ######
     nb_cells = 1000
     domain_size = (2000,2000)
-    
+    sample_size = 'max'
     ###### Gibbs and Pott parameter ######
     J = 2
     beta = 0.2

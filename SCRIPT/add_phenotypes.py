@@ -10,6 +10,10 @@ import argparse
 from pathlib import Path
 from tqdm import tqdm
 
+def list_folders(config):
+    path = config["IF_import"]['directory_path']
+    return [f.name for f in Path(path).iterdir() if f.is_dir()]
+
 def get_arguments():
 
     parser = argparse.ArgumentParser(description = "Draw tysserand for IMC / IF")
@@ -24,11 +28,11 @@ def get_config(config_path):
         config = yaml.safe_load(f)
     return config
 
-def import_data(dir, IMC, IF):
+def import_data(dir, IMC, IF, panel):
     if IMC:
         IMC_cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos.parquet")
     if IF:
-        IF_cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['IF_import']['panel']}_cell_pos.parquet")
+        IF_cell_pos = pd.read_parquet(Path(dir) / f"IF_{panel}_cell_pos.parquet")
 
     if IF and not IMC:
         return IF_cell_pos
@@ -81,23 +85,25 @@ def add_pheno(data, phenotypes, type):
 def main(config_file):
 
     def process_IF():
-    
-        IF_cell_pos = import_data('./OUTPUT_DATA/temp',False,True)
-        IF_phenotypes = import_phenotypes(config_file['pheno_dir'],                           
-                                                False,
-                                                True, config_file['IF_import']['panel'])
-        
-        IF_cell_pos_pheno = add_pheno(IF_cell_pos, IF_phenotypes, 'IF')
+        if config_file["IF_import"]['panel'] == 'all':
+            list_panel = list_folders(config_file)
+            for panel in list_panel:
+                IF_cell_pos = import_data('./OUTPUT_DATA/temp',False,True, panel)
+                IF_phenotypes = import_phenotypes(config_file['pheno_dir'],                           
+                                                        False,
+                                                        True, panel)
+                
+                IF_cell_pos_pheno = add_pheno(IF_cell_pos, IF_phenotypes, 'IF')
 
-        IF_cell_pos_pheno = IF_cell_pos_pheno.rename(columns={'Cluster':'Phenotypes'})
-        IF_cell_pos_pheno.to_parquet(f"./OUTPUT_DATA/temp/IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet")
+                IF_cell_pos_pheno = IF_cell_pos_pheno.rename(columns={'Cluster':'Phenotypes'})
+                IF_cell_pos_pheno.to_parquet(f"./OUTPUT_DATA/temp/IF_{panel}_cell_pos_pheno.parquet")
 
-        IF_phenotypes_list = IF_phenotypes['Cluster'].dropna().drop_duplicates()
-        IF_phenotypes_list.to_csv(f"./OUTPUT_DATA/temp/description/IF_{config_file['IF_import']['panel']}_phenotypes.csv", index=False, header=False)
+                IF_phenotypes_list = IF_phenotypes['Cluster'].dropna().drop_duplicates()
+                IF_phenotypes_list.to_csv(f"./OUTPUT_DATA/temp/description/IF_{panel}_phenotypes.csv", index=False, header=False)
 
     def process_IMC():
 
-        IMC_cell_pos = import_data('./OUTPUT_DATA/temp',True,False)
+        IMC_cell_pos = import_data('./OUTPUT_DATA/temp',True,False,None)
         IMC_phenotypes = import_phenotypes(config_file['pheno_dir'],                           
                                                 True,
                                                 False, None)
