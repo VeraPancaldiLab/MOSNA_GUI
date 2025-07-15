@@ -1,8 +1,7 @@
 mosna/
 data/processed/
-scripts_Bram/
 output_data/
-output_data_backup/
+OUTPUT_DATA/
 
 TEST_NETWORK_V1/
 TEST_NETWORK_V2/
