@@ -44,11 +44,11 @@ mpl.rcParams["savefig.facecolor"] = 'white'
 ########################################## Function ##########################################
 
 def verif_file(type, panel=None):
-    if os.path.isfile(f"./output_data/{type}{panel}_cell_pos.parquet") and \
-        os.path.isfile(f"./output_data/{type}{panel}_cell_pos_pheno.parquet") and \
-        os.path.isfile(f"./output_data/{type}{panel}_markers.parquet") and \
-        os.path.isfile(f"./output_data/{type}{panel}_sample_cell.parquet") and \
-        os.path.isdir(f'./output_data/{type}{panel}_networks_sample'):
+    if os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos.parquet") and \
+        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos_pheno.parquet") and \
+        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_markers.parquet") and \
+        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_sample_cell.parquet") and \
+        os.path.isdir(f'./OUTPUT_DATA/temp/{type}{panel}_networks_sample'):
 
         return True
     return False
@@ -76,14 +76,14 @@ def get_config(config_path):
     return config   
 
 def import_params(output_dir, pheno_col):
-    uniq_phenotypes_IMC = pd.read_csv(output_dir / "description/IMC_phenotypes.csv").iloc[:, 0].to_numpy()
-    uniq_phenotypes_IF = pd.read_csv(output_dir / f"description/IF_{config_file['NAS']['panel']}_phenotypes.csv").iloc[:, 0].to_numpy()
-    cell_types_IMC = pd.read_parquet(output_dir / "IMC_cell_pos_pheno.parquet")[pheno_col]
-    cell_types_IF = pd.read_parquet(output_dir / f"IF_{config_file['NAS']['panel']}_cell_pos_pheno.parquet")[pheno_col]
-    IF_markers = pd.read_csv(output_dir / f"description/IF_{config_file['NAS']['panel']}_markers.csv").iloc[:, 0].to_list()
-    IMC_markers = pd.read_csv(output_dir / "description/IMC_markers.csv").iloc[:, 0].to_list()
-    IF_sample = pd.read_csv(output_dir / f"description/IF_{config_file['NAS']['panel']}_file_description.csv", header=None).values.tolist()
-    IMC_sample = pd.read_csv(output_dir / "description/IMC_file_description.csv", header=None).values.tolist()
+    uniq_phenotypes_IMC = pd.read_csv(output_dir / "temp/description/IMC_phenotypes.csv").iloc[:, 0].to_numpy()
+    uniq_phenotypes_IF = pd.read_csv(output_dir / f"temp/description/IF_{config_file['NAS']['panel']}_phenotypes.csv").iloc[:, 0].to_numpy()
+    cell_types_IMC = pd.read_parquet(output_dir / "temp/IMC_cell_pos_pheno.parquet")[pheno_col]
+    cell_types_IF = pd.read_parquet(output_dir / f"temp/IF_{config_file['NAS']['panel']}_cell_pos_pheno.parquet")[pheno_col]
+    IF_markers = pd.read_csv(output_dir / f"temp/description/IF_{config_file['NAS']['panel']}_markers.csv").iloc[:, 0].to_list()
+    IMC_markers = pd.read_csv(output_dir / "temp/description/IMC_markers.csv").iloc[:, 0].to_list()
+    IF_sample = pd.read_csv(output_dir / f"temp/description/IF_{config_file['NAS']['panel']}_file_description.csv", header=None).values.tolist()
+    IMC_sample = pd.read_csv(output_dir / "temp/description/IMC_file_description.csv", header=None).values.tolist()
     return uniq_phenotypes_IF, uniq_phenotypes_IMC, cell_types_IF, cell_types_IMC, IF_markers, IMC_markers, IF_sample, IMC_sample
 
 def define_sample_name(type):
@@ -269,7 +269,7 @@ def main(IF, IMC, config_file):
 
     method = config_file['NAS']['method']
     pheno_col = 'Phenotypes'
-    output_dir = Path('./output_data')
+    output_dir = Path('./OUTPUT_DATA')
     nodes_aggregation = config_file['NAS']['node_aggregation']
     perform_NAS_all_sample = config_file['NAS']['perform_NAS_all_sample']
 
@@ -293,7 +293,7 @@ def main(IF, IMC, config_file):
         
         panel = define_panel(type)
 
-        network_dir = Path(f'./output_data/{type}{panel}_networks_sample')
+        network_dir = Path(f'./OUTPUT_DATA/temp/{type}{panel}_networks_sample')
         save_dir.mkdir(parents=True, exist_ok=True)
         
         ######################################## Node aggregation ########################################

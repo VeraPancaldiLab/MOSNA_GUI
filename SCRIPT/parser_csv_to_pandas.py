@@ -222,28 +222,28 @@ def main():
 
     print("\t[TASK] Saving pandas in parquet\t\t\t",end='')
     if config_file['IMC_import']['present_in']:
-        IMC_cell_pos.to_parquet(Path('./output_data') / "IMC_cell_pos.parquet")
-        IMC_markers.to_parquet(Path('./output_data') / "IMC_markers.parquet")
-        IMC_sample_cell.to_parquet(Path('./output_data') / "IMC_sample_cell.parquet")
+        IMC_cell_pos.to_parquet(Path('./OUTPUT_DATA/temp') / "IMC_cell_pos.parquet")
+        IMC_markers.to_parquet(Path('./OUTPUT_DATA/temp') / "IMC_markers.parquet")
+        IMC_sample_cell.to_parquet(Path('./OUTPUT_DATA/temp') / "IMC_sample_cell.parquet")
         IMC_markers = IMC_markers.drop('CellID', axis=1)
-        IMC_markers.columns.to_series().to_csv(Path('./output_data') / "description/IMC_markers.csv",
+        IMC_markers.columns.to_series().to_csv(Path('./OUTPUT_DATA') / "temp/description/IMC_markers.csv",
                                                    index=False,
                                                    header=False)
         IMC_sample_cell = IMC_sample_cell.drop('CellID', axis=1).drop_duplicates()
-        IMC_sample_cell.to_csv(Path('./output_data') / "description/IMC_file_description.csv",
+        IMC_sample_cell.to_csv(Path('./OUTPUT_DATA') / "temp/description/IMC_file_description.csv",
                                   index=False,
                                   header=False)
             
     if config_file['IF_import']['present_in']:
-        IF_cell_pos.to_parquet(Path('./output_data') / f"IF_{config_file['IF_import']['panel']}_cell_pos.parquet")
-        IF_markers.to_parquet(Path('./output_data') / f"IF_{config_file['IF_import']['panel']}_markers.parquet")
-        IF_sample_cell.to_parquet(Path('./output_data') / f"IF_{config_file['IF_import']['panel']}_sample_cell.parquet")
+        IF_cell_pos.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{config_file['IF_import']['panel']}_cell_pos.parquet")
+        IF_markers.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{config_file['IF_import']['panel']}_markers.parquet")
+        IF_sample_cell.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{config_file['IF_import']['panel']}_sample_cell.parquet")
         IF_markers = IF_markers.drop('CellID', axis=1)
-        IF_markers.columns.to_series().to_csv(Path('./output_data') / f"description/IF_{config_file['IF_import']['panel']}_markers.csv",
+        IF_markers.columns.to_series().to_csv(Path('./OUTPUT_DATA') / f"temp/description/IF_{config_file['IF_import']['panel']}_markers.csv",
                                                   index=False,
                                                   header=False)
         IF_sample_cell = IF_sample_cell.drop('CellID', axis=1).drop_duplicates()
-        IF_sample_cell.to_csv(Path('./output_data') / f"description/IF_{config_file['IF_import']['panel']}_file_description.csv",
+        IF_sample_cell.to_csv(Path('./OUTPUT_DATA') / f"temp/description/IF_{config_file['IF_import']['panel']}_file_description.csv",
                                   index=False,
                                   header=False)
     print('DONE')

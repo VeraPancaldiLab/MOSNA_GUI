@@ -38,11 +38,11 @@ mpl.rcParams["savefig.facecolor"] = 'white'
 
 ########################################## Function ##########################################
 def verif_file(type, panel=None):
-    if os.path.isfile(f"./output_data/{type}{panel}_cell_pos.parquet") and \
-        os.path.isfile(f"./output_data/{type}{panel}_cell_pos_pheno.parquet") and \
-        os.path.isfile(f"./output_data/{type}{panel}_markers.parquet") and \
-        os.path.isfile(f"./output_data/{type}{panel}_sample_cell.parquet") and \
-        os.path.isdir(f'./output_data/{type}{panel}_networks_sample'):
+    if os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos.parquet") and \
+        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos_pheno.parquet") and \
+        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_markers.parquet") and \
+        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_sample_cell.parquet") and \
+        os.path.isdir(f'./OUTPUT_DATA/temp/{type}{panel}_networks_sample'):
 
         return True
     return False
@@ -124,20 +124,20 @@ def draw_tysserand_network(coords, clustering, patient, type, method='delaunay',
     if sample == None:
         if type == 'IMC':
             plt.title(f"Draw an {type} Tysserand network for patient {patient}", fontsize=30)
-            plt.savefig(f"output_data/Tysserand_network/{type}_Tysserand_network_{patient}.png", bbox_inches="tight")
+            plt.savefig(f"OUTPUT_DATA/Tysserand_network/{type}_Tysserand_network_{patient}.png", bbox_inches="tight")
             plt.close(fig)
         if type == 'IF':
             plt.title(f"Draw an {type} Tysserand network for panel {config_file['tysserand']['panel']} and patient {patient}", fontsize=30)
-            plt.savefig(f"output_data/Tysserand_network/{type}_{config_file['tysserand']['panel']}_Tysserand_network_{patient}.png", bbox_inches="tight")
+            plt.savefig(f"OUTPUT_DATA/Tysserand_network/{type}_{config_file['tysserand']['panel']}_Tysserand_network_{patient}.png", bbox_inches="tight")
             plt.close(fig)
     else:
         if type == 'IMC':
             plt.title(f"Draw an {type} Tysserand network for patient {patient} and {sample_name} {sample}", fontsize=30)
-            plt.savefig(f"output_data/Tysserand_network/{type}_Tysserand_network_{patient}_{sample_name}_{sample}.png", bbox_inches="tight")
+            plt.savefig(f"OUTPUT_DATA/Tysserand_network/{type}_Tysserand_network_{patient}_{sample_name}_{sample}.png", bbox_inches="tight")
             plt.close(fig)
         if type == 'IF':
             plt.title(f"Draw an {type} Tysserand network for panel {config_file['tysserand']['panel']} and patient {patient} and {sample_name} {sample}", fontsize=30)
-            plt.savefig(f"output_data/Tysserand_network/{type}_{config_file['tysserand']['panel']}_Tysserand_network_{patient}_{sample_name}_{sample}.png",
+            plt.savefig(f"OUTPUT_DATA/Tysserand_network/{type}_{config_file['tysserand']['panel']}_Tysserand_network_{patient}_{sample_name}_{sample}.png",
                          bbox_inches="tight")
             plt.close(fig)
 
@@ -228,11 +228,11 @@ def network_parallelization_process_patient_and_sample(patient_sample, sample_na
         edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
         sample_name_for_file = sample_name.replace('_', '-')
         if type == 'IMC':
-            edges.to_parquet(Path(f"output_data/{type}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
-            nodes.to_parquet(Path(f"output_data/{type}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+            edges.to_parquet(Path(f"OUTPUT_DATA/temp/{type}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+            nodes.to_parquet(Path(f"OUTPUT_DATA/temp/{type}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
         if type == 'IF':
-            edges.to_parquet(Path(f"output_data/{type}_{config_file['tysserand']['panel']}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
-            nodes.to_parquet(Path(f"output_data/{type}_{config_file['tysserand']['panel']}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+            edges.to_parquet(Path(f"OUTPUT_DATA/temp/{type}_{config_file['tysserand']['panel']}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+            nodes.to_parquet(Path(f"OUTPUT_DATA/temp/{type}_{config_file['tysserand']['panel']}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
         del edges, pairs, nodes
         gc.collect()
 
@@ -287,11 +287,11 @@ def network_parallelization_process_patient(patient, sample_name, IF_cell_pos, I
         #tqdm.write("\t\t\t\tDONE\n")
         edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
         if type == 'IMC':
-            edges.to_parquet(Path(f"output_data/{type}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
-            nodes.to_parquet(Path(f"output_data/nodes/{type}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
+            edges.to_parquet(Path(f"OUTPUT_DATA/{type}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
+            nodes.to_parquet(Path(f"OUTPUT_DATA/nodes/{type}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
         if type == 'IF':
-            edges.to_parquet(Path(f"output_data/{type}_{config_file['tysserand']['panel']}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
-            nodes.to_parquet(Path(f"output_data/nodes/{type}_{config_file['tysserand']['panel']}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
+            edges.to_parquet(Path(f"OUTPUT_DATA/{type}_{config_file['tysserand']['panel']}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
+            nodes.to_parquet(Path(f"OUTPUT_DATA/nodes/{type}_{config_file['tysserand']['panel']}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
         del edges, pairs, nodes
         gc.collect()
 
@@ -367,12 +367,12 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
 ########################################## Main ##########################################
 
 def main(IF, IMC, config_file):
-    Path('output_data/Tysserand_network').mkdir(parents=True, exist_ok=True)
+    Path('OUTPUT_DATA/Tysserand_network').mkdir(parents=True, exist_ok=True)
     def process(type):
-        Path(f'output_data/{type}{define_panel(type)}_networks_sample').mkdir(parents=True, exist_ok=True)
+        Path(f'OUTPUT_DATA/temp/{type}{define_panel(type)}_networks_sample').mkdir(parents=True, exist_ok=True)
         tab_import = config_file[f'{type}_import']
 
-        cell_pos, markers, sample_cell = import_data('./output_data', type)
+        cell_pos, markers, sample_cell = import_data('./OUTPUT_DATA/temp', type)
         
         if tab_import['re_index']:
             cell_pos['CellID'] = cell_pos.index

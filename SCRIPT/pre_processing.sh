@@ -5,7 +5,7 @@ conda activate mosna
 phenograph=$(yq '.phenograph' CONFIG/configuration.yaml)
 add_pheno=$(yq '.add_pheno' CONFIG/configuration.yaml)
 
-mkdir -p output_data/description
+mkdir -p OUTPUT_DATA/temp/description
 
 python -u SCRIPT/parser_csv_to_pandas.py --file CONFIG/configuration.yaml
 
