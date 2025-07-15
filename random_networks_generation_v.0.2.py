@@ -4,6 +4,7 @@ from mosna import mosna
 from tysserand import tysserand as ty
 from collections import defaultdict
 
+from math import sqrt
 from scipy.ndimage import gaussian_filter
 from scipy.spatial.distance import pdist, squareform
 from scipy.stats import binned_statistic
@@ -13,8 +14,8 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.gridspec as gridspec
-print('\n')
 
+print('\n')
 ######################################################### HELPER FUNCTION #################################################################
 
 def generate_plotting_figure(RUN_TEST):
@@ -97,7 +98,6 @@ def cluster_to_cmap(clustering):
     return celltypes_color_mapper
 
 ######################################################### USING FUNCTION #################################################################
-
 def estimate_correlation_length(nodes, nb_bins=100, sample_size=80000):
     rng = np.random.default_rng(SEED)
 
@@ -160,11 +160,11 @@ def build_edges_from_positions(positions):
 
 def generate_correlated_field(shape, correlation_length):
     noise = np.random.randn(*shape)
+    sigma = correlation_length / sqrt(2)
     field = gaussian_filter(noise, sigma=correlation_length, mode='reflect')
     return field
 
 ######################################################### FUNCTION CORE #################################################################
-
 def build_lattice_indices(xs, ys, shape):
     lattice = -np.ones(shape, dtype=int)
     lattice[ys, xs] = np.arange(len(xs))
@@ -332,7 +332,6 @@ def generate_synthetic_network_potts_field(
     return nodes, edges, fields
 
 ######################################################### MAIN #################################################################
-
 def main():
     global panel
     max_dist_domain = (domain_size[0]**2+domain_size[1]**2)**(1/2)
@@ -419,7 +418,7 @@ if __name__ == '__main__':
     domain_size = (2000,2000)
     
     ###### Gibbs and Pott parameter ######
-    J = 200
+    J = 2
     beta = 0.2
     iter_Gibbs = 50
 

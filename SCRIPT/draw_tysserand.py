@@ -41,9 +41,7 @@ def verif_file(type, panel=None):
     if os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos.parquet") and \
         os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos_pheno.parquet") and \
         os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_markers.parquet") and \
-        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_sample_cell.parquet") and \
-        os.path.isdir(f'./OUTPUT_DATA/temp/{type}{panel}_networks_sample'):
-
+        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_sample_cell.parquet"):
         return True
     return False
 
@@ -370,20 +368,14 @@ def main(IF, IMC, config_file):
     Path('OUTPUT_DATA/Tysserand_network').mkdir(parents=True, exist_ok=True)
     def process(type):
         Path(f'OUTPUT_DATA/temp/{type}{define_panel(type)}_networks_sample').mkdir(parents=True, exist_ok=True)
-        tab_import = config_file[f'{type}_import']
 
         cell_pos, markers, sample_cell = import_data('./OUTPUT_DATA/temp', type)
         
-        if tab_import['re_index']:
-            cell_pos['CellID'] = cell_pos.index
-            markers['CellID'] = markers.index
-            sample_cell['CellID'] = sample_cell.index
-        
-        tysserand_network(cell_pos, markers, sample_cell, tab_import['there_is_duplicata'], type,
+        tysserand_network(cell_pos, markers, sample_cell, config_file["tysserand"][f'{type}_duplicata'], type,
                           config_file['phenograph'],
                           config_file['k_neighbors_phenograph'],
                           config_file['primary_metric_phenograph'],
-                          tab_import['normalization_method'],
+                          config_file[f'{type}_normalization'],
                           config_file['tysserand']['method_tysserand'],
                           config_file['tysserand']['min_neighbors'], cpu=config_file['tysserand']['cpu'])
         
@@ -398,7 +390,7 @@ def main(IF, IMC, config_file):
 
     try:
         if IF and verif_file('IF', define_panel('IF')):
-            print(f"\t[INFO] process on {config_file['tysserand']['panel']} panel")
+            print(f"\n\n\t[INFO] process on {config_file['tysserand']['panel']} panel")
             process('IF')
         else:
             raise ValueError("There is no IF in your data")

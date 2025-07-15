@@ -82,7 +82,7 @@ def main(config_file):
 
     def process_IF():
     
-        IF_cell_pos = import_data('./output_data',False,True)
+        IF_cell_pos = import_data('./OUTPUT_DATA/temp',False,True)
         IF_phenotypes = import_phenotypes(config_file['pheno_dir'],                           
                                                 False,
                                                 True, config_file['IF_import']['panel'])
@@ -90,24 +90,24 @@ def main(config_file):
         IF_cell_pos_pheno = add_pheno(IF_cell_pos, IF_phenotypes, 'IF')
 
         IF_cell_pos_pheno = IF_cell_pos_pheno.rename(columns={'Cluster':'Phenotypes'})
-        IF_cell_pos_pheno.to_parquet(f"./output_data/IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet")
+        IF_cell_pos_pheno.to_parquet(f"./OUTPUT_DATA/temp/IF_{config_file['IF_import']['panel']}_cell_pos_pheno.parquet")
 
         IF_phenotypes_list = IF_phenotypes['Cluster'].dropna().drop_duplicates()
-        IF_phenotypes_list.to_csv(f"./output_data/description/IF_{config_file['IF_import']['panel']}_phenotypes.csv", index=False, header=False)
+        IF_phenotypes_list.to_csv(f"./OUTPUT_DATA/temp/description/IF_{config_file['IF_import']['panel']}_phenotypes.csv", index=False, header=False)
 
     def process_IMC():
 
-        IMC_cell_pos = import_data('./output_data',True,False)
+        IMC_cell_pos = import_data('./OUTPUT_DATA/temp',True,False)
         IMC_phenotypes = import_phenotypes(config_file['pheno_dir'],                           
                                                 True,
                                                 False, None)
         IMC_cell_pos_pheno = add_pheno(IMC_cell_pos, IMC_phenotypes, 'IMC')
 
         IMC_cell_pos_pheno = IMC_cell_pos_pheno.rename(columns={'Cluster':'Phenotypes'})
-        IMC_cell_pos_pheno.to_parquet('./output_data/IMC_cell_pos_pheno.parquet')
+        IMC_cell_pos_pheno.to_parquet('./OUTPUT_DATA/temp/IMC_cell_pos_pheno.parquet')
 
         IMC_phenotypes_list = IMC_phenotypes['Cluster'].dropna().drop_duplicates()
-        IMC_phenotypes_list.to_csv("./output_data/description/IMC_phenotypes.csv", index=False, header=False)
+        IMC_phenotypes_list.to_csv("./OUTPUT_DATA/temp/description/IMC_phenotypes.csv", index=False, header=False)
 
     if config_file['IMC_import']['present_in']:
         process_IMC()

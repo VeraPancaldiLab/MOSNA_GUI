@@ -202,24 +202,32 @@ def import_data(**kwargs):
 def main():
     config_path = get_arguments()
     config_file = get_config(config_path)
-
     if config_file['IMC_import']['present_in']:
         print("\t[TASK] Import IMC data\t\t\t\t", end="")
         IMC_params = config_file['IMC_import'].copy()
         IMC_params.update({'layer_name': 'ROI', 'type': 'IMC'})
 
         IMC_markers, IMC_sample_cell, IMC_cell_pos = import_data(**IMC_params)
+
+        if config_file['IMC_import']['re_index']:
+            IMC_cell_pos['CellID'] = IMC_cell_pos.index
+            IMC_markers['CellID'] = IMC_markers.index
+            IMC_sample_cell['CellID'] = IMC_sample_cell.index
         print("DONE")
 
     if config_file['IF_import']['present_in']:
-        print("\t[TASK] Import IF data\t\t\t\t", end="")
+        print(f"\t[TASK] Import IF {config_file['IF_import']['panel']} panel data\t\t\t", end="")
         IF_params = config_file['IF_import'].copy()
         IF_params.update({'layer_name': 'layer', 'type': 'IF'})
 
         IF_markers, IF_sample_cell, IF_cell_pos = import_data(**IF_params)
-        print("DONE")
         
-
+        
+        if config_file['IF_import']['re_index']:
+            IF_cell_pos['CellID'] = IF_cell_pos.index
+            IF_markers['CellID'] = IF_markers.index
+            IF_sample_cell['CellID'] = IF_sample_cell.index
+        print("DONE")
     print("\t[TASK] Saving pandas in parquet\t\t\t",end='')
     if config_file['IMC_import']['present_in']:
         IMC_cell_pos.to_parquet(Path('./OUTPUT_DATA/temp') / "IMC_cell_pos.parquet")

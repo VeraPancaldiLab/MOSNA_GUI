@@ -42,11 +42,11 @@ mpl.rcParams["savefig.facecolor"] = 'white'
 
 ########################################## Function ##########################################
 def verif_file(type, panel=None):
-    if os.path.isfile(f"./OUTPUT_DATA/{type}{panel}_cell_pos.parquet") and \
-        os.path.isfile(f"./OUTPUT_DATA/{type}{panel}_cell_pos_pheno.parquet") and \
-        os.path.isfile(f"./OUTPUT_DATA/{type}{panel}_markers.parquet") and \
-        os.path.isfile(f"./OUTPUT_DATA/{type}{panel}_sample_cell.parquet") and \
-        os.path.isdir(f'./OUTPUT_DATA/{type}{panel}_networks_sample'):
+    if os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos.parquet") and \
+        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos_pheno.parquet") and \
+        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_markers.parquet") and \
+        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_sample_cell.parquet") and \
+        os.path.isdir(f'./OUTPUT_DATA/temp/{type}{panel}_networks_sample'):
 
         return True
     return False
