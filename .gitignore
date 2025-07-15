@@ -2,6 +2,7 @@ mosna/
 data/processed/
 output_data/
 OUTPUT_DATA/
+FIELDS/
 
-TEST_NETWORK_V1/
+
 TEST_NETWORK_V2/

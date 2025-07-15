@@ -99,7 +99,7 @@ def cluster_to_cmap(clustering):
     return celltypes_color_mapper
 
 ######################################################### USING FUNCTION #################################################################
-def estimate_correlation_length(nodes, nb_bins=100, sample_size="max"):
+def estimate_correlation_length(nodes, nb_bins=100, sample_size=80000):
     rng = np.random.default_rng(SEED)
 
     coords = nodes[['X_position', 'Y_position']].values
@@ -154,7 +154,9 @@ def estimate_correlation_length(nodes, nb_bins=100, sample_size="max"):
         return np.mean(bins), max_distance
 
 def J_normalization(mixmat):
-    return np.tanh(mixmat)+1
+    scale = np.abs(mixmat.values).max()
+    normalized_values = np.tanh(mixmat.values / scale) + 1
+    return pd.DataFrame(normalized_values, index=mixmat.index, columns=mixmat.columns)
 
 def compute_J(mixmat, pheno_1, pheno_2):
     return mixmat.loc[pheno_1, pheno_2]
@@ -208,11 +210,11 @@ def gibbs_sampling_potts_field(
     shape = next(iter(fields.values())).shape
     n_types = len(cell_types)
     inv_cell_types = {ct: i for i, ct in enumerate(cell_types)}
+    dict_cell_types = {i: ct for i, ct in enumerate(cell_types)}
     labels_int = np.array([inv_cell_types[label] for label in labels_init])
 
     xs, ys = np.where(lattice_indices != -1)
     n_cells = len(xs)
-
     field_stack = np.stack([fields[ct] for ct in cell_types], axis=-1)
 
     if not apply_gibbs:
@@ -226,8 +228,9 @@ def gibbs_sampling_potts_field(
         neighbor_map[row['source']].append(row['target'])
         neighbor_map[row['target']].append(row['source'])
 
+    print(mixmat)
     mixmat = J_normalization(mixmat)
-
+    print(mixmat)
     for it in tqdm(range(n_iter), desc='[PROCESS] Gibbs Sampling to balance phenotypes'):
 
         old_labels = labels_int.copy()
@@ -238,7 +241,8 @@ def gibbs_sampling_potts_field(
 
             log_probs = np.zeros(n_types)
             for k in range(n_types):
-                interaction_energy = -compute_J(mixmat, k, k) * np.sum(neighbor_labels == k)
+                J = compute_J(mixmat, dict_cell_types[k], dict_cell_types[k])
+                interaction_energy = -J * np.sum(neighbor_labels == k)
                 x, y = xs[idx], ys[idx]
                 field_energy = -beta * field_stack[x, y, k]
                 log_probs[k] = interaction_energy + field_energy
@@ -248,7 +252,7 @@ def gibbs_sampling_potts_field(
 
         if verbose:
             changes = np.sum(old_labels != labels_int)
-            tqdm.write(f"[Gibbs iteration {it+1}] Changes: {changes} | J = {J:.2f}")
+            tqdm.write(f"[Gibbs iteration {it+1}] Changes: {changes}")
 
     final_labels = np.array([cell_types[i] for i in labels_int])
     return final_labels
@@ -260,10 +264,11 @@ def generate_synthetic_network_potts_field(
     target_proportions,
     cell_types,
     max_dist_domain,
+    mixmat,
     beta=1.0,
     J=1.0,
     amplitude=1,
-    oversample_factor=5,
+    oversample_factor=10,
     n_iter=5,
     verbose=False,
     gibbs_sampling=True
@@ -275,11 +280,11 @@ def generate_synthetic_network_potts_field(
 
     fields = {}
     for ct in tqdm(cell_types, desc="[PROCESS] Generating correlated fields"):
-        if os.path.isfile(f"{ct}_field_{correlation_length}.npy"):
-            fields[ct]=np.load(f"{ct}_field_{correlation_length}.npy")
+        if os.path.isfile(f"FIELDS/{ct}_field_{int(correlation_length)}.npy"):
+            fields[ct]=np.load(f"FIELDS/{ct}_field_{int(correlation_length)}.npy")
         else:
             fields[ct] = amplitude * generate_correlated_field(shape, correlation_length)
-            np.save(f"{ct}_field_{correlation_length}.npy", fields[ct])
+            np.save(f"FIELDS/{ct}_field_{int(correlation_length)}.npy", fields[ct])
 
     n_points = n_cells * oversample_factor
     xs = np.random.randint(0, domain_size[0], size=n_points)
@@ -344,6 +349,7 @@ def generate_synthetic_network_potts_field(
         J=J,
         n_iter=n_iter,
         cell_types=cell_types,
+        mixmat=mixmat,
         verbose=verbose,
         apply_gibbs=gibbs_sampling
     )
@@ -369,9 +375,9 @@ def main():
 
     ################################### Import Data ###########################
 
-    nodes_types = pd.read_parquet(f"./OUTPUT_DATA/{type_of_data}{panel}_networks_sample/nodes_patient-{patient}_" 
+    nodes_types = pd.read_parquet(f"./OUTPUT_DATA/temp/{type_of_data}{panel}_networks_sample/nodes_patient-{patient}_" 
                         f"{sample_type}-{sample}.parquet")
-    edges_types = pd.read_parquet(f"./OUTPUT_DATA/{type_of_data}{panel}_networks_sample/edges_patient-{patient}_" 
+    edges_types = pd.read_parquet(f"./OUTPUT_DATA/temp/{type_of_data}{panel}_networks_sample/edges_patient-{patient}_" 
                         f"{sample_type}-{sample}.parquet")
 
     target_proportions = nodes_types['Phenotypes'].value_counts(normalize=True).to_dict()
@@ -390,6 +396,7 @@ def main():
             max_dist_domain=max_dist_domain,
             beta=beta,
             J=J,
+            mixmat=mixmat_inital,
             n_iter=iter_Gibbs,
             verbose=verbose,
             gibbs_sampling=gibbs_sampling
@@ -397,10 +404,10 @@ def main():
     if FIELD_PLOT:
         plot_field(fields, cell_types, 'original_field')
     
-        cor_l_before_process = estimate_correlation_length(nodes, nb_bins=100, sample_size=sample_size)[0]
+        cor_l_before_process = estimate_correlation_length(nodes, nb_bins=100)[0]
         print(cor_l_before_process)
         fields = {}
-        for ct in tqdm(cell_types, desc="[PROCESS] Generating correlated fields"):
+        for ct in tqdm(cell_types, desc="[PROCESS] Generating correlated fields to verify"):
             fields[ct] = generate_correlated_field(domain_size, cor_l_before_process)
         
         plot_field(fields, cell_types, 'reconstruct_field')
@@ -432,7 +439,7 @@ if __name__ == '__main__':
     ###### Global parameter ######
     SEED = 42  
     RUN_TEST = False
-    FIELD_PLOT = True
+    FIELD_PLOT = False
     verbose = True
     gibbs_sampling = True
 
@@ -445,7 +452,7 @@ if __name__ == '__main__':
     ###### Network parameter ######
     nb_cells = 1000
     domain_size = (2000,2000)
-    sample_size = 'max'
+
     ###### Gibbs and Pott parameter ######
     J = 2
     beta = 0.2
