@@ -388,18 +388,17 @@ def main(IF, IMC, config_file):
         tqdm.write(f"IMC error: {e}")
 
     try:
-        if config_file['tysserand']['panel'] == 'all':
-            for panel in config_file['panel_list']:
-                if IF:
-                    if verif_file('IF', define_panel('IF', panel)):
-                        tqdm.write(f"\n\n\t[INFO] process on {panel} panel")
-                        process('IF', panel)
-                    else:
-                        raise ValueError("There is no IF in your data")
+        if IF:
+            if config_file['tysserand']['panel'] == 'all':
+                for panel in config_file['panel_list']:
+                        if verif_file('IF', define_panel('IF', panel)):
+                            tqdm.write(f"\n\n\t[INFO] process on {panel} panel")
+                            process('IF', panel)
+                        else:
+                            raise ValueError("There is no IF in your data")
 
-        else:
-            if IF:
-                if verif_file('IF', define_panel('IF', panel)):
+            else:
+                if verif_file('IF', define_panel('IF', config_file['tysserand']['panel'])):
                     tqdm.write(f"\n\n\t[INFO] process on {config_file['tysserand']['panel']} panel")
                     process('IF')
                 else:
