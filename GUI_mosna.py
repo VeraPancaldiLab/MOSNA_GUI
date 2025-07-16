@@ -22,7 +22,6 @@ SCRIPTS = [
     'SCRIPT/mosna_NAS.py',
     'SCRIPT/clear_temporary_files.sh'
 ]
-
 class ScriptRunnerThread(QThread):
     output_signal = Signal(str)
     finished_signal = Signal(bool, int)
@@ -53,7 +52,9 @@ class FlowStyleList(list):
 
 def represent_flow_style_list(dumper, data):
     return dumper.represent_sequence('tag:yaml.org,2002:seq', data, flow_style=True)
+
 yaml.add_representer(FlowStyleList, represent_flow_style_list, Dumper=yaml.SafeDumper)
+
 def force_inline_lists(obj):
     if isinstance(obj, dict):
         return {k: force_inline_lists(v) for k, v in obj.items()}
@@ -75,6 +76,7 @@ class MosnaGUI(QMainWindow):
             "silent":        (bool, type(None)),
             "phenograph":    (bool, type(None)),
             "pheno_dir":     (str,  type(None)),
+            "panel_list":    (list, type(None)),
             "add_pheno":     (bool, type(None)),
             "IF_normalization":            (bool,  type(None)),
             "IMC_normalization":            (bool,  type(None)),
@@ -152,6 +154,14 @@ class MosnaGUI(QMainWindow):
         lower_key = key.lower()
         if lower_key in ['method'] and isinstance(value, str):
             options = ['NAS']
+            combo = QComboBox()
+            combo.addItems(options)
+            if value in options:
+                combo.setCurrentText(value)
+            return combo
+
+        if lower_key in ['panel'] and isinstance(value, str):
+            options = self.config_data['panel_list'] + ["all"]
             combo = QComboBox()
             combo.addItems(options)
             if value in options:
@@ -312,7 +322,7 @@ class MosnaGUI(QMainWindow):
     def _append_console(self, text):
         cursor = self.console_output.textCursor()
         cursor.movePosition(QTextCursor.End)
-
+        text = str(text)
         if text.startswith('\r'):
             cursor.movePosition(QTextCursor.StartOfLine, QTextCursor.KeepAnchor)
             cursor.removeSelectedText()

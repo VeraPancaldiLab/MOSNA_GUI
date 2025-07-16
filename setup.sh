@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mkdir -p OUTPUT_DATA
+mkdir -p OUTPUT_DATA/temp
 set -e  # Quitter en cas d'erreur
 
 # === Étape 0 : Vérification de Conda ===

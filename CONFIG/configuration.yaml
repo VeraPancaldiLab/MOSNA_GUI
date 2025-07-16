@@ -1,4 +1,5 @@
 silent: false
+panel_list: [C1, C2]
 phenograph: false
 k_neighbors_phenograph: 30
 primary_metric_phenograph: minkowski
@@ -6,7 +7,7 @@ IF_normalization: false
 IMC_normalization: true
 tysserand:
   IF_perform: true
-  panel: C2
+  panel: all
   IF_duplicata: true
   IMC_perform: false
   IMC_duplicata: false
@@ -22,10 +23,10 @@ Assortativity:
 NAS:
   method: NAS
   output_name_file: IMC_IF_PDAC
-  IMC_perform: true
-  IF_perform: false
+  IMC_perform: false
+  IF_perform: true
   panel: C2
-  node_aggregation: true
+  node_aggregation: false
   perform_NAS_all_sample: true
   nodes_aggregation:
     IF:
@@ -74,11 +75,11 @@ NAS:
     k_cluster: 15
     normalize: niche
   IMC:
-    order: '2'
+    order: '1'
     stat_funcs: np.mean,np.std
     stat_names: [mean, std]
     clusterer_type: gmm
-    n_clusters: 8
+    n_clusters: 20
     reducer_type: umap
     metric: euclidean
     resolution: 0.001
@@ -87,4 +88,4 @@ NAS:
     dim_clust: 2
     min_cluster_size: 1
     k_cluster: 15
-    normalize: total
+    normalize: obs
