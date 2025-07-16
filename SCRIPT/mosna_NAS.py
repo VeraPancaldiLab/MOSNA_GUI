@@ -314,6 +314,7 @@ def main(IF, IMC, config_file):
                             min_dist, dim_clust, min_cluster_size,k_cluster,resolution, n_clusters,
                             save_dir, patient=None, sample=None)
             if type == 'IMC':
+                tqdm.write(f"\n\t[PROCESS] niches for patient IMC")
                 counts = mosna.make_niches_composition(
                     var=cell_types_IMC,
                     niches=cluster_labels,
@@ -321,6 +322,7 @@ def main(IF, IMC, config_file):
                     normalize=normalize
                 )
             elif type == 'IF':
+                tqdm.write(f"\n\t[PROCESS] niches for patient IF")
                 counts = mosna.make_niches_composition(
                     var=cell_types_IF,
                     niches=cluster_labels,
@@ -335,7 +337,7 @@ def main(IF, IMC, config_file):
             reducer_type, metric, n_neighbors, min_dist, dim_clust, \
             min_cluster_size, k_cluster, resolution, n_clusters = get_params(config_file, type, False, method, FUNC_MAP)
 
-            for patient, sample in tqdm(tab_sample, desc= f'{type} niches'):
+            for patient, sample in tqdm(tab_sample, desc= f'\t[PROCESS] {type} Compositions niches'):
                 if type == 'IMC':
                     tqdm.write(f"\n\t[INFO] niches for patient {patient} and ROI {sample}")
                 else:
@@ -375,7 +377,7 @@ def main(IF, IMC, config_file):
 
     try:
         if IMC:
-            if ((config_file['IMC_import']['present_in'] and config_file['tysserand']['IMC_perform']) or verif_file('IMC', define_panel('IMC'))):
+            if verif_file('IMC', define_panel('IMC')):
                 process('IMC', IMC_markers, IMC_sample)
             else:
                 raise ValueError("There is no IMC in your data or the Tysserand networks were not generated")
@@ -384,7 +386,7 @@ def main(IF, IMC, config_file):
 
     try:
         if IF:
-            if ((config_file['IF_import']['present_in'] and config_file['tysserand']['IF_perform']) or verif_file('IF', define_panel('IF'))):
+            if verif_file('IF', define_panel('IF')):
                 process('IF', IF_markers, IF_sample)
             else:
                 raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
@@ -393,7 +395,7 @@ def main(IF, IMC, config_file):
         print(f"\t[INFO] IF error: {e}")
 
 if __name__ == "__main__":
-    print('\n\n[NAS]')
+    print('\n\n[NAS PROCESSING]')
     config_path = get_arguments()
     config_file = get_config(config_path)   
     main(config_file['NAS']['IF_perform'],

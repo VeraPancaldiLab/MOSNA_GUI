@@ -280,11 +280,11 @@ def generate_synthetic_network_potts_field(
 
     fields = {}
     for ct in tqdm(cell_types, desc="[PROCESS] Generating correlated fields"):
-        if os.path.isfile(f"FIELDS/{ct}_field_{int(correlation_length)}.npy"):
-            fields[ct]=np.load(f"FIELDS/{ct}_field_{int(correlation_length)}.npy")
+        if os.path.isfile(f"FIELDS/{ct}_field_corrl-{int(correlation_length)}_domain-{domain_size}.npy"):
+            fields[ct]=np.load(f"FIELDS/{ct}_field_corrl-{int(correlation_length)}_domain-{domain_size}.npy")
         else:
             fields[ct] = amplitude * generate_correlated_field(shape, correlation_length)
-            np.save(f"FIELDS/{ct}_field_{int(correlation_length)}.npy", fields[ct])
+            np.save(f"FIELDS/{ct}_field_corrl-{int(correlation_length)}_domain-{domain_size}.npy", fields[ct])
 
     n_points = n_cells * oversample_factor
     xs = np.random.randint(0, domain_size[0], size=n_points)
@@ -440,7 +440,7 @@ if __name__ == '__main__':
     SEED = 42  
     RUN_TEST = False
     FIELD_PLOT = False
-    verbose = True
+    verbose = False
     gibbs_sampling = True
 
     ###### Data parameter ######
@@ -450,8 +450,8 @@ if __name__ == '__main__':
     sample = '3'
 
     ###### Network parameter ######
-    nb_cells = 1000
-    domain_size = (2000,2000)
+    nb_cells = 10000
+    domain_size = (5000,5000)
 
     ###### Gibbs and Pott parameter ######
     J = 2
