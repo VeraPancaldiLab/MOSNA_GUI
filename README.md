@@ -218,64 +218,8 @@ The pipeline creates a 2D tissue-like structure with cells (nodes), connected by
   - A list of nodes with spatial coordinates and phenotypes
   - A list of spatial edges derived from Delaunay triangulation
 
-### 🔄 Process 1 - Generate Cell Positions
 
-Cells are uniformly distributed in a 2D rectangular space
 
-This simulates a homogeneous tissue environment.
-
-### 🔄 Process 2 - Build Spatial Edges via Delaunay Triangulation
-
-Using **Delaunay**, edges are formed between spatial neighbors.
-
-This provides biologically-plausible neighborhood relations.
-
-### 🔄 Process 3 - Initialize Cell Phenotypes
-
-Each node is assigned a random phenotype from a predefined list of your choice
-
-### 🔄 Process 4 - Define the MRF Energy Function
-
-The energy of the system is defined by the negative sum of Z-score interactions over edges:
-
-```math
-\Huge E = -\sum_{(i, j) \in \text{Edges}} Z_{y_i, y_j}
-```
-
-Where:  
-- $y_i$ and $y_j$ are the phenotypes of neighboring cells  
-- $Z_{y_i, y_j}$ is the Z-score measuring assortativity
-
-### 🔄 Process 5 - Gibbs Sampling to Minimize Energy
-
-For each node, we re-sample its phenotype to minimize local energy:
-
-For a candidate phenotype \( t \), we define:
-
-```math
-\Huge P(y_i = t) \propto \exp\left(-\sum_{j \in \mathcal{N}(i)} Z_{t, y_j}\right)
-```
-
-The sampling is repeated over `n_iter` iterations to reach equilibrium.
-
-### 🔄 Process 6 - Proportion Regularization
-
-After convergence, we correct global proportions by inserting additional points (cells) with minimal impact on the energy:
-$N(x)$ is the set of source cells for the cell x
-
-For phenotype \( t \), the position \( x \) is selected to minimize:
-
-```math
-\Huge \Delta E(x, t) = -\sum_{j \in \mathcal{N}(x)} Z_{t, y_j}
-```
-
-A new cell is added if:
-
-```python
-abs(current_proportion[phenotype] - target_proportion[phenotype]) > tolerance_threshold
-```
-
-This step ensures final phenotype distributions match biological constraints.
 
 ## Step 6: Remove all temporary file in output_data file
 
