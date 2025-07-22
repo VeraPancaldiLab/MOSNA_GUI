@@ -2,7 +2,7 @@
 source ~/miniconda3/etc/profile.d/conda.sh
 conda activate mosna
 
-add_pheno=$(yq '.add_pheno' CONFIG/configuration_pre_process.yaml)
+add_pheno=$(yq eval '.add_pheno' CONFIG/configuration_pre_process.yaml)
 
 mkdir -p OUTPUT_DATA/temp/description
 
