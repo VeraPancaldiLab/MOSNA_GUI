@@ -22,8 +22,20 @@ SCRIPTS = [
     'SCRIPT/clear_temporary_files.sh'
 ]
 def list_folders(config):
-    path = config["IF_import"]['directory_path']
-    return [f.name for f in Path(path).iterdir() if f.is_dir()]
+    try:
+        path = config["IF_import"]['directory_path']
+        p = Path(path)
+        if not p.exists():
+            print(f"Error: The directory '{path}' does not exist.")
+            return []  
+        
+        return [f.name for f in p.iterdir() if f.is_dir()]
+    except KeyError as e:
+        print(f"Error: Missing key in config - {e}")
+        return []  
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return []  
 
 class ScriptRunnerThread(QThread):
     output_signal = Signal(str)
