@@ -41,6 +41,61 @@ This tool provide a GUI to generate easily the networks and other spatial analys
 
 Image qui explique le fonctionnement
 
+## Graphic Interfaces to control your using
+
+**2 GUI :**
+- 1 for pre-processing
+- 1 for Tysserand and MOSNA analysis
+
+before to be able to obtain your tysserand network you must complete first all parameters for the different, this parameters will be explained right after:
+
+![Mon Image](images/GUI.png)
+
+## Step 1: Pre-processing (No NEEDED)
+
+The pre-processing step is required to generate temp file needed for the following steps. 4 files will be created by type of data (IF's panel and IMC)
+
+- cell_pos_pheno = Phenotypes and position are present in this file for each cell sort by sample and patient
+- cell_pos = the same thing but without phenotypes
+- sample_cell = patient and sample for each cell
+- markers = all biomarkers for each cell sort by sample and patient
+
+You must fill **General**, **IF_import** and **IMC_import** sections.
+
+| Section     | Clé                   | Descripton        |
+|-------------|-----------------------|-------------------|
+|**General**  | silent                |                   |
+|             | pheno_dir             |                   |
+|             | phenograph            |                   |
+|             | add_pheno             |                   |
+|**IF_import**| present_in            |                   |
+|             | directory_path        |                   |
+|             | panel                 |                   |
+|             | path_encoding_patient |                   |
+|             | path_file_to_patient  |                   |
+|             | columns_to_drop       |                   |
+|             | layer_columns         |                   |
+|             | patient_columns       |                   |
+|             | marker_columns        |                   |
+|             | cell_id_columns       |                   |
+|             | spatial_columns       |                   |
+|             | normalize_data        |                   |
+|             | re_index              |                   |
+|             | there_is_duplicata    |                   |
+|**IMC_import**| present_in           |                   |
+|             | directory_path        |                   |
+|             | path_encoding_patient |                   |
+|             | path_file_to_patient  |                   |
+|             | columns_to_drop       |                   |
+|             | layer_columns         |                   |
+|             | patient_columns       |                   |
+|             | marker_columns        |                   |
+|             | cell_id_columns       |                   |
+|             | spatial_columns       |                   |
+|             | normalize_data        |                   |
+|             | re_index              |                   |
+|             | there_is_duplicata    |                   |
+
 ### ❗You can directly use Tysserand tool of my own tool instead of run pre-processing if you respect this the following format of your data:
 
 ❗ You must respect few things: 
@@ -85,61 +140,6 @@ replace the name of bio-marker 1 to n by the real name of yours bio-makers
 | Cell 1 |    ...     |   ...      |   ...     |
 |  ...   |    ...     |     ...    |    ...    |
 | Cell N |     ...    |    ...     |    ...    |
-
-## Graphic Interfaces to control your using
-
-**2 GUI :**
-- 1 for pre-processing
-- 1 for Tysserand and MOSNA analysis
-
-before to be able to obtain your tysserand network you must complete first all parameters for the different, this parameters will be explained right after:
-
-![Mon Image](images/GUI.png)
-
-## Step 1: Pre-processing
-
-The pre-processing step is required to generate temp file needed for the following steps. 4 files will be created by type of data (IF's panel and IMC)
-
-- cell_pos_pheno = Phenotypes and position are present in this file for each cell sort by sample and patient
-- cell_pos = the same thing but without phenotypes
-- sample_cell = patient and sample for each cell
-- markers = all biomarkers for each cell sort by sample and patient
-
-You must fill **General**, **IF_import** and **IMC_import** sections.
-
-| Section     | Clé                   | Descripton        |
-|-------------|-----------------------|-------------------|
-|**General**  | silent                |                   |
-|             | pheno_dir             |                   |
-|             | phenograph            |                   |
-|             | add_pheno             |                   |
-|**IF_import**| present_in            |                   |
-|             | directory_path        |                   |
-|             | panel                 |                   |
-|             | path_encoding_patient |                   |
-|             | path_file_to_patient  |                   |
-|             | columns_to_drop       |                   |
-|             | layer_columns         |                   |
-|             | patient_columns       |                   |
-|             | marker_columns        |                   |
-|             | cell_id_columns       |                   |
-|             | spatial_columns       |                   |
-|             | normalize_data        |                   |
-|             | re_index              |                   |
-|             | there_is_duplicata    |                   |
-|**IMC_import**| present_in           |                   |
-|             | directory_path        |                   |
-|             | path_encoding_patient |                   |
-|             | path_file_to_patient  |                   |
-|             | columns_to_drop       |                   |
-|             | layer_columns         |                   |
-|             | patient_columns       |                   |
-|             | marker_columns        |                   |
-|             | cell_id_columns       |                   |
-|             | spatial_columns       |                   |
-|             | normalize_data        |                   |
-|             | re_index              |                   |
-|             | there_is_duplicata    |                   |
 
 ## Step 2: Draw Tysserand Spatial Networks
 
