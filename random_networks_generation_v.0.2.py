@@ -4,6 +4,7 @@ from mosna import mosna
 from tysserand import tysserand as ty
 from collections import defaultdict
 import os
+import shutil
 
 from math import sqrt
 from scipy.ndimage import gaussian_filter
@@ -12,10 +13,12 @@ from scipy.stats import binned_statistic
 from scipy.spatial import Delaunay
 from scipy.optimize import curve_fit
 
+
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.gridspec as gridspec
+import imageio.v2 as imageio
 
 print('\n')
 ######################################################### HELPER FUNCTION #################################################################
@@ -108,7 +111,8 @@ def plotting(
     nodes, 
     axes, 
     title, 
-    pairs=None
+    pairs=None,
+    celltypes_color_mapper=None
 ):
     """
     Plot the spatial cell network with phenotypic labels and optional edge pairs.
@@ -126,8 +130,10 @@ def plotting(
     """
 
     clustering = nodes['Phenotypes']
+    if celltypes_color_mapper is None:
+        celltypes_color_mapper = cluster_to_cmap(clustering)
+
     coords = nodes[['X_position', 'Y_position']]
-    celltypes_color_mapper = cluster_to_cmap(clustering)
     coords = np.array(coords.values.tolist())
     if pairs is None:
         pairs = coords_to_pairs(coords)
@@ -151,6 +157,31 @@ def plotting(
             ax=axes
             )
         axes.set_title(title)
+
+def create_video_from_frames(
+    folder="TEMP_FRAMES", 
+    output="gibbs_network.mp4", 
+    fps=5
+):
+    """
+    Make a video thanks to temporary files
+
+    Parameters
+    ----------
+    folder : str
+        Dossier contenant les frames.
+    output : str
+        Nom du fichier de sortie (.mp4 ou .gif).
+    fps : int
+        Images par seconde.
+    """
+    images = []
+    files = sorted([f for f in os.listdir(folder) if f.endswith('.png')])
+    for file_name in files:
+        file_path = os.path.join(folder, file_name)
+        images.append(imageio.imread(file_path))
+    imageio.mimsave(output, images, fps=fps)
+    shutil.rmtree("./TEMP_FRAMES")
 
 def coords_to_pairs(coords):
     """
@@ -447,7 +478,9 @@ def gibbs_sampling_potts_field(
     cell_types,
     mixmat,
     verbose=False,
-    apply_gibbs=True
+    apply_gibbs=True,
+    PLOT_GIBBS=False,
+    record_frames=False
 ):
     """
     Perform Gibbs sampling using a Potts model with spatial field and cell-cell interaction matrix.
@@ -476,12 +509,17 @@ def gibbs_sampling_potts_field(
         If True, print progress.
     apply_gibbs : bool
         If False, skip sampling and return initial labels.
-
+    PLOT_GIBBS: bool
+        if true, plot the convergence of Gibbs sampling
+    record_frames : bool
+        if True, generate a video of Gibbs sampling
     Returns
     -------
     final_labels : ndarray
         Final cell type labels after sampling.
     """
+    if record_frames: 
+        os.makedirs('./TEMP_FRAMES', exist_ok=True)
 
     shape = next(iter(fields.values())).shape
     n_types = len(cell_types)
@@ -505,11 +543,14 @@ def gibbs_sampling_potts_field(
         neighbor_map[row['target']].append(row['source'])
 
     mixmat = mixmat_normalisation(mixmat)
-
+    changes = []
+    frames = []
+    cell_types_color_mapper = None
+    pairs = None
     for it in tqdm(range(n_iter), desc='[PROCESS] Gibbs Sampling to balance phenotypes'):
 
         old_labels = labels_int.copy()
-
+        
         for idx in np.random.permutation(n_cells):
             neighbors = neighbor_map[idx]
             neighbor_labels = labels_int[neighbors] if neighbors else []
@@ -537,10 +578,44 @@ def gibbs_sampling_potts_field(
             # === Switch Phenotype ===
 
             labels_int[idx] = np.random.choice(n_types, p=probs)
+        
+        changes.append(np.sum(old_labels != labels_int))
+        if record_frames:
+            
+            current_labels = np.array([cell_types[i] for i in labels_int])
+            nodes_frame = pd.DataFrame({
+                'CellID': range(len(xs)),
+                'X_position': xs,
+                'Y_position': ys,
+                'Phenotypes': current_labels
+            })
+            if cell_types_color_mapper is None:
+                clustering = nodes_frame['Phenotypes']
+                cell_types_color_mapper = cluster_to_cmap(clustering)
+            if pairs is None:
+                coords = nodes_frame[['X_position', 'Y_position']]
+                coords = np.array(coords.values.tolist())
+                pairs = coords_to_pairs(coords)
+            fig = plt.figure(figsize=(12, 10))
+            plotting(nodes_frame, plt.gca(), f"Gibbs Iteration {it+1}", 
+                     pairs=pairs, celltypes_color_mapper=cell_types_color_mapper)
+            plt.axis('off')
+            plt.tight_layout()
+            plt.savefig(os.path.join('./TEMP_FRAMES', f"frame_{it:03d}.png"), dpi=300)
+            plt.close()
 
         if verbose:
             changes = np.sum(old_labels != labels_int)
-            tqdm.write(f"[Gibbs iteration {it+1}] Changes: {changes}")
+            tqdm.write(f"[Gibbs iteration {it+1}] Changes: {changes[it]}")
+    if PLOT_GIBBS:
+        plt.figure(figsize=(10, 6))
+        plt.plot(changes, marker='o')
+        plt.xlabel('Gibbs Iteration')
+        plt.ylabel('Number of label changes')
+        plt.title('Gibbs Sampling Convergence')
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(f'TEST_NETWORK_V2/convergence_gibbs_{nb_cells}.png', dpi=300)
 
     final_labels = np.array([cell_types[i] for i in labels_int])
     return final_labels
@@ -559,7 +634,8 @@ def generate_synthetic_network_potts_field(
     oversample_factor=10,
     n_iter=5,
     verbose=False,
-    gibbs_sampling=True
+    gibbs_sampling=True,
+    PLOT_GIBBS=False
 ):
     """
     Generate a synthetic spatial network of cells using Potts field dynamics and correlated attraction.
@@ -596,7 +672,10 @@ def generate_synthetic_network_potts_field(
         If True, print info during execution.
     gibbs_sampling : bool
         Whether to apply Gibbs sampling or not.
-
+    PLOT_GIBBS : bool
+        if True, plot the convergence of Gibbs sampling
+    record_frames : bool
+        if True, generate a video of Gibbs sampling
     Returns
     -------
     nodes : DataFrame
@@ -684,7 +763,9 @@ def generate_synthetic_network_potts_field(
         cell_types=cell_types,
         mixmat=mixmat,
         verbose=verbose,
-        apply_gibbs=gibbs_sampling
+        apply_gibbs=gibbs_sampling,
+        PLOT_GIBBS=PLOT_GIBBS,
+        record_frames=record_frames
     )
 
     nodes = pd.DataFrame({
@@ -745,17 +826,14 @@ def main():
             mixmat=mixmat_inital,
             n_iter=iter_Gibbs,
             verbose=verbose,
-            gibbs_sampling=gibbs_sampling
+            gibbs_sampling=gibbs_sampling,
+            PLOT_GIBBS=PLOT_GIBBS,
+            record_frames=record_frames
         )
     if FIELD_PLOT:
         plot_field(fields, cell_types, 'original_field')
         cor_l_before_process = estimate_correlation_length_fit(nodes, nb_bins=100)[0]
-        print(cor_l_before_process)
-        fields = {}
-        for ct in tqdm(cell_types, desc="[PROCESS] Generating correlated fields to verify"):
-            fields[ct] = generate_correlated_field(domain_size, cor_l_before_process)
-        
-        plot_field(fields, cell_types, 'reconstruct_field')
+        print(f'[INFO] Generated Network Correlation Length = {cor_l_before_process}')
 
     if RUN_TEST:
         ax_network, ax_assortativity, ax_ecart = generate_plotting_figure(RUN_TEST)
@@ -779,29 +857,36 @@ def main():
     plt.tight_layout()
     plt.savefig(f'TEST_NETWORK_V2/test_{nb_cells}.png', dpi=300)
 
+    if gibbs_sampling and record_frames:
+        create_video_from_frames(folder="TEMP_FRAMES", output=f"TEST_NETWORK_V2/gibbs_network_{nb_cells}.mp4", fps=5)
 if __name__ == '__main__':
 
-    ###### Global parameter ######
+    # === Global parameter ===
     SEED = 42  
     RUN_TEST = False
     FIELD_PLOT = False
-    verbose = False
+    
+    # === Gibbs Sampling parameters ===
     gibbs_sampling = True
+    iter_Gibbs = 50
+    verbose = False
+    PLOT_GIBBS = True
+    record_frames = True
 
-    ###### Data parameter ######
+    # === Data parameter ===
     type_of_data = 'IF' 
     panel = 'C2'
     patient = 'B'
     sample = '3'
 
-    ###### Network parameter ######
+    # === Network parameter ===
     nb_cells = 10000
     domain_size = (5000,5000)
 
-    ###### Gibbs and Pott parameter ######
+    # === Pott parameter ===
     J = 1.0
-    beta = 0.2
-    iter_Gibbs = 50
-
+    beta = 0.5
+    
+    # === MAIN ===
     main()
 
