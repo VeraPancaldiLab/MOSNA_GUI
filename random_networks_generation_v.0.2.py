@@ -553,6 +553,7 @@ def generate_synthetic_network_potts_field(
     cell_types,
     max_dist_domain,
     mixmat,
+    randomness_rate=0.8,
     beta=1.0,
     J=1.0,
     oversample_factor=10,
@@ -579,6 +580,10 @@ def generate_synthetic_network_potts_field(
         Max possible distance in the domain (for normalization).
     mixmat : DataFrame
         Interaction matrix for cell-cell affinity.
+    randomness_rate : float
+        rate to select random positions with correlated fields or by noise
+        0.0 = random pick
+        1.0 = pick only by correlated fields. 
     beta : float
         Weight of the spatial field.
     J : float
@@ -601,13 +606,18 @@ def generate_synthetic_network_potts_field(
     fields : dict
         Correlated fields used for sampling.
     """
+    # === Compute the correlation length ===
 
     shape = (domain_size[1], domain_size[0])
     non_corrected_correlation_length, max_distances = estimate_correlation_length_fit(nodes_initial)
     correlation_length = max_dist_domain / max_distances * non_corrected_correlation_length
     tqdm.write(f"Correlation Lentgh Estimated = {correlation_length}")
 
+    # === Generate Fields ===
+
     fields = generate_balanced_fields(shape, cell_types, correlation_length)
+
+    # === Generate random point and compute score by using fields ===
 
     n_points = n_cells * oversample_factor
     xs = np.random.randint(0, domain_size[0], size=n_points)
@@ -635,7 +645,7 @@ def generate_synthetic_network_potts_field(
             probabilities = scaled_scores / scaled_scores.sum()
 
         # Choix principal par scores pondérés
-        num_main = int(count * 1.0)
+        num_main = int(count * randomness_rate)
         num_random = count - num_main
 
         chosen_main = np.random.choice(subset, size=min(num_main, len(subset)), replace=False, p=probabilities)
@@ -739,8 +749,7 @@ def main():
         )
     if FIELD_PLOT:
         plot_field(fields, cell_types, 'original_field')
-    
-        cor_l_before_process = estimate_correlation_length(nodes, nb_bins=100)[0]
+        cor_l_before_process = estimate_correlation_length_fit(nodes, nb_bins=100)[0]
         print(cor_l_before_process)
         fields = {}
         for ct in tqdm(cell_types, desc="[PROCESS] Generating correlated fields to verify"):
