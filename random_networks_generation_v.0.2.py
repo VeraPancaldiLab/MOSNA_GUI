@@ -10,6 +10,7 @@ from scipy.ndimage import gaussian_filter
 from scipy.spatial.distance import pdist, squareform
 from scipy.stats import binned_statistic
 from scipy.spatial import Delaunay
+from scipy.optimize import curve_fit
 
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -18,8 +19,49 @@ import matplotlib.gridspec as gridspec
 
 print('\n')
 ######################################################### HELPER FUNCTION #################################################################
+def define_panel(
+    type_of_data, 
+    panel
+):
+    """
+    Determine panel prefix and sample type based on data modality.
+
+    Parameters
+    ----------
+    type_of_data : str
+        Type of spatial data ("IMC" or "IF").
+    panel : str
+        Panel identifier.
+
+    Returns
+    -------
+    tuple
+        Updated panel name and sample type.
+    """
+        
+    if type_of_data == 'IMC':
+        panel = ''
+        sample_type = 'ROI'
+    elif type_of_data == 'IF':
+        panel = '_' + panel
+        sample_type = 'layer'
+    return panel, sample_type
 
 def generate_plotting_figure(RUN_TEST):
+    """
+    Create a figure layout for plotting network, assortativity, and delta maps.
+
+    Parameters
+    ----------
+    RUN_TEST : bool
+        If True, create a full figure with 3 subplots.
+
+    Returns
+    -------
+    tuple of matplotlib.axes._subplots.AxesSubplot or None
+        Axes for network, assortativity heatmap, and delta heatmap.
+    """
+
     if RUN_TEST:
         fig = plt.figure(figsize=(40, 30))
         gs = gridspec.GridSpec(2, 2, height_ratios=[1,1], wspace=0.4, hspace=0.5)
@@ -32,16 +74,24 @@ def generate_plotting_figure(RUN_TEST):
     else:
         fig = plt.figure(figsize=(20, 15))
 
-def define_panel(type_of_data, panel):
-    if type_of_data == 'IMC':
-        panel = ''
-        sample_type = 'ROI'
-    elif type_of_data == 'IF':
-        panel = '_' + panel
-        sample_type = 'layer'
-    return panel, sample_type
+def plot_field(
+    fields, 
+    cell_types, 
+    title
+):
+    """
+    Plot a field image for each cell type using matplotlib.
 
-def plot_field(fields, cell_types, title):
+    Parameters
+    ----------
+    fields : dict
+        Dictionary {cell_type: 2D field array}.
+    cell_types : list
+        List of cell type names.
+    title : str
+        Title for saving the figure.
+    """
+
     n_types = len(cell_types)
     fig_fields, axes_fields = plt.subplots(1, n_types, figsize=(4 * n_types, 4))
     if n_types == 1:
@@ -54,7 +104,27 @@ def plot_field(fields, cell_types, title):
     plt.tight_layout()
     plt.savefig(f'TEST_NETWORK_V2/{title}.png', dpi=300)
 
-def plotting(nodes, axes, title, pairs=None):
+def plotting(
+    nodes, 
+    axes, 
+    title, 
+    pairs=None
+):
+    """
+    Plot the spatial cell network with phenotypic labels and optional edge pairs.
+
+    Parameters
+    ----------
+    nodes : DataFrame
+        Node table with 'X_position', 'Y_position', 'Phenotypes'.
+    axes : matplotlib.axes.Axes or None
+        Axis to plot on. If None, creates a new figure.
+    title : str
+        Title of the plot.
+    pairs : list of tuple, optional
+        List of edges (pairs of coordinates), default is computed from Delaunay.
+    """
+
     clustering = nodes['Phenotypes']
     coords = nodes[['X_position', 'Y_position']]
     celltypes_color_mapper = cluster_to_cmap(clustering)
@@ -83,11 +153,40 @@ def plotting(nodes, axes, title, pairs=None):
         axes.set_title(title)
 
 def coords_to_pairs(coords):
+    """
+    Generate edge pairs from coordinates using Delaunay triangulation 
+    and links isolated nodes using additional criteria.
+
+    Parameters
+    ----------
+    coords : ndarray
+        Nx2 array of spatial coordinates.
+
+    Returns
+    -------
+    pairs : list of tuple
+        List of node index pairs representing edges.
+    """
+
     pairs = ty.build_delaunay(coords)
     pairs = ty.link_solitaries(coords, pairs, method='delaunay', min_neighbors=15, verbose=0)
     return pairs
 
 def cluster_to_cmap(clustering):
+    """
+    Generate a color map for each unique phenotype cluster.
+
+    Parameters
+    ----------
+    clustering : array-like
+        Cluster labels for each cell.
+
+    Returns
+    -------
+    dict
+        Mapping from cluster value to color.
+    """
+
     if clustering is not None:
         nb_clust = clustering.max()
         uniq = pd.Series(clustering).value_counts().index
@@ -99,69 +198,44 @@ def cluster_to_cmap(clustering):
     return celltypes_color_mapper
 
 ######################################################### USING FUNCTION #################################################################
-def estimate_correlation_length(nodes, nb_bins=100, sample_size=80000):
-    rng = np.random.default_rng(SEED)
 
-    coords = nodes[['X_position', 'Y_position']].values
-    labels = pd.get_dummies(nodes['Phenotypes']).values
-    n = len(coords)
+def mixmat_normalisation(mixmat):
+    """
+    Normalize a cell-cell interaction matrix by z-scoring.
 
-    max_distance = ((coords[:][0].max()-coords[:][0].min())**2+(coords[:][1].max()-coords[:][1].min())**2)**(1/2)
+    Parameters
+    ----------
+    mixmat : DataFrame
+        Raw interaction matrix.
 
-    dists = []
-    sims = []
-    seen_pairs = set()
+    Returns
+    -------
+    DataFrame
+        Normalized interaction matrix (zero-mean, unit variance).
+    """
 
-    if sample_size == 'max':
-        for i in range(n):
-            for j in range(i + 1, n):
-                if i == j or (i, j) in seen_pairs or (j, i) in seen_pairs:
-                    continue
-                seen_pairs.add((i, j))
+    return (mixmat - mixmat.mean()) / mixmat.std()
 
-                dist = np.linalg.norm(coords[i] - coords[j])
-                sim = np.dot(labels[i], labels[j])
-                dists.append(dist)
-                sims.append(sim)
+def compute_assort(
+    nodes, 
+    edges
+):
+    """
+    Compute the Z-score assortativity matrix from a spatial network.
 
-    elif isinstance(sample_size, int):
-        while len(dists) < sample_size:
-            i = rng.integers(0, n)
-            j = rng.integers(0, n)
-            if i == j or (i, j) in seen_pairs or (j, i) in seen_pairs:
-                continue
-            seen_pairs.add((i, j))
+    Parameters
+    ----------
+    nodes : DataFrame
+        Node table with phenotypic annotations.
+    edges : DataFrame
+        Edge table with 'source' and 'target'.
 
-            dist = np.linalg.norm(coords[i] - coords[j])
-            sim = np.dot(labels[i], labels[j])  # peut être 0 ou 1 (ou plus si multi-labels)
-            dists.append(dist)
-            sims.append(sim)
-    else:
-        raise "Sample_size must be an integer or 'max'"
-    
-    dists = np.array(dists)
-    sims = np.array(sims)
+    Returns
+    -------
+    DataFrame
+        Z-score assortativity matrix between phenotypes.
+    """
 
-    # Binning
-    bins = np.linspace(0, max_distance, nb_bins)
-    stat, bin_edges, _ = binned_statistic(dists, sims, statistic='mean', bins=bins)
-
-    stat = np.nan_to_num(stat, nan=0.0)
-    try:
-        decay_index = np.where(stat < (stat[0] / np.e))[0][0]
-        return (bins[decay_index] + bins[decay_index - 1]) / 2, max_distance
-    except IndexError:
-        return np.mean(bins), max_distance
-
-def J_normalization(mixmat):
-    scale = np.abs(mixmat.values).max()
-    normalized_values = np.tanh(mixmat.values / scale) + 1
-    return pd.DataFrame(normalized_values, index=mixmat.index, columns=mixmat.columns)
-
-def compute_J(mixmat, pheno_1, pheno_2):
-    return mixmat.loc[pheno_1, pheno_2]
-
-def compute_assort(nodes, edges):
     nodes_onehot = nodes.join(pd.get_dummies(nodes['Phenotypes'], prefix='', prefix_sep=''))
     cell_types = nodes['Phenotypes'].unique().tolist()
 
@@ -171,6 +245,19 @@ def compute_assort(nodes, edges):
     return mixmat_z
 
 def build_edges_from_positions(positions):
+    """
+    Build a graph from spatial coordinates using Delaunay triangulation.
+
+    Parameters
+    ----------
+    positions : ndarray
+        Nx2 array of cell positions.
+
+    Returns
+    -------
+    DataFrame
+        Edge table with columns ['source', 'target'].
+    """
     tri = Delaunay(positions)
     edges = set()
     for simplex in tri.simplices:
@@ -182,17 +269,172 @@ def build_edges_from_positions(positions):
     edge_df = pd.DataFrame(edge_list, columns=['source', 'target'])
     return edge_df
 
-def generate_correlated_field(shape, correlation_length):
+def generate_correlated_field(
+    shape,
+    correlation_length,
+):
+    """
+    Generate a 2D Gaussian-correlated random field.
+
+    Parameters
+    ----------
+    shape : tuple
+        Field dimensions (height, width).
+    correlation_length : float
+        Spatial correlation length (Gaussian kernel std).
+
+    Returns
+    -------
+    field : ndarray
+        2D correlated scalar field.
+    """
+
     noise = np.random.randn(*shape)
     sigma = correlation_length / sqrt(2)
     field = gaussian_filter(noise, sigma=correlation_length, mode='reflect')
     return field
 
-######################################################### FUNCTION CORE #################################################################
-def build_lattice_indices(xs, ys, shape):
+def build_lattice_indices(
+    xs, 
+    ys, 
+    shape
+):
+    """
+    Create a lattice index matrix mapping spatial coordinates to cell indices.
+
+    Parameters
+    ----------
+    xs : array-like
+        X coordinates of cells.
+    ys : array-like
+        Y coordinates of cells.
+    shape : tuple
+        Shape of the output lattice (height, width).
+
+    Returns
+    -------
+    lattice : ndarray of int
+        2D array where each position holds the index of the corresponding cell, or -1 if empty.
+    """
+
     lattice = -np.ones(shape, dtype=int)
     lattice[ys, xs] = np.arange(len(xs))
     return lattice
+
+######################################################### FUNCTION CORE #################################################################
+
+def estimate_correlation_length_fit(
+    nodes, 
+    nb_bins=100, 
+    sample_size=80000
+):
+    """
+    Estimate the spatial correlation length by fitting exponential decay 
+    to phenotype similarity vs. distance.
+
+    Parameters
+    ----------
+    nodes : DataFrame
+        Node table with positions and phenotypes.
+    nb_bins : int
+        Number of bins for distance grouping.
+    sample_size : int
+        Number of random pairs sampled.
+
+    Returns
+    -------
+    ξ_estimated : float
+        Estimated correlation length (decay parameter).
+    max_dist : float
+        Maximum distance considered.
+    """
+
+    rng = np.random.default_rng(SEED)
+    coords = nodes[['X_position', 'Y_position']].values
+    labels = pd.get_dummies(nodes['Phenotypes']).values
+    n = len(coords)
+
+    dists, sims, seen_pairs = [], [], set()
+
+    while len(dists) < sample_size:
+        i, j = rng.integers(0, n), rng.integers(0, n)
+        if i == j or (i, j) in seen_pairs or (j, i) in seen_pairs:
+            continue
+        seen_pairs.add((i, j))
+        d = np.linalg.norm(coords[i] - coords[j])
+        s = np.dot(labels[i], labels[j])
+        dists.append(d)
+        sims.append(s)
+
+    dists, sims = np.array(dists), np.array(sims)
+    bins = np.linspace(0, dists.max(), nb_bins)
+    bin_means, bin_edges, _ = binned_statistic(dists, sims, statistic='mean', bins=bins)
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    bin_means = np.nan_to_num(bin_means, nan=0.0)
+
+    def exp_decay(x, a, ξ): return a * np.exp(-x / ξ)
+    popt, _ = curve_fit(exp_decay, bin_centers, bin_means, p0=(1.0, 50.0))
+
+    ξ_estimated = popt[1]
+    return ξ_estimated, dists.max()
+
+def generate_balanced_fields(
+    shape,
+    cell_types,
+    correlation_length,
+    amplitude=1.0,
+    local_noise_level=0.5,          ### between 0 and 1 
+    save_dir="FIELDS"
+):
+    """
+    Génère un champ global spatialement corrélé + un bruit local filtré pour chaque type.
+
+    Parameters:
+    -----------
+    shape : tuple
+        Dimensions du champ (height, width)
+    cell_types : list
+        Liste des types cellulaires
+    correlation_length : float
+        Longueur de corrélation spatiale
+    amplitude : float
+        Amplitude globale du champ
+    local_noise_level : float
+        Intensité du bruit local relatif
+    save_dir : str
+        Dossier où sauvegarder les champs générés
+
+    Returns:
+    --------
+    fields : dict
+        Dictionnaire {type_cellulaire: champ 2D}
+    """
+    local_noise_level = local_noise_level/100 + 0.05
+
+
+    os.makedirs(save_dir, exist_ok=True)
+    fields = {}
+
+    # === Génère un champ global corrélé ===
+    base_field = generate_correlated_field(shape, correlation_length)
+
+    for ct in tqdm(cell_types, desc="[PROCESS] Correlated Field per Type"):
+        field_path = f"{save_dir}/{ct}_field_corrl-{int(correlation_length)}_domain-{shape}.npy"
+
+        if os.path.isfile(field_path):
+            fields[ct] = np.load(field_path)
+        else:
+            # === Génère un bruit local filtré ===
+            local_noise = np.random.randn(*shape)
+            filtered_noise = gaussian_filter(local_noise, sigma=correlation_length / 3)
+
+            # === Champ final : base + bruit doux ===
+            final_field = amplitude * (base_field + local_noise_level * filtered_noise)
+            fields[ct] = final_field
+
+            np.save(field_path, final_field)
+
+    return fields
 
 def gibbs_sampling_potts_field(
     labels_init,
@@ -207,6 +449,40 @@ def gibbs_sampling_potts_field(
     verbose=False,
     apply_gibbs=True
 ):
+    """
+    Perform Gibbs sampling using a Potts model with spatial field and cell-cell interaction matrix.
+
+    Parameters
+    ----------
+    labels_init : array-like
+        Initial cell type labels (strings).
+    fields : dict
+        Dictionary of {cell_type: 2D field array}.
+    lattice_indices : ndarray
+        Matrix mapping spatial positions to cell indices.
+    edges : DataFrame
+        DataFrame of graph edges with columns ['source', 'target'].
+    beta : float
+        Weight of the spatial field in energy calculation.
+    J : float
+        Global interaction strength scaling factor.
+    n_iter : int
+        Number of Gibbs iterations.
+    cell_types : list
+        List of cell types (labels).
+    mixmat : DataFrame
+        Normalized cell-cell interaction matrix.
+    verbose : bool
+        If True, print progress.
+    apply_gibbs : bool
+        If False, skip sampling and return initial labels.
+
+    Returns
+    -------
+    final_labels : ndarray
+        Final cell type labels after sampling.
+    """
+
     shape = next(iter(fields.values())).shape
     n_types = len(cell_types)
     inv_cell_types = {ct: i for i, ct in enumerate(cell_types)}
@@ -222,15 +498,14 @@ def gibbs_sampling_potts_field(
             print("[INFO] Gibbs sampling skipped — returning initial labels.")
         return np.array(labels_init)
 
-    # --- Carte des voisins basée sur les arêtes du graphe ---
+    # === Carte des voisins basée sur les arêtes du graphe ===
     neighbor_map = defaultdict(list)
     for _, row in edges.iterrows():
         neighbor_map[row['source']].append(row['target'])
         neighbor_map[row['target']].append(row['source'])
 
-    print(mixmat)
-    mixmat = J_normalization(mixmat)
-    print(mixmat)
+    mixmat = mixmat_normalisation(mixmat)
+
     for it in tqdm(range(n_iter), desc='[PROCESS] Gibbs Sampling to balance phenotypes'):
 
         old_labels = labels_int.copy()
@@ -241,13 +516,26 @@ def gibbs_sampling_potts_field(
 
             log_probs = np.zeros(n_types)
             for k in range(n_types):
-                J = compute_J(mixmat, dict_cell_types[k], dict_cell_types[k])
-                interaction_energy = J * np.sum(neighbor_labels == k)
+
+                # === Interaction Cells-Cells Energy ===
+                interaction_energy = 0.0
+                for label_j in neighbor_labels:
+                    interaction_energy += J * mixmat.loc[dict_cell_types[k], dict_cell_types[label_j]]
+
+                # === Fields Influence Energy ===
                 x, y = xs[idx], ys[idx]
                 field_energy = beta * field_stack[x, y, k]
+
+
                 log_probs[k] = interaction_energy + field_energy
+
+            # === Coversion in Probalities ===
+
             probs = np.exp(log_probs)
             probs /= np.sum(probs)
+
+            # === Switch Phenotype ===
+
             labels_int[idx] = np.random.choice(n_types, p=probs)
 
         if verbose:
@@ -267,24 +555,59 @@ def generate_synthetic_network_potts_field(
     mixmat,
     beta=1.0,
     J=1.0,
-    amplitude=1,
     oversample_factor=10,
     n_iter=5,
     verbose=False,
     gibbs_sampling=True
 ):
+    """
+    Generate a synthetic spatial network of cells using Potts field dynamics and correlated attraction.
+
+    Parameters
+    ----------
+    nodes_initial : DataFrame
+        Input nodes from real data, with coordinates and phenotype info.
+    n_cells : int
+        Desired number of cells in the synthetic network.
+    domain_size : tuple
+        Size of the spatial domain (width, height).
+    target_proportions : dict
+        Desired cell type proportions.
+    cell_types : list
+        List of all possible cell types.
+    max_dist_domain : float
+        Max possible distance in the domain (for normalization).
+    mixmat : DataFrame
+        Interaction matrix for cell-cell affinity.
+    beta : float
+        Weight of the spatial field.
+    J : float
+        Scaling factor for cell-cell interaction energy.
+    oversample_factor : int
+        Number of candidates generated before selecting final n_cells.
+    n_iter : int
+        Number of Gibbs sampling iterations.
+    verbose : bool
+        If True, print info during execution.
+    gibbs_sampling : bool
+        Whether to apply Gibbs sampling or not.
+
+    Returns
+    -------
+    nodes : DataFrame
+        Final node table with coordinates and phenotypes.
+    edges : DataFrame
+        Final edge list based on spatial proximity.
+    fields : dict
+        Correlated fields used for sampling.
+    """
+
     shape = (domain_size[1], domain_size[0])
-    non_corrected_correlation_length, max_distances = estimate_correlation_length(nodes_initial)
-    correlation_length = max_dist_domain/max_distances*non_corrected_correlation_length
+    non_corrected_correlation_length, max_distances = estimate_correlation_length_fit(nodes_initial)
+    correlation_length = max_dist_domain / max_distances * non_corrected_correlation_length
     tqdm.write(f"Correlation Lentgh Estimated = {correlation_length}")
 
-    fields = {}
-    for ct in tqdm(cell_types, desc="[PROCESS] Generating correlated fields"):
-        if os.path.isfile(f"FIELDS/{ct}_field_corrl-{int(correlation_length)}_domain-{domain_size}.npy"):
-            fields[ct]=np.load(f"FIELDS/{ct}_field_corrl-{int(correlation_length)}_domain-{domain_size}.npy")
-        else:
-            fields[ct] = amplitude * generate_correlated_field(shape, correlation_length)
-            np.save(f"FIELDS/{ct}_field_corrl-{int(correlation_length)}_domain-{domain_size}.npy", fields[ct])
+    fields = generate_balanced_fields(shape, cell_types, correlation_length)
 
     n_points = n_cells * oversample_factor
     xs = np.random.randint(0, domain_size[0], size=n_points)
@@ -368,6 +691,19 @@ def generate_synthetic_network_potts_field(
 
 ######################################################### MAIN #################################################################
 def main():
+    """
+    Main function to load real data, compute fields, generate a synthetic spatial network, 
+    and optionally visualize results.
+
+    This function:
+    - Loads input nodes and edges
+    - Computes correlation length
+    - Builds spatially correlated fields
+    - Performs Gibbs sampling with Potts model
+    - Computes and visualizes assortativity
+    - Saves plots and synthetic network
+    """
+
     global panel
     max_dist_domain = (domain_size[0]**2+domain_size[1]**2)**(1/2)
     np.random.seed(SEED)
@@ -454,7 +790,7 @@ if __name__ == '__main__':
     domain_size = (5000,5000)
 
     ###### Gibbs and Pott parameter ######
-    J = 2
+    J = 1.0
     beta = 0.2
     iter_Gibbs = 50
 
