@@ -242,9 +242,9 @@ def gibbs_sampling_potts_field(
             log_probs = np.zeros(n_types)
             for k in range(n_types):
                 J = compute_J(mixmat, dict_cell_types[k], dict_cell_types[k])
-                interaction_energy = -J * np.sum(neighbor_labels == k)
+                interaction_energy = J * np.sum(neighbor_labels == k)
                 x, y = xs[idx], ys[idx]
-                field_energy = -beta * field_stack[x, y, k]
+                field_energy = beta * field_stack[x, y, k]
                 log_probs[k] = interaction_energy + field_energy
             probs = np.exp(log_probs)
             probs /= np.sum(probs)
