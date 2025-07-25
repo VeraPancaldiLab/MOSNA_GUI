@@ -19,7 +19,6 @@ import seaborn as sns
 import matplotlib.gridspec as gridspec
 import imageio.v2 as imageio
 
-print('\n')
 ######################################################### HELPER FUNCTION #################################################################
 def define_panel(
     type_of_data, 
@@ -887,4 +886,5 @@ if __name__ == '__main__':
     beta = 0.5
     
     # === MAIN ===
+    print('\n')
     main()
