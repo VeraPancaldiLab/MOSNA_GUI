@@ -1,10 +1,6 @@
 import os
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
-import sys
 import warnings
-import gc
-from time import time
-import copy
 import json
 from sklearn.exceptions import ConvergenceWarning, FitFailedWarning
 warnings.simplefilter('ignore', FitFailedWarning)
@@ -15,22 +11,12 @@ warnings.simplefilter('ignore', UserWarning)
 import numpy as np
 import pandas as pd  
 import matplotlib.pyplot as plt
-import seaborn as sns
 import argparse
 import yaml
-from time import time
 import warnings
-import joblib
 from pathlib import Path
-from time import time
 from tqdm import tqdm
-import copy
 import matplotlib as mpl
-import napari
-import colorcet as cc
-import composition_stats as cs
-from sklearn.impute import KNNImputer
-from lifelines import KaplanMeierFitter, CoxPHFitter
 
 from tysserand import tysserand as ty
 from mosna import mosna
@@ -44,11 +30,11 @@ mpl.rcParams["savefig.facecolor"] = 'white'
 ########################################## Function ##########################################
 
 def verif_file(type, panel=None):
-    if os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos.parquet") and \
-        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos_pheno.parquet") and \
-        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_markers.parquet") and \
-        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_sample_cell.parquet") and \
-        os.path.isdir(f'./OUTPUT_DATA/temp/{type}{panel}_networks_sample'):
+    if os.path.isfile(f"./temp/{type}{panel}_cell_pos.parquet") and \
+        os.path.isfile(f"./temp/{type}{panel}_cell_pos_pheno.parquet") and \
+        os.path.isfile(f"./temp/{type}{panel}_markers.parquet") and \
+        os.path.isfile(f"./temp/{type}{panel}_sample_cell.parquet") and \
+        os.path.isdir(f'./temp/{type}{panel}_networks_sample'):
 
         return True
     return False
@@ -293,7 +279,7 @@ def main(IF, IMC, config_file):
         
         panel = define_panel(type)
 
-        network_dir = Path(f'./OUTPUT_DATA/temp/{type}{panel}_networks_sample')
+        network_dir = Path(f'./temp/{type}{panel}_networks_sample')
         save_dir.mkdir(parents=True, exist_ok=True)
         
         ######################################## Node aggregation ########################################

@@ -4,7 +4,7 @@ conda activate mosna
 
 add_pheno=$(yq eval '.add_pheno' CONFIG/configuration_pre_process.yaml)
 
-mkdir -p OUTPUT_DATA/temp/description
+mkdir -p temp/description
 
 python -u SCRIPT/parser_csv_to_pandas.py --file CONFIG/configuration_pre_process.yaml
 

@@ -800,9 +800,9 @@ def main():
 
     ################################### Import Data ###########################
 
-    nodes_types = pd.read_parquet(f"./OUTPUT_DATA/temp/{type_of_data}{panel}_networks_sample/nodes_patient-{patient}_" 
+    nodes_types = pd.read_parquet(f"./temp/{type_of_data}{panel}_networks_sample/nodes_patient-{patient}_" 
                         f"{sample_type}-{sample}.parquet")
-    edges_types = pd.read_parquet(f"./OUTPUT_DATA/temp/{type_of_data}{panel}_networks_sample/edges_patient-{patient}_" 
+    edges_types = pd.read_parquet(f"./temp/{type_of_data}{panel}_networks_sample/edges_patient-{patient}_" 
                         f"{sample_type}-{sample}.parquet")
 
     target_proportions = nodes_types['Phenotypes'].value_counts(normalize=True).to_dict()

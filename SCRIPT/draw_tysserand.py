@@ -1,6 +1,5 @@
 import os
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
-import sys
 import warnings
 import gc
 import multiprocessing
@@ -16,14 +15,9 @@ import pandas as pd
 import yaml
 import argparse
 import matplotlib.pyplot as plt
-import seaborn as sns
 from pathlib import Path
-from time import time
 from tqdm import tqdm
-import copy
 import matplotlib as mpl
-import colorcet as cc
-import composition_stats as cs
 from phenograph.cluster import cluster
 
 from tysserand import tysserand as ty
@@ -39,10 +33,10 @@ mpl.rcParams["savefig.facecolor"] = 'white'
 ########################################## Function ##########################################
 
 def verif_file(type, panel=None):
-    if os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos.parquet") and \
-        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos_pheno.parquet") and \
-        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_markers.parquet") and \
-        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_sample_cell.parquet"):
+    if os.path.isfile(f"./temp/{type}{panel}_cell_pos.parquet") and \
+        os.path.isfile(f"./temp/{type}{panel}_cell_pos_pheno.parquet") and \
+        os.path.isfile(f"./temp/{type}{panel}_markers.parquet") and \
+        os.path.isfile(f"./temp/{type}{panel}_sample_cell.parquet"):
         return True
     return False
 
@@ -225,11 +219,11 @@ def network_parallelization_process_patient_and_sample(patient_sample, sample_na
         edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
         sample_name_for_file = sample_name.replace('_', '-')
         if type == 'IMC':
-            edges.to_parquet(Path(f"OUTPUT_DATA/temp/{type}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
-            nodes.to_parquet(Path(f"OUTPUT_DATA/temp/{type}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+            edges.to_parquet(Path(f"temp/{type}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+            nodes.to_parquet(Path(f"temp/{type}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
         if type == 'IF':
-            edges.to_parquet(Path(f"OUTPUT_DATA/temp/{type}_{panel}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
-            nodes.to_parquet(Path(f"OUTPUT_DATA/temp/{type}_{panel}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+            edges.to_parquet(Path(f"temp/{type}_{panel}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+            nodes.to_parquet(Path(f"temp/{type}_{panel}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
         del edges, pairs, nodes
         gc.collect()
 
@@ -364,9 +358,9 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
 def main(IF, IMC, config_file):
     Path('OUTPUT_DATA/Tysserand_network').mkdir(parents=True, exist_ok=True)
     def process(type, panel=None):
-        Path(f'OUTPUT_DATA/temp/{type}{define_panel(type, panel)}_networks_sample').mkdir(parents=True, exist_ok=True)
+        Path(f'temp/{type}{define_panel(type, panel)}_networks_sample').mkdir(parents=True, exist_ok=True)
 
-        cell_pos, markers, sample_cell = import_data('./OUTPUT_DATA/temp', type, panel)
+        cell_pos, markers, sample_cell = import_data('./temp', type, panel)
         
         tysserand_network(cell_pos, markers, sample_cell, config_file["tysserand"][f'{type}_duplicata'], type, panel,
                           config_file['phenograph'],

@@ -1,6 +1,5 @@
 import os
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
-import sys
 import warnings
 import gc
 from time import time
@@ -11,7 +10,6 @@ warnings.simplefilter('ignore', FutureWarning)
 warnings.simplefilter('ignore', DeprecationWarning)
 warnings.simplefilter('ignore', UserWarning)
 warnings.simplefilter('ignore', RuntimeWarning)
-import numpy as np
 import pandas as pd  
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -19,19 +17,10 @@ import argparse
 import yaml
 from time import time
 import warnings
-import joblib
 from pathlib import Path
 from time import time
 from tqdm import tqdm
-import copy
 import matplotlib as mpl
-import napari
-import colorcet as cc
-import composition_stats as cs
-from sklearn.impute import KNNImputer
-from lifelines import KaplanMeierFitter, CoxPHFitter
-
-from tysserand import tysserand as ty
 from mosna import mosna
 import matplotlib as mpl
 import matplotlib.gridspec as gridspec
@@ -42,11 +31,11 @@ mpl.rcParams["savefig.facecolor"] = 'white'
 
 ########################################## Function ##########################################
 def verif_file(type, panel=None):
-    if os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos.parquet") and \
-        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_cell_pos_pheno.parquet") and \
-        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_markers.parquet") and \
-        os.path.isfile(f"./OUTPUT_DATA/temp/{type}{panel}_sample_cell.parquet") and \
-        os.path.isdir(f'./OUTPUT_DATA/temp/{type}{panel}_networks_sample'):
+    if os.path.isfile(f"./temp/{type}{panel}_cell_pos.parquet") and \
+        os.path.isfile(f"./temp/{type}{panel}_cell_pos_pheno.parquet") and \
+        os.path.isfile(f"./temp/{type}{panel}_markers.parquet") and \
+        os.path.isfile(f"./temp/{type}{panel}_sample_cell.parquet") and \
+        os.path.isdir(f'./temp/{type}{panel}_networks_sample'):
 
         return True
     return False
@@ -333,26 +322,26 @@ def main(IF, IMC, config_file):
     def process(type, config_file, panel=None):
 
         panel = define_panel(type, panel)
-        markers_col = pd.read_csv(f'./OUTPUT_DATA/temp/description/{type}{panel}_markers.csv', header=None)[0].tolist()
-        pheno = pd.read_csv(f'./OUTPUT_DATA/temp/description/{type}{panel}_phenotypes.csv', header=None)[0].tolist()
+        markers_col = pd.read_csv(f'./temp/description/{type}{panel}_markers.csv', header=None)[0].tolist()
+        pheno = pd.read_csv(f'./temp/description/{type}{panel}_phenotypes.csv', header=None)[0].tolist()
 
         sample_name={'IMC':'ROI', 'IF':'layer'}
-        cell_pos, markers, sample_cell = import_data('./OUTPUT_DATA/temp',type)
+        cell_pos, markers, sample_cell = import_data('./temp',type)
         sample = sample_are_present_in_data(sample_cell, sample_name[type])
         
         if config_file['Assortativity']['perform_batch']:
-            dir_batch = Path(f"./OUTPUT_DATA/temp/{type}{panel}_networks_sample") / "batch"
+            dir_batch = Path(f"./temp/{type}{panel}_networks_sample") / "batch"
             dir_batch.mkdir(parents=True, exist_ok=True)
-            nodes_directory, nodes_corr_batch = correct_batch_effect(f"./OUTPUT_DATA/temp/{type}{panel}_networks_sample", 
+            nodes_directory, nodes_corr_batch = correct_batch_effect(f"./temp/{type}{panel}_networks_sample", 
                                                                      markers_col, sample_name[type], dir_batch) 
         if config_file['Assortativity']['perform_clr_transfo']:                                                      
-            nodes_transfo(f"./OUTPUT_DATA/temp/{type}{panel}_networks_sample", 
+            nodes_transfo(f"./temp/{type}{panel}_networks_sample", 
                         markers_col, sample_name[type], sample_present=sample)
 
         if not (save_dir / f"{type}{panel}_net_stat.parquet").exists():
             t = time()
             print(f"\t[INFO] Processing Assortativity for {type} data\t\t\t", end='')
-            net_stat = mix_mat_assortativity(f"./OUTPUT_DATA/temp/{type}{panel}_networks_sample", 
+            net_stat = mix_mat_assortativity(f"./temp/{type}{panel}_networks_sample", 
                                                 "Phenotypes", 
                                                 type=type)
             net_stat.to_parquet(save_dir / f"{type}{panel}_net_stat.parquet")

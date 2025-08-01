@@ -3,12 +3,10 @@ print("\n[PARSER CSV TO PANDAS]")
 
 import yaml
 import argparse
-import numpy as np
 import pandas as pd
-import os
 import glob
 from pathlib import Path
-import copy
+
 
 #################### Main Function ####################
 def list_folders(config):
@@ -219,9 +217,9 @@ def main():
             IMC_sample_cell['CellID'] = IMC_sample_cell.index
         print("DONE")
         print("\t[TASK] Saving pandas in parquet\t\t\t",end='')
-        IMC_cell_pos.to_parquet(Path('./OUTPUT_DATA/temp') / "IMC_cell_pos.parquet")
-        IMC_markers.to_parquet(Path('./OUTPUT_DATA/temp') / "IMC_markers.parquet")
-        IMC_sample_cell.to_parquet(Path('./OUTPUT_DATA/temp') / "IMC_sample_cell.parquet")
+        IMC_cell_pos.to_parquet(Path('./temp') / "IMC_cell_pos.parquet")
+        IMC_markers.to_parquet(Path('./temp') / "IMC_markers.parquet")
+        IMC_sample_cell.to_parquet(Path('./temp') / "IMC_sample_cell.parquet")
         IMC_markers = IMC_markers.drop('CellID', axis=1)
         IMC_markers.columns.to_series().to_csv(Path('./OUTPUT_DATA') / "temp/description/IMC_markers.csv",
                                                    index=False,
@@ -248,9 +246,9 @@ def main():
                     IF_sample_cell['CellID'] = IF_sample_cell.index
 
                 print("\t[TASK] Saving pandas in parquet\t\t\t",end='')
-                IF_cell_pos.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{panel}_cell_pos.parquet")
-                IF_markers.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{panel}_markers.parquet")
-                IF_sample_cell.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{panel}_sample_cell.parquet")
+                IF_cell_pos.to_parquet(Path('./temp') / f"IF_{panel}_cell_pos.parquet")
+                IF_markers.to_parquet(Path('./temp') / f"IF_{panel}_markers.parquet")
+                IF_sample_cell.to_parquet(Path('./temp') / f"IF_{panel}_sample_cell.parquet")
                 IF_markers = IF_markers.drop('CellID', axis=1)
                 IF_markers.columns.to_series().to_csv(Path('./OUTPUT_DATA') / f"temp/description/IF_{panel}_markers.csv",
                                                 index=False,
@@ -275,9 +273,9 @@ def main():
                     IF_sample_cell['CellID'] = IF_sample_cell.index
             
             print("\t[TASK] Saving pandas in parquet\t\t\t",end='')
-            IF_cell_pos.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{panel}_cell_pos.parquet")
-            IF_markers.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{panel}_markers.parquet")
-            IF_sample_cell.to_parquet(Path('./OUTPUT_DATA/temp') / f"IF_{panel}_sample_cell.parquet")
+            IF_cell_pos.to_parquet(Path('./temp') / f"IF_{panel}_cell_pos.parquet")
+            IF_markers.to_parquet(Path('./temp') / f"IF_{panel}_markers.parquet")
+            IF_sample_cell.to_parquet(Path('./temp') / f"IF_{panel}_sample_cell.parquet")
             IF_markers = IF_markers.drop('CellID', axis=1)
             IF_markers.columns.to_series().to_csv(Path('./OUTPUT_DATA') / f"temp/description/IF_{panel}_markers.csv",
                                                 index=False,

@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e 
-mkdir -p OUTPUT_DATA/temp
+mkdir -p OUTPUT_DATA
+mkdir -p temp
 
 # === Installation de dépendances système ===
 
@@ -33,12 +34,13 @@ echo "DONE"
 read -p "Do you want to install MOSNA with a GPU using or not | (y/n): " HAS_GPU
 printf "\n[PROCESS] Conda Env generation\t\t\n"
 if [[ "$HAS_GPU" == "y" || "$HAS_GPU" == "Y" ]]; then
-    conda create --yes --solver=libmamba -n mosna-gpu -c rapidsai -c conda-forge -c nvidia -c pytorch \
+    conda create --yes -n mosna-gpu -c rapidsai -c conda-forge -c nvidia -c pytorch \
         rapids=23.04.01 python=3.10 cuda-version=11.2 \
-        pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 scanpy
+        pytorch==1.12.1 torchvision==0.13.1 \
+        statsmodels=0.14.4 torchaudio==0.12.1 scanpy
     ENV_NAME=mosna-gpu
 else
-    conda create --yes --solver=libmamba -n mosna -c conda-forge python=3.10 scanpy
+    conda create --yes -n mosna -c conda-forge python=3.10 scanpy statsmodels=0.14.4
     ENV_NAME=mosna
 fi
 
@@ -47,23 +49,25 @@ fi
 printf "\n[PROCESS] Environnement update by using 'mosna.yml'\t\t\n"
 eval "$(conda shell.bash hook)"
 conda activate "$ENV_NAME"
-conda env update -n "$ENV_NAME" -f mosna.yml
+conda env update -n "$ENV_NAME" -f env.yml 
+
+# === Installation du package local mosna===
+
+if [ -d "./mosna" ]; then
+    echo "[INFO] Mosna already installed"
+else
+    printf "\n[PROCESS] MOSNA package Installation\t\t\n"
+    git clone https://github.com/AlexCoul/mosna.git
+fi
+cd mosna
+pip install -e . 
+cd ..
 
 # === Installation des dépendances Python supplémentaires ===
-
 printf "\n[PROCESS] Installation of additional Python packages\t\t\n"
 pip install ipykernel ipywidgets napari tysserand
 pip install scipy==1.13
 
-# === Installation du package local mosna===
-
-printf "\n[PROCESS] MOSNA package Installation\t\t\n"
-git clone https://github.com/AlexCoul/mosna.git
-cd mosna
-pip install -e .
-cd ..
-
 conda deactivate
 echo "Complete installation"
 echo "Activate your environment with : conda activate $ENV_NAME"
-
