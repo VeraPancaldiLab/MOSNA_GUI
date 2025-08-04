@@ -262,6 +262,8 @@ def main(IF, IMC, config_file):
         ######################################## Define configuration ########################################
         sample_name = define_sample_name(type)
         
+        tab_feature_to_compute_NAS = ['X_position', 'Y_position', 'Phenotypes']
+
         if config_file['NAS']['output_name_file'] is not None:
             save_dir = sof_dir / f"{str(config_file['NAS']['output_name_file'])}"
         else:
@@ -320,7 +322,7 @@ def main(IF, IMC, config_file):
 
                 #################### Define parameters for niches and run the clustering ####################
 
-                features_NAS = get_param_for_niches(nodes, edges, uniq_pheno.tolist(),       # tab_markers
+                features_NAS = get_param_for_niches(nodes, edges, tab_feature_to_compute_NAS,       # tab_markers
                                                     stat_funcs, stat_names, order, 
                                                     save_dir, patient, sample)
                 

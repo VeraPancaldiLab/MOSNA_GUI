@@ -17,7 +17,15 @@ sudo apt install -y \
     libxml2 \
     libffi-dev \
     libxcb-xinerama0 \
-    jq
+    jq \
+    python3-dev \
+    python3-distutils \
+    libatlas-base-dev \
+    liblapack-dev \
+    gfortran \
+    cython3 \
+    pkg-config
+
 sudo snap install yq
 
 # === Detection de Conda ===
@@ -37,19 +45,17 @@ if [[ "$HAS_GPU" == "y" || "$HAS_GPU" == "Y" ]]; then
     conda create --yes -n mosna-gpu -c rapidsai -c conda-forge -c nvidia -c pytorch \
         rapids=23.04.01 python=3.10 cuda-version=11.2 \
         pytorch==1.12.1 torchvision==0.13.1 \
-        statsmodels=0.14.4 torchaudio==0.12.1 scanpy
+        torchaudio==0.12.1 scanpy
     ENV_NAME=mosna-gpu
 else
-    conda create --yes -n mosna -c conda-forge python=3.10 scanpy statsmodels=0.14.4
+    conda create --yes -n mosna -c conda-forge python=3.10 scanpy
     ENV_NAME=mosna
 fi
 
 # === Activation (à rappeler manuellement dans la session actuelle) ===
-
-printf "\n[PROCESS] Environnement update by using 'mosna.yml'\t\t\n"
 eval "$(conda shell.bash hook)"
 conda activate "$ENV_NAME"
-conda env update -n "$ENV_NAME" -f mosna.yml 
+
 
 # === Installation du package local mosna===
 
@@ -59,14 +65,19 @@ else
     printf "\n[PROCESS] MOSNA package Installation\t\t\n"
     git clone https://github.com/AlexCoul/mosna.git
 fi
+
+pip install ipykernel ipywidgets napari tysserand
+
 cd mosna
-pip install -e . 
+pip install -e .
+pip install scipy==1.13 
 cd ..
 
+
 # === Installation des dépendances Python supplémentaires ===
-printf "\n[PROCESS] Installation of additional Python packages\t\t\n"
-pip install ipykernel ipywidgets napari tysserand
-pip install scipy==1.13
+printf "\n[PROCESS] Environnement update by using 'mosna.yml'\t\t\n"
+conda env update -n "$ENV_NAME" -f env.yml 
+
 
 conda deactivate
 echo "Complete installation"
