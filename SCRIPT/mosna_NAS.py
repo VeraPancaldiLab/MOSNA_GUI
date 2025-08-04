@@ -30,20 +30,14 @@ mpl.rcParams["savefig.facecolor"] = 'white'
 ########################################## Function ##########################################
 
 def verif_file(type, panel=None):
-    if os.path.isfile(f"./temp/{type}{panel}_cell_pos.parquet") and \
-        os.path.isfile(f"./temp/{type}{panel}_cell_pos_pheno.parquet") and \
-        os.path.isfile(f"./temp/{type}{panel}_markers.parquet") and \
-        os.path.isfile(f"./temp/{type}{panel}_sample_cell.parquet") and \
-        os.path.isdir(f'./temp/{type}{panel}_networks_sample'):
-
+    if os.path.isfile(f"./temp/{type}{panel}.parquet"):
         return True
     return False
 
-def define_panel(type):
+def define_panel(type, panel):
     if type == 'IMC':
         panel = ''
     if type == 'IF':
-        panel = config_file['NAS']['panel']
         panel = '_' + panel
     return panel
 
@@ -61,16 +55,16 @@ def get_config(config_path):
         config = yaml.safe_load(f)
     return config   
 
-def import_params(output_dir, pheno_col):
-    uniq_phenotypes_IMC = pd.read_csv(output_dir / "temp/description/IMC_phenotypes.csv").iloc[:, 0].to_numpy()
-    uniq_phenotypes_IF = pd.read_csv(output_dir / f"temp/description/IF_{config_file['NAS']['panel']}_phenotypes.csv").iloc[:, 0].to_numpy()
-    cell_types_IMC = pd.read_parquet(output_dir / "temp/IMC_cell_pos_pheno.parquet")[pheno_col]
-    cell_types_IF = pd.read_parquet(output_dir / f"temp/IF_{config_file['NAS']['panel']}_cell_pos_pheno.parquet")[pheno_col]
-    IF_markers = pd.read_csv(output_dir / f"temp/description/IF_{config_file['NAS']['panel']}_markers.csv").iloc[:, 0].to_list()
-    IMC_markers = pd.read_csv(output_dir / "temp/description/IMC_markers.csv").iloc[:, 0].to_list()
-    IF_sample = pd.read_csv(output_dir / f"temp/description/IF_{config_file['NAS']['panel']}_file_description.csv", header=None).values.tolist()
-    IMC_sample = pd.read_csv(output_dir / "temp/description/IMC_file_description.csv", header=None).values.tolist()
-    return uniq_phenotypes_IF, uniq_phenotypes_IMC, cell_types_IF, cell_types_IMC, IF_markers, IMC_markers, IF_sample, IMC_sample
+def import_params(type, pheno_col):
+    panel = define_panel(type)
+
+    cell_types = pd.read_parquet(f"./temp/{type}{panel}.parquet")[pheno_col]
+    uniq_pheno = cell_types.unique().to_numpy()
+
+    sample = pd.read_parquet(f"./temp/{type}{panel}.parquet")[["patient", panel]].drop_duplicates()
+    markers = pd.read_csv(f"./temp/description/{type}{panel}_markers.csv").iloc[:, 0].to_list()
+
+    return cell_types, uniq_pheno, sample, markers
 
 def define_sample_name(type):
     sample_name_dict={'IMC':'ROI', 'IF':'layer'}
@@ -107,8 +101,7 @@ def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, s
     return var_aggreg
 
 def get_param_for_niches(nodes_df, edges_df, node_features_list, 
-                        stat_funcs, stat_names, order,
-                        save_dir, patient, sample,):
+                        stat_funcs, stat_names, order):
     
     features_NAS = mosna.make_features_NAS(
         X=nodes_df[node_features_list].values,
@@ -133,9 +126,9 @@ def clustering_NAS(features_NAS, reducer_type, clusterer_type, n_neighbors,
         dir=save_dir / f'clustering-{patient}-{sample}'
     dir.mkdir(parents=True, exist_ok=True)
 
-    cluster_labels, cluster_dir, nb_clust, clusterer = mosna.get_clusterer(
+    cluster_labels, _, _, _ = mosna.get_clusterer(
         data=features_NAS.values,
-        data_dir=dir,     # dossier pour sauvegarder modèles + embeddings
+        data_dir=dir,
         reducer_type=reducer_type,
         clusterer_type=clusterer_type,
         n_neighbors=n_neighbors,
@@ -173,7 +166,7 @@ def tysserand(coords, pairs, clustering,
               type, patient, sample, sample_name,
               save_dir, normalize):
     
-    fig, ax = ty.plot_network(
+    fig, _ = ty.plot_network(
         np.array(coords.values.tolist()), pairs,
         labels=clustering,
         color_mapper=color_map(clustering),
@@ -187,7 +180,6 @@ def tysserand(coords, pairs, clustering,
 
 def color_map(clustering):
     if clustering is not None:
-        nb_clust = clustering.max()
         uniq = pd.Series(clustering).value_counts().index
 
         clusters_cmap = mosna.make_cluster_cmap(uniq)
@@ -259,17 +251,15 @@ def main(IF, IMC, config_file):
     nodes_aggregation = config_file['NAS']['node_aggregation']
     perform_NAS_all_sample = config_file['NAS']['perform_NAS_all_sample']
 
-    uniq_phenotypes_IF, uniq_phenotypes_IMC, cell_types_IF, cell_types_IMC, IF_markers, IMC_markers, IF_sample, IMC_sample = import_params(output_dir, pheno_col)
-
     if method == 'NAS':
         sof_dir = output_dir / f"NAS"    
     elif method == 'SCAN-IT':
-        sof_dir = output_dir / f"SCAN-IT"    
+        sof_dir = output_dir / f"SCAN-IT"
+        raise Exception("SCAN-IT not available yet")
 
-    def process(type, tab_markers, tab_sample):
+    def process(type, panel):
 
         ######################################## Define configuration ########################################
-
         sample_name = define_sample_name(type)
         
         if config_file['NAS']['output_name_file'] is not None:
@@ -278,43 +268,34 @@ def main(IF, IMC, config_file):
             save_dir_ = sof_dir / 'standard'
         
         panel = define_panel(type)
-
         network_dir = Path(f'./temp/{type}{panel}_networks_sample')
         save_dir.mkdir(parents=True, exist_ok=True)
         
+        cell_type, uniq_pheno, tab_sample, tab_markers = import_params()
         ######################################## Node aggregation ########################################
         
         if nodes_aggregation:
             stat_funcs, stat_names, normalize, order, clusterer_type, \
             reducer_type, metric, n_neighbors, min_dist, dim_clust, \
             min_cluster_size, k_cluster, resolution, n_clusters = get_params(config_file, type, nodes_aggregation, method, FUNC_MAP)
-            if type == 'IMC':
-                nodes_aggregate = var_aggregate(network_dir,save_dir,method,pheno_col, uniq_phenotypes_IMC,stat_funcs, 
+
+
+            nodes_aggregate = var_aggregate(network_dir,save_dir,method,pheno_col, uniq_pheno,stat_funcs, 
                                                 stat_names, sample_name, type, panel)
-            elif type == 'IF':
-                nodes_aggregate = var_aggregate(network_dir,save_dir,method,pheno_col, uniq_phenotypes_IF,stat_funcs, 
-                                                stat_names, sample_name, type, panel)
+            
                 
             cluster_labels = clustering_NAS(nodes_aggregate,reducer_type, 
                             clusterer_type, n_neighbors, metric, 
                             min_dist, dim_clust, min_cluster_size,k_cluster,resolution, n_clusters,
                             save_dir, patient=None, sample=None)
-            if type == 'IMC':
-                tqdm.write(f"\n\t[PROCESS] niches for patient IMC")
-                counts = mosna.make_niches_composition(
-                    var=cell_types_IMC,
+
+            tqdm.write(f"\n\t[PROCESS] niches for patient {type}")
+            counts = mosna.make_niches_composition(
+                    var=cell_type,
                     niches=cluster_labels,
                     var_label="Phenotypes",
                     normalize=normalize
-                )
-            elif type == 'IF':
-                tqdm.write(f"\n\t[PROCESS] niches for patient IF")
-                counts = mosna.make_niches_composition(
-                    var=cell_types_IF,
-                    niches=cluster_labels,
-                    var_label="Phenotypes",
-                    normalize=normalize
-                )
+            )
 
             plot_niches(counts, cluster_labels, save_dir, None, None, type, panel, normalize=normalize)
         ######################################## For each Patient/sample ########################################
@@ -339,7 +320,7 @@ def main(IF, IMC, config_file):
 
                 #################### Define parameters for niches and run the clustering ####################
 
-                features_NAS = get_param_for_niches(nodes, edges, tab_markers, 
+                features_NAS = get_param_for_niches(nodes, edges, uniq_pheno.tolist(),       # tab_markers
                                                     stat_funcs, stat_names, order, 
                                                     save_dir, patient, sample)
                 
@@ -364,7 +345,7 @@ def main(IF, IMC, config_file):
     try:
         if IMC:
             if verif_file('IMC', define_panel('IMC')):
-                process('IMC', IMC_markers, IMC_sample)
+                process('IMC')
             else:
                 raise ValueError("There is no IMC in your data or the Tysserand networks were not generated")
     except ValueError as e:
@@ -372,11 +353,18 @@ def main(IF, IMC, config_file):
 
     try:
         if IF:
-            if verif_file('IF', define_panel('IF')):
-                process('IF', IF_markers, IF_sample)
+            if config_file['NAS']['panel'] == 'all':
+                for panel in config_file['panel_list']:
+                    if verif_file('IF', panel):
+                        process('IF',panel)
+                    else:
+                        raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
             else:
-                raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
-                
+                if verif_file('IF', panel):
+                    process('IF',panel)
+                else:
+                    raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
+                    
     except ValueError as e:
         print(f"\t[INFO] IF error: {e}")
 

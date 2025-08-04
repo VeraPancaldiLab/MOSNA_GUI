@@ -108,7 +108,7 @@ You must fill **General**, **IF_import** and **IMC_import** sections.
 ❗ All this file contains all your data, if you have 30 IMC images from a same dataset you can concatenate in this files
 
 Tab for the following file format:
-- type_cell_pos_pheno.parquet
+- type_panel.parquet or type.parquet
 
 | Index  | CellID  | patient | Sample | X_position | Y_position | Phenotypes |
 |--------|---------|---------|--------|------------|------------|------------|
@@ -116,7 +116,7 @@ Tab for the following file format:
 |  ...   |    ...     |      ...   |     ...   |     ...       |   ...         |     ...       |
 | Cell N |    ...     |     ...    |    ...    |    ...        |     ...       |    ...        |
 
-- type_cell_pos.parquet
+- Or without Phenotyping but you will need markers to Phenotype by using Phenograph (included in the tool)
 
 | Index  | CellID  | patient | Sample | X_position | Y_position |
 |--------|---------|---------|--------|------------|------------|
@@ -124,7 +124,7 @@ Tab for the following file format:
 |  ...   |      ...   |      ...   |    ...    |      ...      |    ...        |
 | Cell N |    ...     |     ...    |      ...  |      ...      |    ...        |
 
-- type_markers.parquet
+- type_markers.parquet (only needed if you don't have Phenotypes column)
 replace the name of bio-marker 1 to n by the real name of yours bio-makers
 
 | Index  | CellID  | Maker 1 | ... | Marker N   |
@@ -133,13 +133,6 @@ replace the name of bio-marker 1 to n by the real name of yours bio-makers
 |  ...   |     ...    |     ...    |    ...    |      ...      |
 | Cell N |     ...    |     ...    |   ...     |      ...      |
 
-- type_sample_cell.parquet
-
-| Index  | CellID  | patient | Sample |
-|--------|---------|---------|--------|
-| Cell 1 |    ...     |   ...      |   ...     |
-|  ...   |    ...     |     ...    |    ...    |
-| Cell N |     ...    |    ...     |    ...    |
 
 ## Step 2: Draw Tysserand Spatial Networks
 

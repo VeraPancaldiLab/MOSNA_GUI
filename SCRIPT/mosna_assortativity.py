@@ -31,12 +31,7 @@ mpl.rcParams["savefig.facecolor"] = 'white'
 
 ########################################## Function ##########################################
 def verif_file(type, panel=None):
-    if os.path.isfile(f"./temp/{type}{panel}_cell_pos.parquet") and \
-        os.path.isfile(f"./temp/{type}{panel}_cell_pos_pheno.parquet") and \
-        os.path.isfile(f"./temp/{type}{panel}_markers.parquet") and \
-        os.path.isfile(f"./temp/{type}{panel}_sample_cell.parquet") and \
-        os.path.isdir(f'./temp/{type}{panel}_networks_sample'):
-
+    if os.path.isfile(f"./temp/{type}{panel}.parquet"):
         return True
     return False
 
@@ -64,29 +59,6 @@ def get_config(config_path):
 def define_sample_name(type):
     sample_name_dict={'IMC':'ROI', 'IF':'layer'}
     return sample_name_dict[type]
-
-def import_data(dir, type):
-    if type == 'IMC':
-        sample_cell = pd.read_parquet(Path(dir) / "IMC_sample_cell.parquet")
-        markers = pd.read_parquet(Path(dir) / "IMC_markers.parquet")
-        if (Path(dir) / "IMC_cell_pos_pheno.parquet").exists():
-            cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos_pheno.parquet")
-        else:
-            cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos.parquet")
-        cell_pos.drop(columns='patient', inplace=True)
-        cell_pos.drop(columns=define_sample_name(type), inplace=True)
-
-    if type == 'IF':
-        sample_cell = pd.read_parquet(Path(dir) / f"IF_{config_file['Assortativity']['panel']}_sample_cell.parquet")
-        markers = pd.read_parquet(Path(dir) / f"IF_{config_file['Assortativity']['panel']}_markers.parquet")
-        if (Path(dir) / f"IF_{config_file['Assortativity']['panel']}_cell_pos_pheno.parquet").exists():
-            cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['Assortativity']['panel']}_cell_pos_pheno.parquet")
-        else:
-            cell_pos = pd.read_parquet(Path(dir) / f"IF_{config_file['Assortativity']['panel']}_cell_pos.parquet")
-        cell_pos.drop(columns='patient', inplace=True)
-        cell_pos.drop(columns=define_sample_name(type), inplace=True)
-        
-    return cell_pos, markers, sample_cell
     
 def sample_are_present_in_data(data, name):
     if name is None:
@@ -171,7 +143,7 @@ def plot_mix_mat(save_dir, net_stats, sample_id, type, panel):
     return z_cols
 
 def clean_net_stat(z_net_stats):
-    z_net_stats_cleaned, select_finite = mosna.clean_data(
+    z_net_stats_cleaned, _ = mosna.clean_data(
         z_net_stats, 
         method='mixed',
         thresh=0.8,
@@ -278,7 +250,7 @@ def group_assort(net_stat, z_cols, save_dir, type, panel):
     
         # --- BARPLOT of mean ± std ---
 
-        fig2_height = max(6, len(df_plot["pair"]) * 0.3)  # adapt height to number of pairs
+        fig2_height = max(6, len(df_plot["pair"]) * 0.3)
         fig2 = plt.figure(figsize=(20, fig2_height))
         ax_bar = fig2.add_subplot(111)
 
@@ -316,27 +288,28 @@ def main(IF, IMC, config_file):
 
     save_dir = Path("./OUTPUT_DATA/Assortativity")
     save_dir.mkdir(parents=True, exist_ok=True)
-
     Path("./OUTPUT_DATA/synthetic_network_generation/mixmat_IF_IMC").mkdir(parents=True, exist_ok=True)
 
     def process(type, config_file, panel=None):
 
         panel = define_panel(type, panel)
-        markers_col = pd.read_csv(f'./temp/description/{type}{panel}_markers.csv', header=None)[0].tolist()
-        pheno = pd.read_csv(f'./temp/description/{type}{panel}_phenotypes.csv', header=None)[0].tolist()
 
-        sample_name={'IMC':'ROI', 'IF':'layer'}
-        cell_pos, markers, sample_cell = import_data('./temp',type)
-        sample = sample_are_present_in_data(sample_cell, sample_name[type])
-        
+        # === Work in Progress === 
+        """
+        Cells = pd.read_parquet(f"./temp/{type}{panel}.parquet")
+        sample = sample_are_present_in_data(Cells, sample_name[type])
+        markers_col = pd.read_csv(f'./temp/description/{type}{panel}_markers.csv', header=None)[0].tolist()
         if config_file['Assortativity']['perform_batch']:
             dir_batch = Path(f"./temp/{type}{panel}_networks_sample") / "batch"
             dir_batch.mkdir(parents=True, exist_ok=True)
             nodes_directory, nodes_corr_batch = correct_batch_effect(f"./temp/{type}{panel}_networks_sample", 
-                                                                     markers_col, sample_name[type], dir_batch) 
+                                                                     markers_col, sample_name[type], dir_batch)
         if config_file['Assortativity']['perform_clr_transfo']:                                                      
             nodes_transfo(f"./temp/{type}{panel}_networks_sample", 
                         markers_col, sample_name[type], sample_present=sample)
+        """
+
+        # === Compute Assortativity ===
 
         if not (save_dir / f"{type}{panel}_net_stat.parquet").exists():
             t = time()
@@ -348,12 +321,14 @@ def main(IF, IMC, config_file):
             print(f"DONE\n\t[INFO] Assortativity for {type} took {time()-t} s")
             del net_stat, t
             gc.collect()
-        
+
         net_stat = pd.read_parquet(save_dir / f'{type}{panel}_net_stat.parquet')
         list_id = net_stat.index.to_list()
         save_dir_type = save_dir / f"figures/{type}{panel}"
         save_dir_type.mkdir(parents=True, exist_ok=True)
         
+        # === Plot Assortativity ===
+
         for id in tqdm(list_id, desc=f"\t[PROCESS]  └─ Processing assortativity for {type}"):
             z_cols = plot_mix_mat(save_dir_type, clean_net_stat(net_stat), id, type, panel)
         

@@ -33,10 +33,7 @@ mpl.rcParams["savefig.facecolor"] = 'white'
 ########################################## Function ##########################################
 
 def verif_file(type, panel=None):
-    if os.path.isfile(f"./temp/{type}{panel}_cell_pos.parquet") and \
-        os.path.isfile(f"./temp/{type}{panel}_cell_pos_pheno.parquet") and \
-        os.path.isfile(f"./temp/{type}{panel}_markers.parquet") and \
-        os.path.isfile(f"./temp/{type}{panel}_sample_cell.parquet"):
+    if os.path.isfile(f"./temp/{type}{panel}.parquet"):
         return True
     return False
 
@@ -64,29 +61,6 @@ def get_config(config_path):
 def define_sample_name(type):
     sample_name_dict={'IMC':'ROI', 'IF':'layer'}
     return sample_name_dict[type]
-
-def import_data(dir, type, panel=None):
-    if type == 'IMC':
-        sample_cell = pd.read_parquet(Path(dir) / "IMC_sample_cell.parquet")
-        markers = pd.read_parquet(Path(dir) / "IMC_markers.parquet")
-        if (Path(dir) / "IMC_cell_pos_pheno.parquet").exists():
-            cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos_pheno.parquet")
-        else:
-            cell_pos = pd.read_parquet(Path(dir) / "IMC_cell_pos.parquet")
-        cell_pos.drop(columns='patient', inplace=True)
-        cell_pos.drop(columns=define_sample_name(type), inplace=True)
-        
-    if type == 'IF':
-        sample_cell = pd.read_parquet(Path(dir) / f"IF_{panel}_sample_cell.parquet")
-        markers = pd.read_parquet(Path(dir) / f"IF_{panel}_markers.parquet")
-        if (Path(dir) / f"IF_{panel}_cell_pos_pheno.parquet").exists():
-            cell_pos = pd.read_parquet(Path(dir) / f"IF_{panel}_cell_pos_pheno.parquet")
-        else:
-            cell_pos = pd.read_parquet(Path(dir) / f"IF_{panel}_cell_pos.parquet")
-        cell_pos.drop(columns='patient', inplace=True)
-        cell_pos.drop(columns=define_sample_name(type), inplace=True)
-
-    return cell_pos, markers, sample_cell
 
 def draw_tysserand_network(coords, clustering, patient, type, panel=None, method='delaunay', min_neighbors=3, sample=None, sample_name=None):
     if clustering is not None:
@@ -163,53 +137,50 @@ def phenograph_clustering(markers_to_cluster, k_neighbors, primary_metrics_pheno
     gc.collect()
     return clustering, Q
 
-def network_parallelization_process_patient_and_sample(patient_sample, sample_name, IF_cell_pos, IF_markers, IF_sample_cell, 
+def network_parallelization_process_patient_and_sample(patient_sample, sample_name, Cells, markers, 
                       there_is_duplicata, type, panel=None,
                       make_phenograph=False, k_neighbors = 30, primary_metrics_phenograh='minkowski', normalize = False, 
                       method='delaunay', min_neighbors=3):
 
-        filtre = ((IF_sample_cell['patient'] == patient_sample[0]) &
-                    (IF_sample_cell[f'{sample_name}'] == patient_sample[1]))
+        filtre = ((Cells['patient'] == patient_sample[0]) &
+                    (Cells[f'{sample_name}'] == patient_sample[1]))
 
         if there_is_duplicata:
-            cells_df = IF_sample_cell.loc[filtre, ['CellID']]
-            markers_to_cluter_IF = cells_df.merge(IF_markers.drop_duplicates(subset='CellID'), on='CellID', how='left')
-            cell_ID_pos = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left')
-            coords = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left') 
+            cells_df = Cells.loc[filtre, ['CellID']]
+            cell_ID_pos = cells_df.merge(Cells.drop_duplicates(subset='CellID'), on='CellID', how='left')
+            coords = cells_df.merge(Cells.drop_duplicates(subset='CellID'), on='CellID', how='left') 
             coords = coords.drop(columns=['CellID','Phenotypes'])
-            nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
-            nodes['patient'] = patient_sample[0]
-            nodes[f'{sample_name}'] = patient_sample[1]
 
-
-        else:
-            cells = IF_sample_cell.loc[filtre, 'CellID'].drop_duplicates()
-            coords = IF_cell_pos.loc[filtre, ['X_position','Y_position']]
-            markers_to_cluter_IF = IF_markers[IF_markers['CellID'].isin(cells)].drop_duplicates(subset='CellID')
-            cell_ID_pos = IF_cell_pos.loc[filtre, ['CellID','X_position','Y_position','Phenotypes']]
-            nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
-            nodes['patient'] = patient_sample[0]
-            nodes[f'{sample_name}'] = patient_sample[1]
-
+            if markers is not None:
+                markers_to_cluter = cells_df.merge(markers.drop_duplicates(subset='CellID'), on='CellID', how='left')
             
+        else:
+            cells = Cells.loc[filtre, 'CellID'].drop_duplicates()
+            coords = Cells.loc[filtre, ['X_position','Y_position']]
+            cell_ID_pos = Cells.loc[filtre, ['CellID','X_position','Y_position','Phenotypes']]
+
+            if markers is not None:
+                markers_to_cluter = cells_df.merge(markers.drop_duplicates(subset='CellID'))
+
 
         if make_phenograph:
-     
-            markers_to_cluter_IF = markers_to_cluter_IF.set_index('CellID')
+            markers_to_cluter = markers_to_cluter.set_index('CellID')
             if normalize:
-                markers_to_cluter_IF = normalize_markers(markers_to_cluter_IF)
+                markers_to_cluter = normalize_markers(markers_to_cluter)
                 
-            clustering_IF, Q_IF = phenograph_clustering(markers_to_cluter_IF, k_neighbors, primary_metrics_phenograh)
-            cell_ID_pos['Phenotypes']=clustering_IF
- 
-                
+            clustering, Q = phenograph_clustering(markers_to_cluter, k_neighbors, primary_metrics_phenograh)
+            cell_ID_pos['Phenotypes'] = clustering
+
+            del markers_to_cluter
         else:
-            clustering_IF=cell_ID_pos['Phenotypes']
+            clustering = cell_ID_pos['Phenotypes']
                 
 
-        pairs = draw_tysserand_network(coords, clustering_IF, patient_sample[0], type=type, panel=panel, sample=patient_sample[1], method=method, min_neighbors=min_neighbors, sample_name=sample_name)
+        pairs = draw_tysserand_network(coords, clustering, patient_sample[0], type=type, panel=panel, 
+                                       sample=patient_sample[1], method=method,
+                                       min_neighbors=min_neighbors, sample_name=sample_name)
     
-        del coords, cell_ID_pos, clustering_IF, markers_to_cluter_IF
+        del coords, clustering
         if 'cells' in locals():
             del cells
         if 'cells_df' in locals():
@@ -220,54 +191,51 @@ def network_parallelization_process_patient_and_sample(patient_sample, sample_na
         sample_name_for_file = sample_name.replace('_', '-')
         if type == 'IMC':
             edges.to_parquet(Path(f"temp/{type}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
-            nodes.to_parquet(Path(f"temp/{type}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+            cell_ID_pos.to_parquet(Path(f"temp/{type}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
         if type == 'IF':
             edges.to_parquet(Path(f"temp/{type}_{panel}_networks_sample") / f'edges_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
-            nodes.to_parquet(Path(f"temp/{type}_{panel}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
-        del edges, pairs, nodes
+            cell_ID_pos.to_parquet(Path(f"temp/{type}_{panel}_networks_sample") / f'nodes_patient-{patient_sample[0]}_{sample_name_for_file}-{patient_sample[1]}.parquet', index=False)
+        del edges, pairs, cell_ID_pos
         gc.collect()
 
-def network_parallelization_process_patient(patient, sample_name, IF_cell_pos, IF_markers, IF_sample_cell, 
+def network_parallelization_process_patient(patient, Cells, markers, 
                       there_is_duplicata, type, panel=None,
                       make_phenograph=False, k_neighbors = 30, primary_metrics_phenograh='minkowski', normalize = False, 
                       method='delaunay', min_neighbors=3):
 
-        filtre = IF_sample_cell['patient'] == patient
+        filtre = Cells['patient'] == patient
 
         if there_is_duplicata:
-            cells_df = IF_sample_cell.loc[filtre, ['CellID']]
-            markers_to_cluter_IF = cells_df.merge(IF_markers.drop_duplicates(subset='CellID'), on='CellID', how='left')
-            cell_ID_pos = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left')
-            coords = cells_df.merge(IF_cell_pos.drop_duplicates(subset='CellID'), on='CellID', how='left') 
+            cells_df = Cells.loc[filtre, ['CellID']]
+            cell_ID_pos = cells_df.merge(Cells.drop_duplicates(subset='CellID'), on='CellID', how='left')
+            coords = cells_df.merge(Cells.drop_duplicates(subset='CellID'), on='CellID', how='left') 
             coords=coords.drop(columns=['CellID','Phenotypes'])
-            nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
-            nodes['patient'] = patient
+            
+            if markers is not None:
+                markers_to_cluter = cells_df.merge(markers.drop_duplicates(subset='CellID'), on='CellID', how='left')
 
         else:
-            cells = IF_sample_cell.loc[filtre, 'CellID'].drop_duplicates()
-            coords = IF_cell_pos.loc[filtre, ['X_position','Y_position']]
-            markers_to_cluter_IF = IF_markers[IF_markers['CellID'].isin(cells)].drop_duplicates(subset='CellID')
-            cell_ID_pos = IF_cell_pos.loc[filtre, ['CellID','X_position','Y_position','Phenotypes']]
-            nodes = markers_to_cluter_IF.merge(cell_ID_pos, on='CellID', how='left', suffixes=('_marker', '_pos'))
-            nodes['patient'] = patient
+            cells = Cells.loc[filtre, 'CellID'].drop_duplicates()
+            coords = Cells.loc[filtre, ['X_position','Y_position']]
+            cell_ID_pos = Cells.loc[filtre, ['CellID','X_position','Y_position','Phenotypes']]
+
+            if markers is not None:
+                markers_to_cluter = markers[markers['CellID'].isin(cells)].drop_duplicates(subset='CellID')
 
                         
         if make_phenograph:
-            markers_to_cluter_IF = markers_to_cluter_IF.set_index('CellID')
-                
-
+            markers_to_cluter = markers_to_cluter.set_index('CellID')
             if normalize:
-                markers_to_cluter_IF = normalize_markers(markers_to_cluter_IF)
-                
-            clustering_IF, Q_IF = phenograph_clustering(markers_to_cluter_IF, k_neighbors, primary_metrics_phenograh)
-            cell_ID_pos['Phenotypes']=clustering_IF
+                markers_to_cluter = normalize_markers(markers_to_cluter)
+            clustering, Q = phenograph_clustering(markers_to_cluter, k_neighbors, primary_metrics_phenograh)
+            cell_ID_pos['Phenotypes'] = clustering
+            del markers_to_cluter
 
-                
         else:
-            clustering_IF=cell_ID_pos['Phenotypes']
+            clustering = cell_ID_pos['Phenotypes']
 
-        pairs = draw_tysserand_network(coords, clustering_IF, patient, type=type, panel=panel, method=method, min_neighbors=min_neighbors)
-        del coords, cell_ID_pos, clustering_IF, markers_to_cluter_IF
+        pairs = draw_tysserand_network(coords, clustering, patient, type=type, panel=panel, method=method, min_neighbors=min_neighbors)
+        del coords, clustering
         if 'cells' in locals():
             del cells
         if 'cells_df' in locals():
@@ -277,11 +245,11 @@ def network_parallelization_process_patient(patient, sample_name, IF_cell_pos, I
         edges = pd.DataFrame(data=pairs, columns=['source', 'target'])
         if type == 'IMC':
             edges.to_parquet(Path(f"OUTPUT_DATA/{type}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
-            nodes.to_parquet(Path(f"OUTPUT_DATA/nodes/{type}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
+            cell_ID_pos.to_parquet(Path(f"OUTPUT_DATA/nodes/{type}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
         if type == 'IF':
             edges.to_parquet(Path(f"OUTPUT_DATA/{type}_{panel}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
-            nodes.to_parquet(Path(f"OUTPUT_DATA/nodes/{type}_{panel}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
-        del edges, pairs, nodes
+            cell_ID_pos.to_parquet(Path(f"OUTPUT_DATA/nodes/{type}_{panel}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
+        del edges, pairs, cell_ID_pos
         gc.collect()
 
 def verif_cpu(cpu, unique_list):
@@ -294,8 +262,8 @@ def verif_cpu(cpu, unique_list):
     tqdm.write(f"\t[INFO] you are currently using {cpu} cpu")
     return cpu
 
-def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell, 
-                      there_is_duplicata, type, panel=None,
+def tysserand_network(Cells, there_is_duplicata, type, 
+                      markers=None , panel=None,
                       make_phenograph=False, k_neighbors = 30, primary_metrics_phenograh='minkowski', normalize = False, 
                       method='delaunay', min_neighbors=3, cpu=4):
     
@@ -304,14 +272,14 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
     else:
         sample_name = 'layer'
 
-    if 'Phenotypes' not in IF_cell_pos:
-        IF_cell_pos['Phenotypes'] = ''
+    if 'Phenotypes' not in Cells:
+        Cells['Phenotypes'] = ''
 
-    if sample_name in IF_sample_cell.columns:
-        unique_patient_samples = IF_sample_cell[['patient',sample_name]].drop_duplicates()
+    if sample_name in Cells.columns:
+        unique_patient_samples = Cells[['patient',sample_name]].drop_duplicates()
         unique_list = list(unique_patient_samples.itertuples(index=False, name=None))
         cpu = verif_cpu(cpu, unique_list)
-        args_list = [(patient_sample, sample_name, IF_cell_pos, IF_markers, IF_sample_cell, 
+        args_list = [(patient_sample, sample_name, Cells, markers, 
                     there_is_duplicata, type, panel, make_phenograph, k_neighbors, 
                     primary_metrics_phenograh, normalize, method, min_neighbors)
                     for patient_sample in unique_list]
@@ -331,10 +299,10 @@ def tysserand_network(IF_cell_pos, IF_markers, IF_sample_cell,
         gc.collect()
 
     else:
-        unique_patient_samples = IF_sample_cell['patient'].drop_duplicates()
+        unique_patient_samples = Cells['patient'].drop_duplicates()
         unique_list = unique_patient_samples.tolist()
         cpu = verif_cpu(cpu, unique_list)
-        args_list = [(patient, sample_name, IF_cell_pos, IF_markers, IF_sample_cell, 
+        args_list = [(patient, sample_name, Cells, markers, 
                     there_is_duplicata, type, make_phenograph, k_neighbors, 
                     primary_metrics_phenograh, normalize, method, min_neighbors)
                     for patient in unique_list]
@@ -360,9 +328,22 @@ def main(IF, IMC, config_file):
     def process(type, panel=None):
         Path(f'temp/{type}{define_panel(type, panel)}_networks_sample').mkdir(parents=True, exist_ok=True)
 
-        cell_pos, markers, sample_cell = import_data('./temp', type, panel)
-        
-        tysserand_network(cell_pos, markers, sample_cell, config_file["tysserand"][f'{type}_duplicata'], type, panel,
+        if type == "IMC":
+            Cells = pd.read_parquet("./temp/IMC.parquet")
+            if config_file['phenograph']:
+                markers = pd.read_parquet("./temp/IMC_markers.parquet")
+            else:
+                markers = None
+
+
+        if type == "IF":
+            Cells = pd.read_parquet(f".temp/IF_{panel}.parquet")
+            if config_file['phenograph']:
+                markers = pd.read_parquet(f"./temp/IF_{panel}_markers.parquet")
+            else:
+                markers = None
+
+        tysserand_network(Cells, config_file["tysserand"][f'{type}_duplicata'], type, markers, panel,
                           config_file['phenograph'],
                           config_file['k_neighbors_phenograph'],
                           config_file['primary_metric_phenograph'],

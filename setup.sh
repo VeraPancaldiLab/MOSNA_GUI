@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e 
 mkdir -p OUTPUT_DATA
-mkdir -p temp
+mkdir -p temp/description
 
 # === Installation de dépendances système ===
 
@@ -49,7 +49,7 @@ fi
 printf "\n[PROCESS] Environnement update by using 'mosna.yml'\t\t\n"
 eval "$(conda shell.bash hook)"
 conda activate "$ENV_NAME"
-conda env update -n "$ENV_NAME" -f env.yml 
+conda env update -n "$ENV_NAME" -f mosna.yml 
 
 # === Installation du package local mosna===
 
