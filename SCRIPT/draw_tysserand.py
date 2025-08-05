@@ -332,19 +332,23 @@ def main(IF, IMC, config_file):
         Path(f'temp/{type}{define_panel(type, panel)}_networks_sample').mkdir(parents=True, exist_ok=True)
 
         files = glob.glob(f"./temp/{type}{define_panel(type, panel)}*.parquet")
-        Cells = pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
-        if config_file['phenograph']:
-            markers = pd.read_parquet("./temp/IMC_markers.parquet")
-        else:
-            markers = None
+        for file in files:
+            tqdm.write(f'[PROCESS] Processing on {file} file')
+            Cells = pd.read_parquet(file)
+            if config_file['phenograph']:
+                markers = pd.read_parquet("./temp/IMC_markers.parquet")
+            else:
+                markers = None
 
-        tysserand_network(Cells, config_file["tysserand"][f'{type}_duplicata'], type, markers, panel,
-                          config_file['phenograph'],
-                          config_file['k_neighbors_phenograph'],
-                          config_file['primary_metric_phenograph'],
-                          config_file[f'{type}_normalization'],
-                          config_file['tysserand']['method_tysserand'],
-                          config_file['tysserand']['min_neighbors'], cpu=config_file['tysserand']['cpu'])
+            tysserand_network(Cells, config_file["tysserand"][f'{type}_duplicata'], type, markers, panel,
+                            config_file['phenograph'],
+                            config_file['k_neighbors_phenograph'],
+                            config_file['primary_metric_phenograph'],
+                            config_file[f'{type}_normalization'],
+                            config_file['tysserand']['method_tysserand'],
+                            config_file['tysserand']['min_neighbors'], cpu=config_file['tysserand']['cpu'])
+            del Cells, markers
+            gc.collect()
         
     try:
         if IMC:

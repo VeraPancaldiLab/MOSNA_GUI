@@ -31,7 +31,7 @@ mpl.rcParams["savefig.facecolor"] = 'white'
 
 ########################################## Function ##########################################
 def verif_file(type, panel=None):
-    if os.path.isfile(f"./temp/{type}{panel}.parquet"):
+    if os.path.isdir(f"./temp/{type}{panel}_networks_sample"):
         return True
     return False
 
