@@ -3,5 +3,7 @@ data/processed/
 output_data/
 OUTPUT_DATA/
 FIELDS/
+temp/
+
 
 TEST_NETWORK_V2/
