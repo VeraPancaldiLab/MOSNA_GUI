@@ -13,6 +13,7 @@ warnings.simplefilter('ignore', UserWarning)
 import numpy as np
 import pandas as pd
 import yaml
+import glob
 import argparse
 import matplotlib.pyplot as plt
 from pathlib import Path
@@ -23,9 +24,11 @@ from phenograph.cluster import cluster
 from tysserand import tysserand as ty
 from mosna import mosna
 
+import matplotlib._pylab_helpers as matpy
 import matplotlib as mpl
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
+mpl.use("Agg")
 mpl.rcParams["figure.facecolor"] = 'white'
 mpl.rcParams["axes.facecolor"] = 'white'
 mpl.rcParams["savefig.facecolor"] = 'white'
@@ -33,9 +36,7 @@ mpl.rcParams["savefig.facecolor"] = 'white'
 ########################################## Function ##########################################
 
 def verif_file(type, panel=None):
-    if os.path.isfile(f"./temp/{type}{panel}.parquet"):
-        return True
-    return False
+    return len(glob.glob(f"./temp/{type}{panel}*.parquet")) > 0
 
 def define_panel(type, panel=None):
     if type == 'IMC':
@@ -108,6 +109,8 @@ def draw_tysserand_network(coords, clustering, patient, type, panel=None, method
             plt.close(fig)
 
     del clusters_cmap, n_colors, celltypes_color_mapper, uniq, fig
+    plt.close('all')
+    matpy.Gcf.destroy_all()
     gc.collect()
     return pairs
 
@@ -247,7 +250,7 @@ def network_parallelization_process_patient(patient, Cells, markers,
             edges.to_parquet(Path(f"OUTPUT_DATA/{type}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
             cell_ID_pos.to_parquet(Path(f"OUTPUT_DATA/nodes/{type}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
         if type == 'IF':
-            edges.to_parquet(Path(f"OUTPUT_DATA/{type}_{panel}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
+            edges.to_parquet(Path(f"OUTPUT_DATA/{type}{panel}_networks_sample") / f'edges_patient-{patient}.parquet', index=False)
             cell_ID_pos.to_parquet(Path(f"OUTPUT_DATA/nodes/{type}_{panel}_networks_sample") / f'nodes_patient-{patient}.parquet', index=False)
         del edges, pairs, cell_ID_pos
         gc.collect()
@@ -328,20 +331,12 @@ def main(IF, IMC, config_file):
     def process(type, panel=None):
         Path(f'temp/{type}{define_panel(type, panel)}_networks_sample').mkdir(parents=True, exist_ok=True)
 
-        if type == "IMC":
-            Cells = pd.read_parquet("./temp/IMC.parquet")
-            if config_file['phenograph']:
-                markers = pd.read_parquet("./temp/IMC_markers.parquet")
-            else:
-                markers = None
-
-
-        if type == "IF":
-            Cells = pd.read_parquet(f".temp/IF_{panel}.parquet")
-            if config_file['phenograph']:
-                markers = pd.read_parquet(f"./temp/IF_{panel}_markers.parquet")
-            else:
-                markers = None
+        files = glob.glob(f"./temp/{type}{define_panel(type, panel)}*.parquet")
+        Cells = pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
+        if config_file['phenograph']:
+            markers = pd.read_parquet("./temp/IMC_markers.parquet")
+        else:
+            markers = None
 
         tysserand_network(Cells, config_file["tysserand"][f'{type}_duplicata'], type, markers, panel,
                           config_file['phenograph'],
@@ -351,7 +346,6 @@ def main(IF, IMC, config_file):
                           config_file['tysserand']['method_tysserand'],
                           config_file['tysserand']['min_neighbors'], cpu=config_file['tysserand']['cpu'])
         
-
     try:
         if IMC:
             if verif_file('IMC', define_panel('IMC')):
@@ -375,7 +369,7 @@ def main(IF, IMC, config_file):
             else:
                 if verif_file('IF', define_panel('IF', config_file['tysserand']['panel'])):
                     tqdm.write(f"\n\n\t[INFO] process on {config_file['tysserand']['panel']} panel")
-                    process('IF')
+                    process('IF', config_file['tysserand']['panel'])
                 else:
                     raise ValueError("There is no IF in your data")
 

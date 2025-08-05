@@ -4,11 +4,11 @@ phenograph: false
 k_neighbors_phenograph: 30
 primary_metric_phenograph: minkowski
 IF_normalization: false
-IMC_normalization: true
+IMC_normalization: false
 tysserand:
   IF_perform: true
-  panel: all
-  IF_duplicata: true
+  panel: C2
+  IF_duplicata: false
   IMC_perform: false
   IMC_duplicata: false
   cpu: 20
