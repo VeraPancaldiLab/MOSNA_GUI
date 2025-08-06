@@ -35,7 +35,7 @@ def verif_file(type, panel=None):
         return True
     return False
 
-def define_panel(type):
+def define_panel(type, panel=None):
     if type == 'IMC':
         panel = ''
     if type == 'IF':
@@ -105,12 +105,12 @@ def nodes_transfo(nodes_dir, marker_cols, sample_name=None, sample_present=True)
             save_dir='auto',
         )
 
-def mix_mat_assortativity(nodes_dir, pheno_col, n_shuffle = 50, type=None):
+def mix_mat_assortativity(net_dir, pheno_col, n_shuffle = 50, type=None):
 
     sample_name = define_sample_name(type)
 
     net_stats = mosna.groups_assort_mixmat(
-        net_dir=nodes_dir, 
+        net_dir=net_dir, 
         attributes_col=pheno_col,
         make_onehot=True,
         id_level_1='patient',
@@ -292,8 +292,6 @@ def main(IF, IMC, config_file):
 
     def process(type, config_file, panel=None):
 
-        panel = define_panel(type, panel)
-
         # === Work in Progress === 
         """
         Cells = pd.read_parquet(f"./temp/{type}{panel}.parquet")
@@ -314,17 +312,17 @@ def main(IF, IMC, config_file):
         if not (save_dir / f"{type}{panel}_net_stat.parquet").exists():
             t = time()
             print(f"\t[INFO] Processing Assortativity for {type} data\t\t\t", end='')
-            net_stat = mix_mat_assortativity(f"./temp/{type}{panel}_networks_sample", 
-                                                "Phenotypes", 
+            net_stat = mix_mat_assortativity(net_dir=f"./temp/{type}{define_panel(type, panel)}_networks_sample", 
+                                                pheno_col="Phenotypes", 
                                                 type=type)
-            net_stat.to_parquet(save_dir / f"{type}{panel}_net_stat.parquet")
+            net_stat.to_parquet(save_dir / f"{type}{define_panel(type, panel)}_net_stat.parquet")
             print(f"DONE\n\t[INFO] Assortativity for {type} took {time()-t} s")
             del net_stat, t
             gc.collect()
 
-        net_stat = pd.read_parquet(save_dir / f'{type}{panel}_net_stat.parquet')
+        net_stat = pd.read_parquet(save_dir / f'{type}{define_panel(type, panel)}_net_stat.parquet')
         list_id = net_stat.index.to_list()
-        save_dir_type = save_dir / f"figures/{type}{panel}"
+        save_dir_type = save_dir / f"figures/{type}{define_panel(type, panel)}"
         save_dir_type.mkdir(parents=True, exist_ok=True)
         
         # === Plot Assortativity ===

@@ -85,6 +85,7 @@ class MosnaGUI(QMainWindow):
             "cpu":                    (int,  type(None)),
             "k_neighbors_phenograph": (int,  type(None)),
             "panel": (str, type(None)),
+            "all_layers": (bool, type(None)),
             "primary_metric_phenograph": (str, type(None)),
             "method_tysserand":        (str, type(None)),
             "min_neighbors":           (int, type(None)),
@@ -160,14 +161,14 @@ class MosnaGUI(QMainWindow):
                 combo.setCurrentText(value)
             return combo
 
-        if lower_key in ['panel'] and isinstance(value, str):
+        elif lower_key in ['panel'] and isinstance(value, str):
             options = self.config_data['panel_list'] + ["all"]
             combo = QComboBox()
             combo.addItems(options)
             if value in options:
                 combo.setCurrentText(value)
             return combo
-        
+ 
         elif lower_key in ['reducer_type'] and isinstance(value, str):
             options = ['umap']
             combo = QComboBox()
