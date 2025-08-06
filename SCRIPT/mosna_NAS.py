@@ -34,7 +34,7 @@ def verif_file(type, panel=None):
         return True
     return False
 
-def define_panel(type, panel):
+def define_panel(type, panel=None):
     if type == 'IMC':
         panel = ''
     if type == 'IF':
@@ -55,16 +55,17 @@ def get_config(config_path):
         config = yaml.safe_load(f)
     return config   
 
-def import_params(type, pheno_col):
-    panel = define_panel(type)
+def import_data(type, panel, pheno_col, marker_present=False):
 
-    cell_types = pd.read_parquet(f"./temp/{type}{panel}.parquet")[pheno_col]
-    uniq_pheno = cell_types.unique().to_numpy()
+    cell_types = pd.read_parquet(f"./temp/{type}{define_panel(type, panel)}.parquet")[pheno_col]
+    uniq_pheno = cell_types.unique()
 
-    sample = pd.read_parquet(f"./temp/{type}{panel}.parquet")[["patient", panel]].drop_duplicates()
-    markers = pd.read_csv(f"./temp/description/{type}{panel}_markers.csv").iloc[:, 0].to_list()
-
-    return cell_types, uniq_pheno, sample, markers
+    sample = pd.read_parquet(f"./temp/{type}{define_panel(type, panel)}.parquet")[["patient", define_sample_name(type)]].drop_duplicates()
+    tab_sample = list(sample[["patient", "layer"]].itertuples(index=False, name=None)) 
+    if marker_present:
+        markers = pd.read_csv(f"./temp/description/{type}{define_panel(type, panel)}_markers.csv").iloc[:, 0].to_list()
+        return cell_types, uniq_pheno, sample, markers
+    return cell_types, uniq_pheno, tab_sample
 
 def define_sample_name(type):
     sample_name_dict={'IMC':'ROI', 'IF':'layer'}
@@ -96,7 +97,7 @@ def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, s
             dir_save_interm=None,
             verbose=1,
             )
-        var_aggreg.to_parquet(output_dir / f'{file_type}{panel}_aggregation_stats.parquet', index=False)
+        var_aggreg.to_parquet(output_dir / f'{file_type}{define_panel(type, panel)}_aggregation_stats.parquet', index=False)
     var_aggreg.drop(columns=['patient', sample_name], inplace=True)
     return var_aggreg
 
@@ -155,10 +156,10 @@ def plot_niches(counts, cluster_labels, save_dir, patient, sample, image_type, p
     axes[0].set_title('Niches histogram')
 
     if sample == None and patient == None:
-        fig.suptitle(f"For an {image_type}{panel} image and panel niches composition for with {normalize}_normalization")
-        fig.savefig(save_dir / f'{image_type}{panel}_niche_composition_{normalize}.png', dpi=300, bbox_inches='tight')
+        fig.suptitle(f"For an {image_type}{define_panel(type, panel)} image and panel niches composition for with {normalize}_normalization")
+        fig.savefig(save_dir / f'{image_type}{define_panel(type, panel)}_niche_composition_{normalize}.png', dpi=300, bbox_inches='tight')
     if sample != None and patient != None:
-        fig.suptitle(f"For an {image_type}{panel} image and panel niches composition for {patient}, sample {sample} with {normalize} normalization")
+        fig.suptitle(f"For an {image_type}{define_panel(type, panel)} image and panel niches composition for {patient}, sample {sample} with {normalize} normalization")
         fig.savefig(save_dir / f'{patient}-{sample}_niche_composition_{normalize}.png', dpi=300, bbox_inches='tight')
     plt.close(fig)
 
@@ -257,7 +258,7 @@ def main(IF, IMC, config_file):
         sof_dir = output_dir / f"SCAN-IT"
         raise Exception("SCAN-IT not available yet")
 
-    def process(type, panel):
+    def process(type, panel=None):
 
         ######################################## Define configuration ########################################
         sample_name = define_sample_name(type)
@@ -269,11 +270,11 @@ def main(IF, IMC, config_file):
         else:
             save_dir_ = sof_dir / 'standard'
         
-        panel = define_panel(type)
-        network_dir = Path(f'./temp/{type}{panel}_networks_sample')
+        
+        network_dir = Path(f'./temp/{type}{define_panel(type, panel)}_networks_sample')
         save_dir.mkdir(parents=True, exist_ok=True)
         
-        cell_type, uniq_pheno, tab_sample, tab_markers = import_params()
+        cell_type, uniq_pheno, tab_sample = import_data(type, panel, 'Phenotypes')
         ######################################## Node aggregation ########################################
         
         if nodes_aggregation:
@@ -311,7 +312,7 @@ def main(IF, IMC, config_file):
                     tqdm.write(f"\n\t[INFO] niches for patient {patient} and ROI {sample}")
                 else:
                     tqdm.write(f"\n\t[INFO] niches for patient {patient} and layer {sample}")
-                save_dir_data = save_dir / f'{type}{panel}'
+                save_dir_data = save_dir / f'{type}{define_panel(type, panel)}'
                 save_directory = save_dir_data / f"normalization_{normalize}"
                 save_directory.mkdir(parents=True, exist_ok=True)
                 
@@ -323,8 +324,7 @@ def main(IF, IMC, config_file):
                 #################### Define parameters for niches and run the clustering ####################
 
                 features_NAS = get_param_for_niches(nodes, edges, tab_feature_to_compute_NAS,       # tab_markers
-                                                    stat_funcs, stat_names, order, 
-                                                    save_dir, patient, sample)
+                                                    stat_funcs, stat_names, order)
                 
                 cluster_labels = clustering_NAS(features_NAS,reducer_type, 
                                                     clusterer_type, n_neighbors, metric, 
@@ -357,12 +357,12 @@ def main(IF, IMC, config_file):
         if IF:
             if config_file['NAS']['panel'] == 'all':
                 for panel in config_file['panel_list']:
-                    if verif_file('IF', panel):
+                    if verif_file('IF', define_panel('IF', panel)):
                         process('IF',panel)
                     else:
                         raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
             else:
-                if verif_file('IF', panel):
+                if verif_file('IF', define_panel('IF', panel)):
                     process('IF',panel)
                 else:
                     raise ValueError("There is no IF in your data or the Tysserand networks were not generated")

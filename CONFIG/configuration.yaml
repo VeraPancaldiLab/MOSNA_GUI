@@ -25,7 +25,7 @@ NAS:
   output_name_file: IMC_IF_PDAC
   IMC_perform: false
   IF_perform: true
-  panel: C2
+  panel: all
   node_aggregation: false
   perform_NAS_all_sample: true
   nodes_aggregation:
@@ -64,7 +64,7 @@ NAS:
     stat_funcs: np.mean,np.std
     stat_names: [mean, std]
     clusterer_type: gmm
-    n_clusters: 8
+    n_clusters: 10
     reducer_type: umap
     metric: euclidean
     resolution: 0.005
