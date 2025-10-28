@@ -51,7 +51,7 @@ before to be able to obtain your tysserand network you must complete first all p
 
 ![Mon Image](images/GUI.png)
 
-## Step 1: Pre-processing (No NEEDED)
+## Step 1: Pre-processing (No NEEDED - available on Preprocessing Branch)
 
 The pre-processing step is required to generate temp file needed for the following steps. 4 files will be created by type of data (IF's panel and IMC)
 
