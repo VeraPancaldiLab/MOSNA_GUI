@@ -278,7 +278,7 @@ def tysserand_network(Cells, there_is_duplicata, type,
     if 'Phenotypes' not in Cells:
         Cells['Phenotypes'] = ''
 
-    if sample_name in Cells.columns and not all_layers:
+    if sample_name in Cells.columns:
         unique_patient_samples = Cells[['patient',sample_name]].drop_duplicates()
         unique_list = list(unique_patient_samples.itertuples(index=False, name=None))
         cpu = verif_cpu(cpu, unique_list)

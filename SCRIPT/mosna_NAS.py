@@ -61,7 +61,8 @@ def import_data(type, panel, pheno_col, marker_present=False):
     uniq_pheno = cell_types.unique()
 
     sample = pd.read_parquet(f"./temp/{type}{define_panel(type, panel)}.parquet")[["patient", define_sample_name(type)]].drop_duplicates()
-    tab_sample = list(sample[["patient", "layer"]].itertuples(index=False, name=None)) 
+
+    tab_sample = list(sample[["patient", "ROI"]].itertuples(index=False, name=None)) 
     if marker_present:
         markers = pd.read_csv(f"./temp/description/{type}{define_panel(type, panel)}_markers.csv").iloc[:, 0].to_list()
         return cell_types, uniq_pheno, sample, markers
@@ -75,37 +76,43 @@ def var_aggregate(network_dir, output_dir, method, pheno_col, uniq_phenotypes, s
     if sample_name is None:
         sample_name = 'sample'
 
+    suffix = define_panel(file_type, panel) if panel is not None else ""
+
     if (output_dir / f'{file_type}_aggregation_stats.parquet').exists():
-        print(f'\t[INFO] Load aggregation statistics from {file_type}')
-        var_aggreg = pd.read_parquet(output_dir / f'{file_type}_aggregation_stats.parquet')
+        print(f'\n[INFO] Load aggregation statistics from {file_type}')
+        var_aggreg = pd.read_parquet(output_dir / f'{file_type}_{suffix}_aggregation_stats.parquet')
     else:
-        print(f'\t[INFO] Compute aggregation statistics from {file_type}')
+        print(f'\n[INFO] Compute aggregation statistics from {file_type}')
         var_aggreg = mosna.compute_spatial_omic_features_all_networks(
             method=method,
             nodes_dir=network_dir,
-            edges_dir=network_dir, 
+            edges_dir=network_dir,
             attributes_col=pheno_col,
             use_attributes=uniq_phenotypes, 
             make_onehot=True,
             stat_funcs=stat_funcs,
             stat_names=stat_names,
             id_level_1='patient',
-            id_level_2=sample_name, 
+            id_level_2=sample_name,
             parallel_groups=False,
             memory_limit='max',
             save_intermediate_results=False, 
             dir_save_interm=None,
             verbose=1,
             )
-        var_aggreg.to_parquet(output_dir / f'{file_type}{define_panel(type, panel)}_aggregation_stats.parquet', index=False)
+        var_aggreg.to_parquet(output_dir / f'{file_type}_{suffix}_aggregation_stats.parquet', index=False)
     var_aggreg.drop(columns=['patient', sample_name], inplace=True)
     return var_aggreg
 
 def get_param_for_niches(nodes_df, edges_df, node_features_list, 
                         stat_funcs, stat_names, order):
-    
+    feat_xy = nodes_df[['X_position', 'Y_position']].astype(float)
+    feat_pheno = pd.get_dummies(nodes_df['Phenotypes'], prefix='Pheno').astype(float)
+
+    X_df = pd.concat([feat_xy, feat_pheno], axis=1)
+
     features_NAS = mosna.make_features_NAS(
-        X=nodes_df[node_features_list].values,
+        X=X_df.values,
         pairs=edges_df.values,
         order=order,
         var_names = node_features_list,
@@ -141,7 +148,7 @@ def clustering_NAS(features_NAS, reducer_type, clusterer_type, n_neighbors,
         min_cluster_size=min_cluster_size,
         use_gpu=False,
         k_cluster=k_cluster,
-        verbose=0,
+        verbose=1,
     )
     shutil.rmtree(dir)
     return cluster_labels
@@ -262,8 +269,6 @@ def main(IF, IMC, config_file):
 
         ######################################## Define configuration ########################################
         sample_name = define_sample_name(type)
-        
-        tab_feature_to_compute_NAS = ['X_position', 'Y_position', 'Phenotypes']
 
         if config_file['NAS']['output_name_file'] is not None:
             save_dir = sof_dir / f"{str(config_file['NAS']['output_name_file'])}"
@@ -282,11 +287,10 @@ def main(IF, IMC, config_file):
             reducer_type, metric, n_neighbors, min_dist, dim_clust, \
             min_cluster_size, k_cluster, resolution, n_clusters = get_params(config_file, type, nodes_aggregation, method, FUNC_MAP)
 
-
             nodes_aggregate = var_aggregate(network_dir,save_dir,method,pheno_col, uniq_pheno,stat_funcs, 
                                                 stat_names, sample_name, type, panel)
             
-                
+
             cluster_labels = clustering_NAS(nodes_aggregate,reducer_type, 
                             clusterer_type, n_neighbors, metric, 
                             min_dist, dim_clust, min_cluster_size,k_cluster,resolution, n_clusters,
@@ -301,7 +305,9 @@ def main(IF, IMC, config_file):
             )
 
             plot_niches(counts, cluster_labels, save_dir, None, None, type, panel, normalize=normalize)
+
         ######################################## For each Patient/sample ########################################
+
         if perform_NAS_all_sample:
             stat_funcs, stat_names, normalize, order, clusterer_type, \
             reducer_type, metric, n_neighbors, min_dist, dim_clust, \
@@ -322,8 +328,9 @@ def main(IF, IMC, config_file):
                 edges = pd.read_parquet(network_dir / f'edges_patient-{patient}_{sample_name}-{sample}.parquet')
 
                 #################### Define parameters for niches and run the clustering ####################
+                tab_feature_to_compute_NAS = ['X_position', 'Y_position', 'Phenotypes']
 
-                features_NAS = get_param_for_niches(nodes, edges, tab_feature_to_compute_NAS,       # tab_markers
+                features_NAS = get_param_for_niches(nodes, edges, tab_feature_to_compute_NAS,
                                                     stat_funcs, stat_names, order)
                 
                 cluster_labels = clustering_NAS(features_NAS,reducer_type, 
