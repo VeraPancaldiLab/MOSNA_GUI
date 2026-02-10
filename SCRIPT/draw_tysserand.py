@@ -12,21 +12,19 @@ warnings.simplefilter('ignore', DeprecationWarning)
 warnings.simplefilter('ignore', UserWarning)
 import numpy as np
 import pandas as pd
-import yaml
 import glob
-import argparse
 import matplotlib.pyplot as plt
 from pathlib import Path
 from tqdm import tqdm
 import matplotlib as mpl
 from phenograph.cluster import cluster
-
-from tysserand import tysserand as ty
-from mosna import mosna
-
 import matplotlib._pylab_helpers as matpy
 import matplotlib as mpl
 from concurrent.futures import ProcessPoolExecutor, as_completed
+
+from tysserand import tysserand as ty
+from mosna import mosna
+from package.utils import verif_file, define_panel, get_arguments, get_config, define_sample_name
 
 mpl.use("Agg")
 mpl.rcParams["figure.facecolor"] = 'white'
@@ -34,34 +32,6 @@ mpl.rcParams["axes.facecolor"] = 'white'
 mpl.rcParams["savefig.facecolor"] = 'white'
 
 ########################################## Function ##########################################
-
-def verif_file(type, panel=None):
-    return len(glob.glob(f"./temp/{type}{panel}*.parquet")) > 0
-
-def define_panel(type, panel=None):
-    if type == 'IMC':
-        panel = ''
-    if type == 'IF':
-        panel = '_' + panel
-    return panel
-
-def get_arguments():
-
-    parser = argparse.ArgumentParser(description = "Draw tysserand for IMC / IF")
-    parser.add_argument('--file', type = str, required=True, help = "config file")
-    args = parser.parse_args()
-
-    return args.file
-
-def get_config(config_path):
-        
-    with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
-    return config
-
-def define_sample_name(type):
-    sample_name_dict={'IMC':'ROI', 'IF':'layer'}
-    return sample_name_dict[type]
 
 def draw_tysserand_network(coords, clustering, patient, type, panel=None, method='delaunay', min_neighbors=3, sample=None, sample_name=None):
     if clustering is not None:
@@ -333,7 +303,7 @@ def main(IF, IMC, config_file):
 
         files = glob.glob(f"./temp/{type}{define_panel(type, panel)}*.parquet")
         for file in files:
-            tqdm.write(f'[PROCESS] Processing on {file} file')
+            tqdm.write(f'\t[PROCESS] Processing on {file} file')
             Cells = pd.read_parquet(file)
             if config_file['phenograph']:
                 markers = pd.read_parquet("./temp/IMC_markers.parquet")
@@ -352,7 +322,7 @@ def main(IF, IMC, config_file):
         
     try:
         if IMC:
-            if verif_file('IMC', define_panel('IMC')):
+            if verif_file(Path.cwd(),'IMC', ".parquet", define_panel('IMC')):
                 tqdm.write(f"\n\n\t[INFO] process on IMC")
                 process('IMC')
             else:
@@ -364,14 +334,14 @@ def main(IF, IMC, config_file):
         if IF:
             if config_file['tysserand']['panel'] == 'all':
                 for panel in config_file['panel_list']:
-                        if verif_file('IF', define_panel('IF', panel)):
+                        if verif_file(Path.cwd(),'IF', ".parquet", define_panel('IF', panel)):
                             tqdm.write(f"\n\n\t[INFO] process on {panel} panel")
                             process('IF', panel)
                         else:
                             raise ValueError("There is no IF in your data")
 
             else:
-                if verif_file('IF', define_panel('IF', config_file['tysserand']['panel'])):
+                if verif_file(Path.cwd(),'IF', ".parquet", define_panel('IF', config_file['tysserand']['panel'])):
                     tqdm.write(f"\n\n\t[INFO] process on {config_file['tysserand']['panel']} panel")
                     process('IF', config_file['tysserand']['panel'])
                 else:

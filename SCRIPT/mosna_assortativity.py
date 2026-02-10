@@ -20,61 +20,20 @@ import warnings
 from pathlib import Path
 from time import time
 from tqdm import tqdm
+
 import matplotlib as mpl
-from mosna import mosna
 import matplotlib as mpl
 import matplotlib.gridspec as gridspec
 from matplotlib.patches import Patch
+
+from mosna import mosna
+from package.utils import verif_folder, define_panel, get_arguments, get_config, define_sample_name, replace_sample_name
+
 mpl.rcParams["figure.facecolor"] = 'white'
 mpl.rcParams["axes.facecolor"] = 'white'
 mpl.rcParams["savefig.facecolor"] = 'white'
 
-########################################## Function ##########################################
-def verif_file(type, panel=None):
-    if os.path.isdir(f"./temp/{type}{panel}_networks_sample"):
-        return True
-    return False
-
-def define_panel(type, panel=None):
-    if type == 'IMC':
-        panel = ''
-    if type == 'IF':
-        panel = '_' + panel
-    return panel
-
-def get_arguments():
-
-    parser = argparse.ArgumentParser(description = "Draw tysserand for IMC / IF")
-    parser.add_argument('--file', type = str, required=True, help = "config file")
-    args = parser.parse_args()
-
-    return args.file
-
-def get_config(config_path):
-        
-    with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
-    return config   
-
-def define_sample_name(type):
-    sample_name_dict={'IMC':'ROI', 'IF':'layer'}
-    return sample_name_dict[type]
-    
-def sample_are_present_in_data(data, name):
-    if name is None:
-        name = 'sample'
-    if name in data.columns:
-        return True
-    else:
-        return False
-
-def open_markers(file):
-    with open(file, 'r') as f:
-        markers = [line.strip() for line in f if line.strip()]
-    return markers
-
-def replace_sample_name(sample_name):
-    return sample_name.replace('_', '-')
+########################################## Function ##########################################  
 
 def nodes_transfo(nodes_dir, marker_cols, sample_name=None, sample_present=True):
     if sample_name is not None:
@@ -292,21 +251,6 @@ def main(IF, IMC, config_file):
 
     def process(type, config_file, panel=None):
 
-        # === Work in Progress === 
-        """
-        Cells = pd.read_parquet(f"./temp/{type}{panel}.parquet")
-        sample = sample_are_present_in_data(Cells, sample_name[type])
-        markers_col = pd.read_csv(f'./temp/description/{type}{panel}_markers.csv', header=None)[0].tolist()
-        if config_file['Assortativity']['perform_batch']:
-            dir_batch = Path(f"./temp/{type}{panel}_networks_sample") / "batch"
-            dir_batch.mkdir(parents=True, exist_ok=True)
-            nodes_directory, nodes_corr_batch = correct_batch_effect(f"./temp/{type}{panel}_networks_sample", 
-                                                                     markers_col, sample_name[type], dir_batch)
-        if config_file['Assortativity']['perform_clr_transfo']:                                                      
-            nodes_transfo(f"./temp/{type}{panel}_networks_sample", 
-                        markers_col, sample_name[type], sample_present=sample)
-        """
-
         # === Compute Assortativity ===
 
         if not (save_dir / f"{type}{panel}_net_stat.parquet").exists():
@@ -334,7 +278,7 @@ def main(IF, IMC, config_file):
     
     try:
         if IMC: 
-            if verif_file('IMC', define_panel('IMC')):
+            if verif_folder(Path.cwd(),'IMC', "_networks_sample", define_panel('IMC')):
                 process('IMC', config_file)
             else:
                 raise ValueError("There is no IMC in your data or the Tysserand networks were not generated")
@@ -345,12 +289,12 @@ def main(IF, IMC, config_file):
         if IF:
             if config_file['Assortativity']['panel'] == 'all':
                 for panel in config_file['panel_list']:
-                    if verif_file('IF', define_panel('IF', panel)):
+                    if verif_folder(Path.cwd(),'IF', "_networks_sample", define_panel('IF', panel)):
                         process('IF', config_file, panel)
                     else:
                         raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
             else:
-                if verif_file('IF', define_panel('IF', config_file['Assortativity']['panel'])):
+                if verif_folder(Path.cwd(),'IF', define_panel('IF', "_networks_sample", config_file['Assortativity']['panel'])):
                     process('IF', config_file, config_file['Assortativity']['panel'])
                 else:
                     raise ValueError("There is no IF in your data or the Tysserand networks were not generated")
