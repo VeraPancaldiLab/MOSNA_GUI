@@ -1,0 +1,92 @@
+silent: false
+panel_list: [C1, C2]
+phenograph: false
+k_neighbors_phenograph: 30
+primary_metric_phenograph: minkowski
+IF_normalization: false
+IMC_normalization: false
+tysserand:
+  IF_perform: false
+  panel: C2
+  IF_duplicata: false
+  IMC_perform: true
+  IMC_duplicata: false
+  cpu: 20
+  method_tysserand: delaunay
+  min_neighbors: 3
+Assortativity:
+  Network directory: networks_phenotyped
+  Phenotype column: Phenotype
+  Patient_ID: patient
+  Sample_ID: sample
+  Extension: csv
+  Index: Object
+NAS:
+  method: NAS
+  output_name_file: IMC_IF_PDAC
+  IMC_perform: true
+  IF_perform: false
+  panel: all
+  node_aggregation: true
+  perform_NAS_all_sample: false
+  nodes_aggregation:
+    IF:
+      order: '1'
+      stat_funcs: np.mean,np.std
+      stat_names: [mean, std]
+      clusterer_type: gmm
+      n_clusters: 15
+      reducer_type: umap
+      metric: euclidean
+      resolution: 0.005
+      n_neighbors: 15
+      min_dist: 0.0
+      dim_clust: 3
+      min_cluster_size: 10
+      k_cluster: 15
+      normalize: niche
+    IMC:
+      order: '2'
+      stat_funcs: np.mean,np.std
+      stat_names: [mean, std]
+      clusterer_type: gmm
+      n_clusters: 8
+      reducer_type: umap
+      metric: euclidean
+      resolution: 0.0001
+      n_neighbors: 15
+      min_dist: 0.0
+      dim_clust: 3
+      min_cluster_size: 10
+      k_cluster: 15
+      normalize: total
+  IF:
+    order: '1'
+    stat_funcs: np.mean,np.std
+    stat_names: [mean, std]
+    clusterer_type: gmm
+    n_clusters: 10
+    reducer_type: umap
+    metric: euclidean
+    resolution: 0.005
+    n_neighbors: 15
+    min_dist: 0.1
+    dim_clust: 3
+    min_cluster_size: 1
+    k_cluster: 15
+    normalize: niche
+  IMC:
+    order: '1'
+    stat_funcs: np.mean,np.std
+    stat_names: [mean, std]
+    clusterer_type: gmm
+    n_clusters: 15
+    reducer_type: umap
+    metric: euclidean
+    resolution: 0.001
+    n_neighbors: 15
+    min_dist: 0.0
+    dim_clust: 2
+    min_cluster_size: 1
+    k_cluster: 15
+    normalize: obs
