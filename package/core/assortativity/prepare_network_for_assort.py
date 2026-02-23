@@ -2,13 +2,14 @@ import pandas as pd
 from tqdm import tqdm
 
 from package.utils.read_extension import get_opener
-from package.core.transform_nodes import transform_nodes
-from package.core.assert_net_assortativity import assert_nodes_assortativity, assert_edges_assortativity
+from .transform_nodes import transform_nodes
+from .assert_net_assortativity import assert_nodes_assortativity, assert_edges_assortativity
 
 def prepare_network_for_assort(net_dir, temp_dir, Pheno_col, id_level_1="patient", id_level_2="sample", extension="csv", nodes_index=None):
 
     edges_files = sorted(net_dir.glob(f"edges_{id_level_1}-*_{id_level_2}-*.{extension}"))
     nodes_files = sorted(net_dir.glob(f"nodes_{id_level_1}-*_{id_level_2}-*.{extension}"))
+    tqdm.write(f"[INFO] Find {len(edges_files)+len(nodes_files)} files to trait (Nodes + Edges)")
 
     opener = get_opener(extension)
 
@@ -20,7 +21,7 @@ def prepare_network_for_assort(net_dir, temp_dir, Pheno_col, id_level_1="patient
 
     all_classes = set()
     for nodes in nodes_files:
-        s = pd.read_csv(nodes)[Pheno_col].dropna().unique()
+        s = opener(nodes)[Pheno_col].dropna().unique()
         all_classes.update(s)
 
     for nodes in tqdm(nodes_files, desc="[PRE-PROCESSING] Nodes traitement"):

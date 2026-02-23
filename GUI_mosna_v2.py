@@ -19,6 +19,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 CONFIG_PATH = str(BASE_DIR / 'CONFIG' / 'configuration_v2.yaml')
 SCRIPTS = [
+    str(BASE_DIR / 'package' / 'tysserand_network.py'),
     str(BASE_DIR / 'package' / 'assortativity.py'),
     str(BASE_DIR / 'package' / 'clear_temporary_files.sh'),
 ]
@@ -82,28 +83,24 @@ class MosnaGUI(QMainWindow):
 
         self.expected_types = {
             "silent": (bool, type(None)),
-            "phenograph": (bool, type(None)),
-            "pheno_dir": (str, type(None)),
-            "panel_list": (list, type(None)),
-            "add_pheno": (bool, type(None)),
-            "IF_normalization": (bool, type(None)),
-            "IMC_normalization": (bool, type(None)),
-            "IMC_duplicata": (bool, type(None)),
-            "IF_duplicata": (bool, type(None)),
-            "cpu": (int, type(None)),
-            "k_neighbors_phenograph": (int, type(None)),
-            "panel": (str, type(None)),
-            "all_layers": (bool, type(None)),
-            "primary_metric_phenograph": (str, type(None)),
-            "method_tysserand": (str, type(None)),
-            "min_neighbors": (int, type(None)),
+
+            ### Tysserand features ###
+            "Nodes directory":(str, type(None)),
+            "CPU": (int, type(None)),
+            "Edges method": (str, type(None)),
+            "Min neighbors": (int, type(None)),
+            "Extension":(str, type(None)),
+            "X coordinates column":(str, type(None)),
+            "Y coordinates column":(str, type(None)),
+            "Phenotype column":(str, type(None)),
+            "Patient column name":(str, type(None)),
+            "Sample column name":(str, type(None)),
 
             ### Assortativity features ###
             "Network_directory": (str, type(None)),
             "Patient_ID":(str, type(None)),
             "Sample_ID":(str, type(None)),
             "Phenotype column":(str, type(None)),
-            "Extension":(str, type(None)),
             "Index":(str, type(None)),
 
             "method": (str, type(None)),
@@ -238,14 +235,6 @@ class MosnaGUI(QMainWindow):
                 combo.setCurrentText(value)
             return combo
 
-        if lower_key in ['panel'] and isinstance(value, str):
-            options = self.config_data.get('panel_list', []) + ["all"]
-            combo = QComboBox()
-            combo.addItems(options)
-            if value in options:
-                combo.setCurrentText(value)
-            return combo
-
         if lower_key in ['reducer_type'] and isinstance(value, str):
             options = ['umap']
             combo = QComboBox()
@@ -278,15 +267,7 @@ class MosnaGUI(QMainWindow):
                 combo.setCurrentText(value)
             return combo
 
-        if lower_key in ['primary_metric_phenograph'] and isinstance(value, str):
-            options = ['minkowski']
-            combo = QComboBox()
-            combo.addItems(options)
-            if value in options:
-                combo.setCurrentText(value)
-            return combo
-
-        if lower_key in ['method_tysserand'] and isinstance(value, str):
+        if lower_key in ['edges method'] and isinstance(value, str):
             options = ['delaunay', 'knn']
             combo = QComboBox()
             combo.addItems(options)
@@ -339,7 +320,7 @@ class MosnaGUI(QMainWindow):
         self.tabs = QTabWidget()
         layout.addWidget(self.tabs)
 
-        order = ['General', 'IF_import', 'IMC_import', 'tysserand', 'Assortativity', 'NAS', 'documentation']
+        order = ['General', 'Tysserand', 'Assortativity', 'NAS', 'documentation']
         general_data = {k: v for k, v in self.config_data.items() if not isinstance(v, dict) and k != 'documentation'}
         self._add_tab("General", "__general__", general_data)
 
