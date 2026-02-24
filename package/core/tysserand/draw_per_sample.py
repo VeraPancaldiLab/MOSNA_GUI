@@ -38,10 +38,10 @@ def draw_per_sample(file, X_position, Y_position, Pheno_col, method, min_neighbo
     fig.tight_layout()
     ax.set_title(f"Tysserand network {patient_colmun} {patient} and {sample_column} {sample}", fontsize=30)
     fig.savefig(saving_folder / f"net_{patient}-{sample}.png", dpi = 300, bbox_inches="tight")
+    plt.close(fig)
 
     edge = pd.DataFrame(data=pairs, columns=['source', 'target'])
     node.to_parquet(temp_folder / f"nodes_{patient_colmun}-{patient}_{sample_column}-{sample}.parquet")
     edge.to_parquet(temp_folder / f"edges_{patient_colmun}-{patient}_{sample_column}-{sample}.parquet")
-    plt.close(fig)
     del pairs, coords, celltypes_color_mapper, clustering, clusters_cmap, node, opener, n_colors, edge
     gc.collect()
