@@ -1,25 +1,22 @@
 silent: false
-panel_list: [C1, C2]
-phenograph: false
-k_neighbors_phenograph: 30
-primary_metric_phenograph: minkowski
-IF_normalization: false
-IMC_normalization: false
-tysserand:
-  IF_perform: false
-  panel: C2
-  IF_duplicata: false
-  IMC_perform: true
-  IMC_duplicata: false
-  cpu: 20
-  method_tysserand: delaunay
-  min_neighbors: 3
+Tysserand:
+  Nodes directory: /home/owen.griere/Desktop/Tobylawrence_PDACIMC/Processed_data/mosna_networks
+  Patient column name: patient
+  Sample column name: sample
+  Extension: parquet
+  X coordinates column: centroid-0
+  Y coordinates column: centroid-1
+  Phenotype column: Phenotype
+  Edges method: delaunay
+  Min neighbors: 3
+  CPU: 20
 Assortativity:
-  IF_perform: false
-  panel: C1
-  IMC_perform: true
-  perform_batch: false
-  perform_clr_transfo: false
+  Network directory: Default
+  Phenotype column: Phenotype
+  Patient_ID: patient
+  Sample_ID: sample
+  Extension: csv
+  Index: Object
 NAS:
   method: NAS
   output_name_file: IMC_IF_PDAC

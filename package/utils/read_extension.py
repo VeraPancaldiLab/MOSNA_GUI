@@ -6,7 +6,7 @@ def get_opener(extension):
             return pd.read_csv(path)
         return opener
 
-    if extension == "parquet":
+    elif extension == "parquet":
         def opener(path):
             return pd.read_parquet(path)
         return opener

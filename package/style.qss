@@ -77,3 +77,52 @@ QToolTip {
     color: #333;
     border: 1px solid #d4ac0d;
 }
+
+QLabel#RunStatusLabel {
+    background: #1e293b;   /* bleu ardoise foncé opaque */
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 10px 12px;
+    color: #e5e7eb;
+}
+
+QProgressBar#RunProgressBar {
+    background: #1e293b;   /* même fond que le statut */
+    border: 1px solid #334155;
+    border-radius: 12px;
+    height: 18px;
+    padding: 2px;
+    text-align: center;
+    color: #e5e7eb;
+}
+
+/* Barre remplie */
+QProgressBar#RunProgressBar::chunk {
+    border-radius: 10px;
+    margin: 1px;
+
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0  #38bdf8,
+        stop: 0.5 #3b82f6,
+        stop: 1  #2563eb
+    );
+}
+
+/* Succès */
+QProgressBar#RunProgressBar[status="success"]::chunk {
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0  #22c55e,
+        stop: 1  #10b981
+    );
+}
+
+/* Erreur */
+QProgressBar#RunProgressBar[status="error"]::chunk {
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0  #ef4444,
+        stop: 1  #f43f5e
+    );
+}

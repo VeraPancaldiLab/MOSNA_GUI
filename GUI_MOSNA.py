@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import yaml
 import ast
@@ -10,22 +11,24 @@ from yaml.representer import SafeRepresenter
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QFileDialog, QMessageBox,
     QPushButton, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel, QLineEdit,
-    QTextEdit, QFormLayout, QComboBox, QMessageBox
+    QTextEdit, QFormLayout, QComboBox, QProgressBar
 )
 from PySide6.QtCore import QThread, Signal, QTimer
 
 
 BASE_DIR = Path(__file__).resolve().parent
 
-CONFIG_PATH = str(BASE_DIR / 'CONFIG' / 'configuration_v2.yaml')
+CONFIG_PATH = str(BASE_DIR / 'CONFIG' / 'configuration.yaml')
 SCRIPTS = [
     str(BASE_DIR / 'package' / 'tysserand_network.py'),
     str(BASE_DIR / 'package' / 'assortativity.py'),
+    str(BASE_DIR / 'package' / 'niche_analysis.py'),
     str(BASE_DIR / 'package' / 'clear_temporary_files.sh'),
 ]
 
 class ScriptRunnerThread(QThread):
     finished_signal = Signal(bool, int, str)
+    output_line = Signal(str)  # Nouvelle sortie temps réel
 
     def __init__(self, command, cwd=None, env=None):
         super().__init__()
@@ -35,21 +38,33 @@ class ScriptRunnerThread(QThread):
 
     def run(self):
         try:
-            completed = subprocess.run(
+            proc = subprocess.Popen(
                 self.command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                check=False,
                 cwd=self.cwd,
                 env=self.env,
+                bufsize=1,
+                universal_newlines=True
             )
-            success = (completed.returncode == 0)
-            output = completed.stdout or ""
-            self.finished_signal.emit(success, completed.returncode, output)
+
+            collected = []
+
+            # Lecture temps réel
+            if proc.stdout is not None:
+                for line in proc.stdout:
+                    line = line.rstrip("\n")
+                    collected.append(line)
+                    self.output_line.emit(line)
+
+            returncode = proc.wait()
+            output = "\n".join(collected)
+            success = (returncode == 0)
+            self.finished_signal.emit(success, returncode, output)
+
         except Exception as e:
             self.finished_signal.emit(False, -1, f"Error while running the command: {e}")
-
 class FlowStyleList(list):
     pass
 
@@ -103,6 +118,7 @@ class MosnaGUI(QMainWindow):
             "Phenotype column":(str, type(None)),
             "Index":(str, type(None)),
 
+            ### NAS ###
             "method": (str, type(None)),
             "output_name_file": (str, type(None)),
             "node_aggregation": (bool, type(None)),
@@ -124,6 +140,7 @@ class MosnaGUI(QMainWindow):
         }
 
     def _on_script_finished(self, script, success, returncode, output):
+        self._progress_stop(success)
         base = os.path.basename(script)
 
         if success:
@@ -283,6 +300,70 @@ class MosnaGUI(QMainWindow):
                 combo.setCurrentText(value)
             return combo
 
+        if lower_key in ['network directory']:
+            container = QWidget()
+            layout = QHBoxLayout(container)
+            layout.setContentsMargins(0, 0, 0, 0)
+
+            combo = QComboBox()
+            combo.addItems(['Default', 'Custom'])
+
+            path_edit = QLineEdit()
+            browse_btn = QPushButton("Browse")
+
+            if value is None:
+                combo.setCurrentText('Default')
+                path_edit.setEnabled(False)
+                browse_btn.setEnabled(False)
+            else:
+                combo.setCurrentText('Custom')
+                path_edit.setText(str(value))
+
+            def toggle_mode():
+                is_custom = combo.currentText() == 'Custom'
+                path_edit.setEnabled(is_custom)
+                browse_btn.setEnabled(is_custom)
+
+            combo.currentIndexChanged.connect(toggle_mode)
+
+            def browse():
+                selected = QFileDialog.getExistingDirectory(self, "Select folder")
+                if selected:
+                    path_edit.setText(selected)
+
+            browse_btn.clicked.connect(browse)
+
+            layout.addWidget(combo)
+            layout.addWidget(path_edit)
+            layout.addWidget(browse_btn)
+
+            container._combo = combo
+            container._path_edit = path_edit
+
+            return container
+        
+        if lower_key in ['nodes directory']:
+            container = QWidget()
+            layout = QHBoxLayout(container)
+            layout.setContentsMargins(0, 0, 0, 0)
+
+            path_edit = QLineEdit(str(value) if value else "")
+            browse_btn = QPushButton("Browse")
+
+            def browse():
+                selected = QFileDialog.getExistingDirectory(self, "Select folder")
+                if selected:
+                    path_edit.setText(selected)
+
+            browse_btn.clicked.connect(browse)
+
+            layout.addWidget(path_edit)
+            layout.addWidget(browse_btn)
+
+            container._path_edit = path_edit
+
+            return container
+
         if lower_key in ['stat_funcs'] and isinstance(value, str):
             options = ['np.mean,np.std', 'np.mean']
             combo = QComboBox()
@@ -306,6 +387,40 @@ class MosnaGUI(QMainWindow):
 
         return QLineEdit(str(value))
 
+    def _on_script_output_line(self, line: str):
+        if not line:
+            return
+        
+        if line.startswith("[QT_INFO]"):
+            msg = line.replace("[QT_INFO]", "").strip()
+            if msg:
+                self.run_status_label.setText(msg)
+            return
+
+        if line.startswith("[QT_PROGRESS]"):
+            payload = line.replace("[QT_PROGRESS]", "").strip()
+
+            m_cur = re.search(r"current=(\d+)", payload)
+            m_tot = re.search(r"total=(\d+)", payload)
+
+            if not (m_cur and m_tot):
+                return
+
+            current = int(m_cur.group(1))
+            total = int(m_tot.group(1))
+
+            m_desc = re.search(r"desc=(.*)$", payload)
+            desc = m_desc.group(1).strip() if m_desc else ""
+            if desc:
+                self.run_status_label.setText(desc)
+
+            if total > 0:
+                if self.run_progress.maximum() != total:
+                    self.run_progress.setRange(0, total)
+                self.run_progress.setValue(min(current, total))
+
+            return
+
     def _build_ui(self):
         main_widget = QWidget()
         self.setCentralWidget(main_widget)
@@ -315,13 +430,17 @@ class MosnaGUI(QMainWindow):
         self.working_dir_label.setStyleSheet(
             "padding: 6px; background-color: #f2f2f2; border: 1px solid #d0d0d0;"
         )
+
         layout.addWidget(self.working_dir_label)
 
         self.tabs = QTabWidget()
-        layout.addWidget(self.tabs)
+        layout.addWidget(self.tabs, stretch=1)
 
         order = ['General', 'Tysserand', 'Assortativity', 'NAS', 'documentation']
-        general_data = {k: v for k, v in self.config_data.items() if not isinstance(v, dict) and k != 'documentation'}
+        general_data = {
+            k: v for k, v in self.config_data.items()
+            if not isinstance(v, dict) and k != 'documentation'
+        }
         self._add_tab("General", "__general__", general_data)
 
         for key in order[1:]:
@@ -347,6 +466,21 @@ class MosnaGUI(QMainWindow):
         self.save_btn = QPushButton("Save Config")
         self.save_btn.clicked.connect(self._on_save)
         layout.addWidget(self.save_btn)
+
+        self.run_status_label = QLabel("Aucun script en cours")
+        self.run_status_label.setStyleSheet("padding: 6px;")
+
+        self.run_progress = QProgressBar()
+        self.run_progress.setVisible(True)
+
+        self.run_progress.setRange(0, 1)
+        self.run_progress.setValue(0)
+
+        self.run_status_label.setObjectName("RunStatusLabel")
+        self.run_progress.setObjectName("RunProgressBar")
+
+        layout.addWidget(self.run_status_label)
+        layout.addWidget(self.run_progress)
 
     def _add_tab(self, tab_name, section_key, data):
         tab = QWidget()
@@ -401,6 +535,14 @@ class MosnaGUI(QMainWindow):
             self.entries.setdefault(section_key, {})[k] = widget_field
         tab_widget.addTab(widget, name)
 
+    def _progress_start(self, title: str):
+        self.run_status_label.setText(title)
+        self.run_progress.setRange(0, 0)
+
+    def _progress_stop(self, success: bool):
+        self.run_progress.setRange(0, 100)
+        self.run_progress.setValue(100 if success else 0)
+
     def _add_doc_tab(self, doc):
         tab = QWidget()
         layout = QVBoxLayout(tab)
@@ -425,6 +567,14 @@ class MosnaGUI(QMainWindow):
         self.tabs.addTab(tab, "Documentation")
 
     def _parse_value(self, key, widget):
+
+        if hasattr(widget, "_path_edit"):
+            return widget._path_edit.text().strip() or None
+
+        if hasattr(widget, "_combo") and hasattr(widget, "_path_edit"):
+            if widget._combo.currentText() == "Default":
+                return None
+            return widget._path_edit.text().strip() or None
         if isinstance(widget, QTextEdit):
             val = widget.toPlainText().strip()
         elif isinstance(widget, QComboBox):
@@ -547,17 +697,26 @@ class MosnaGUI(QMainWindow):
         prefix = str(BASE_DIR)
         env["PYTHONPATH"] = prefix if not existing else prefix + os.pathsep + existing
 
+        env["ENABLE_QT_PROGRESS"] = "1"
+        base = os.path.basename(script)
+        self._progress_start(f"Script en cours : {base}")
+
         self.script_thread = ScriptRunnerThread(cmd, cwd=self.working_dir, env=env)
+
+        # Connexion temps réel : indispensable pour mettre à jour le statut et la barre
+        self.script_thread.output_line.connect(self._on_script_output_line)
+
         self.script_thread.finished_signal.connect(
             lambda success, code, out: self._on_script_finished(script, success, code, out)
         )
-        self.script_thread.start()
 
+        self.script_thread.start()
+  
 if __name__ == '__main__':
     app = QApplication(sys.argv)
 
     try:
-        with open("./SCRIPT/style.qss", encoding="utf-8") as f:
+        with open("./package/style.qss", encoding="utf-8") as f:
             app.setStyleSheet(f.read())
     except Exception as e:
         print(f"Impossible to download the style file : {e}")
