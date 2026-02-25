@@ -117,9 +117,8 @@ class MosnaGUI(QMainWindow):
 
             ### NAS ###
             "method": (str, type(None)),
-            "output_name_file": (str, type(None)),
-            "node_aggregation": (bool, type(None)),
-            "perform_NAS_all_sample": (bool, type(None)),
+            "Aggregated nodes": (bool, type(None)),
+            "Per sample": (bool, type(None)),
             "order": (str, type(None)),
             "stat_funcs": (str, type(None)),
             "stat_names": (list, type(None)),
@@ -242,7 +241,7 @@ class MosnaGUI(QMainWindow):
         lower_key = key.lower()
 
         if lower_key in ['method'] and isinstance(value, str):
-            options = ['NAS']
+            options = ['NAS', "SCAN-IT"]
             combo = QComboBox()
             combo.addItems(options)
             if value in options:
