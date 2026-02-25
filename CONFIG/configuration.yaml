@@ -1,22 +1,22 @@
 silent: false
 Tysserand:
-  Nodes directory: /home/owen.griere/Desktop/Tobylawrence_PDACIMC/Processed_data/mosna_networks
+  Nodes directory: /home/owen.griere/Desktop/Xenium TRANSCAN/pre_processed_files
   Patient column name: patient
-  Sample column name: sample
+  Sample column name: null
   Extension: parquet
-  X coordinates column: centroid-0
-  Y coordinates column: centroid-1
-  Phenotype column: Phenotype
+  X coordinates column: x
+  Y coordinates column: y
+  Phenotype column: Cell_type
   Edges method: delaunay
   Min neighbors: 3
   CPU: 20
 Assortativity:
   Network directory: Default
-  Phenotype column: Phenotype
-  Patient_ID: patient
-  Sample_ID: sample
+  Phenotype column: Cell_type
+  Patient column name: patient
+  Sample column name: null
   Extension: csv
-  Index: Object
+  Index: cell
 NAS:
   method: NAS
   output_name_file: IMC_IF_PDAC

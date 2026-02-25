@@ -15,7 +15,6 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import QThread, Signal, QTimer
 
-
 BASE_DIR = Path(__file__).resolve().parent
 
 CONFIG_PATH = str(BASE_DIR / 'CONFIG' / 'configuration.yaml')
@@ -113,8 +112,6 @@ class MosnaGUI(QMainWindow):
 
             ### Assortativity features ###
             "Network_directory": (str, type(None)),
-            "Patient_ID":(str, type(None)),
-            "Sample_ID":(str, type(None)),
             "Phenotype column":(str, type(None)),
             "Index":(str, type(None)),
 
@@ -299,6 +296,41 @@ class MosnaGUI(QMainWindow):
             if value in options:
                 combo.setCurrentText(value)
             return combo
+
+        if lower_key == "sample column name":
+            container = QWidget()
+            layout = QHBoxLayout(container)
+            layout.setContentsMargins(0, 0, 0, 0)
+
+            mode = QComboBox()
+            mode.addItems(["None", "Custom"])
+
+            edit = QLineEdit()
+
+            if value is None:
+                mode.setCurrentText("None")
+                edit.setText("")
+                edit.setEnabled(False)
+            else:
+                mode.setCurrentText("Custom")
+                edit.setText(str(value))
+                edit.setEnabled(True)
+
+            def toggle_mode():
+                is_custom = (mode.currentText() == "Custom")
+                edit.setEnabled(is_custom)
+                if not is_custom:
+                    edit.setText("")
+
+            mode.currentIndexChanged.connect(toggle_mode)
+
+            layout.addWidget(mode)
+            layout.addWidget(edit)
+
+            container._mode_combo = mode
+            container._value_edit = edit
+
+            return container   
 
         if lower_key in ['network directory']:
             container = QWidget()
@@ -575,6 +607,14 @@ class MosnaGUI(QMainWindow):
             if widget._combo.currentText() == "Default":
                 return None
             return widget._path_edit.text().strip() or None
+        
+        if hasattr(widget, "_mode_combo") and hasattr(widget, "_value_edit"):
+            mode = widget._mode_combo.currentText().strip()
+            if mode == "None":
+                return None
+            txt = widget._value_edit.text().strip()
+            return txt if txt != "" else None
+
         if isinstance(widget, QTextEdit):
             val = widget.toPlainText().strip()
         elif isinstance(widget, QComboBox):

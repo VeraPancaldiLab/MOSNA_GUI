@@ -8,4 +8,6 @@ def assert_file_for_tysserand(file, config, extension):
     assert config["Y coordinates column"] in df.columns, f'{config["Y coordinates column"]} are not {df}'
     assert config["Phenotype column"] in df.columns, f'{config["Phenotype column"]} are not in {df}'
     assert config["Patient column name"] in file.stem, f'{config["Patient column name"]} are not present in this file name : {file}'
-    assert config["Sample column name"] in file.stem, f'{config["Sample column name"]} are not present in this file name : {file}'
+
+    value = config.get("Sample column name", None)
+    assert value is None or value in file.stem , f'Sample column name are not present in this file name : {file}'
