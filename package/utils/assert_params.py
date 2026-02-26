@@ -21,6 +21,42 @@ def assert_params(analyse_to_perform, config):
         assert isinstance(config["Index"],str), "Index parameter must be str"
 
     elif analyse_to_perform == "NAS":
-        print(0)
+        assert isinstance(config["Phenotype column"],str), "Phenotype column parameter must be str"
+        assert isinstance(config["Patient column name"],str), "Patient column name parameter must be str"
+        assert isinstance(config["Sample column name"],str) or isinstance(config['Sample column name'], type(None)), "Sample column name parameter must be str"
+        assert isinstance(config["Extension"],str), "Extension parameter must be str"
+        assert isinstance(config["Processing method"], str), "Processing method must be str"
+        assert isinstance(config["Niches method"], str), "Niches method must be str"
+        assert isinstance(config["Phenotype column"], str), "Phenotype column must be str"
+
+        if config["Processing method"] == "Aggregated nodes":
+            verification_list = ['Aggregated nodes']
+        elif config["Processing method"] == "Per sample":
+            verification_list = ['Per sample']
+        else:
+            verification_list = ["Aggregated nodes", 'Per sample']
+
+        for verification_process in verification_list:
+            assert isinstance(config[verification_process]["order"], str), "order must be str"
+            assert isinstance(config[verification_process]['stat_funcs'],list), "stat_funcs must be list"
+            assert isinstance(config[verification_process]["stat_names"],list), "stat_names must be list"
+            assert isinstance(config[verification_process]["clusterer_type"], str), "clusterer_type must be str"
+            assert config[verification_process]["clusterer_type"] in ["leiden","ecg",'spectral',"gmm"]
+
+            assert isinstance(config[verification_process]["n_clusters"], int), "n_clusters must be int"
+            assert isinstance(config[verification_process]["reducer_type"], str), 'reducer type must be str'
+            assert config[verification_process]["reducer_type"] in ['umap']
+
+            assert isinstance(config[verification_process]["metric"], str), "metric must be str"
+            assert config[verification_process]["metric"] in ['manhattan', 'euclidean', 'cosine']
+
+            assert isinstance(config[verification_process]["resolution"], float), "resolution must be float"
+            assert isinstance(config[verification_process]["n_neighbors"], int), "n_neighbors must be int"
+            assert isinstance(config[verification_process]["min_dist"], float), "min_dist must be float"
+            assert isinstance(config[verification_process]["dim_clust"], int), "dim_clust must be int"
+            assert isinstance(config[verification_process]["min_cluster_size"], int), "min_cluster_size must be int"
+            assert isinstance(config[verification_process]["k_cluster"], int), "k_cluster must be int"
+            assert isinstance(config[verification_process]["normalize"], str), "normalize must be str"
+            assert config[verification_process]["normalize"] in ['total', 'niche', 'obs', 'clr', 'niche&obs']
 
     return None
