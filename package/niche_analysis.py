@@ -3,35 +3,63 @@ from pathlib import Path
 
 from package.utils.read_config import get_config, get_arguments
 from package.utils.assert_params import assert_params
-
+from package.core.NAS.find_all_pheno import find_all_pheno
+from package.utils.convert_net_dir import convert_net_dir
+from package.core.NAS.assert_net_niches import assert_net_niches
 
 from mosna import mosna
 
 def main():
 
-    ### --- PRE-PROCESS --- ###
+    ############################## --- PRE-PROCESS --- ####################################
 
     analyse = "Niche Analysis"
 
     config_path, working_dir = get_arguments()
     config = get_config(config_path)[analyse]
     working_dir = Path(working_dir)
+    temp_folder = working_dir / "temp/net_dir_mosna"
 
     assert_params(analyse, config)
 
-    with_aggregation = config["Aggregated nodes"]
-    per_sample = config['Per sample']
+    with_aggregation = per_sample = False
+    if config["Processing method"] == 'Aggregated nodes':
+        with_aggregation = True
+    elif config["Processing method"] == 'Per sample':
+        per_sample = True
+    else:
+        per_sample = with_aggregation = True
 
-    ### --- PROCESS --- ###
+    
+
+    if config['Network directory'] == 'Default':
+        net_dir = temp_folder
+        extension = 'parquet'
+        assert_net_niches(net_dir)
+    else:
+        extension = config['Extension']
+        net_dir = config['Network directory']
+        assert_net_niches(net_dir)
+        if extension != "parquet":
+            convert_net_dir(net_dir, config["Patient column name"], config.get("Sample column name:", "sample"), extension, temp_folder)
+            extension = 'parquet'
+            net_dir = temp_folder
+
+    uniq_phenotype = find_all_pheno(net_dir,
+                                    extension,
+                                    config["Phenotype column"],
+                                    config["Patient column name"],
+                                    config.get("Sample column name:", "sample"))
+
+    ############################## --- PROCESS --- #######################################
+
     if with_aggregation:
-
 
         save_dir = working_dir / "Output/Niche Analysis/Aggregation"
         save_dir.mkdir(exist_ok=True, parents=True)
-        uniq_phenotype = 
         kwargs = {
             "method": config.get("method", "NAS"),
-            "net_dir": config['Network directory'],
+            "net_dir": net_dir,
             "save_dir": save_dir,
             "pheno_col": config["Phenotype column"], 
             "uniq_phenotype": uniq_phenotype,   
@@ -40,7 +68,7 @@ def main():
             "id_level_1": config.get("Patient column name", "patient"),
             "id_level_2": config.get("Sample column name:", "sample"),
 
-            # Clustering / réduction
+            ################ Clustering / réduction
             "reducer_type": config["Aggregated nodes"].get("reducer_type", "umap"),
             "clusterer_type": config["Aggregated nodes"].get("clusterer_type", "leiden"),
             "n_neighbors": int(config["Aggregated nodes"].get("n_neighbors", 15)),
@@ -52,22 +80,20 @@ def main():
             "min_cluster_size": float(config["Aggregated nodes"].get("min_cluster_size", 0.001)),
             "k_cluster": int(config["Aggregated nodes"].get("k_cluster", 8)),
 
-            # Normalisation composition niches
+            ################ Normalisation composition niches
             "normalize": config["Aggregated nodes"].get("normalize", "total"),
         }
         from package.core.NAS.aggregated_niches import aggregated_niches
-
         aggregated_niches(**kwargs)
+
 
     elif per_sample:
 
         save_dir = save_dir = working_dir / "Output/Niche Analysis/Per sample"
         save_dir.mkdir(exist_ok=True, parents=True)
-        uniq_phenotype = 
-
         kwargs = {
             "method": config.get("method", "NAS"),
-            "net_dir": config['Network directory'],
+            "net_dir": net_dir,
             "save_dir": save_dir,
             "pheno_col": config["Phenotype column"], 
             "uniq_phenotype": uniq_phenotype,    
@@ -76,7 +102,7 @@ def main():
             "id_level_1": config.get("Patient column name", "patient"),
             "id_level_2": config.get("Sample column name:", "sample"),
 
-            # Clustering / réduction
+            ############# Clustering / réduction
             "reducer_type": config["Per sample"].get("reducer_type", "umap"),
             "clusterer_type": config["Per sample"].get("clusterer_type", "leiden"),
             "n_neighbors": int(config["Per sample"].get("n_neighbors", 15)),
@@ -88,9 +114,11 @@ def main():
             "min_cluster_size": float(config["Per sample"].get("min_cluster_size", 0.001)),
             "k_cluster": int(config["Per sample"].get("k_cluster", 8)),
 
-            # Normalisation composition niches
+            ########## Normalisation composition niches
             "normalize": config["Per sample"].get("normalize", "total"),
         }
         from package.core.NAS.niches_per_sample import niches_per_sample
-
         niches_per_sample(**kwargs)
+
+if __name__ == '__main__':
+    main()

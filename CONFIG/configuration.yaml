@@ -19,11 +19,11 @@ Assortativity:
   Index: cell
 Niche Analysis:
   Network directory: Default
+  Extension: parquet
   Patient column name: patient
   Sample column name: null
-  Aggregated nodes: true
-  Per sample: false
-  method: NAS
+  Processing method: Aggregated nodes
+  Niches method: NAS
   Phenotype column: Cell_type
   Aggregated nodes:
     order: '1'

@@ -116,9 +116,8 @@ class MosnaGUI(QMainWindow):
             "Index":(str, type(None)),
 
             ### NAS ###
-            "method": (str, type(None)),
-            "Aggregated nodes": (bool, type(None)),
-            "Per sample": (bool, type(None)),
+            "Niches method": (str, type(None)),
+            "Processing method":(str, type(None)),
             "order": (str, type(None)),
             "stat_funcs": (str, type(None)),
             "stat_names": (list, type(None)),
@@ -240,14 +239,22 @@ class MosnaGUI(QMainWindow):
 
         lower_key = key.lower()
 
-        if lower_key in ['method'] and isinstance(value, str):
+        if lower_key in ['niches method'] and isinstance(value, str):
             options = ['NAS', "SCAN-IT"]
             combo = QComboBox()
             combo.addItems(options)
             if value in options:
                 combo.setCurrentText(value)
             return combo
-
+        
+        if lower_key in ['processing method'] and isinstance(value, str):
+            options = ['Aggregated nodes','Per sample' ,'both']
+            combo = QComboBox()
+            combo.addItems(options)
+            if value in options:
+                combo.setCurrentText(value)
+            return combo
+        
         if lower_key in ['reducer_type'] and isinstance(value, str):
             options = ['umap']
             combo = QComboBox()
