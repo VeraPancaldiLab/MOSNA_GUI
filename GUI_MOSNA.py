@@ -7,17 +7,21 @@ import subprocess
 import shlex
 from pathlib import Path
 from yaml.representer import SafeRepresenter
+import markdown
 
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QFileDialog, QMessageBox,
     QPushButton, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel, QLineEdit,
-    QTextEdit, QFormLayout, QComboBox, QProgressBar
+    QTextEdit, QFormLayout, QComboBox, QProgressBar, QTextBrowser
 )
 from PySide6.QtCore import QThread, Signal, QTimer
+from PySide6.QtCore import QUrl
 
 BASE_DIR = Path(__file__).resolve().parent
 
 CONFIG_PATH = str(BASE_DIR / 'CONFIG' / 'configuration.yaml')
+DOC_HTML_PATH = BASE_DIR / "DOC" / "documentation.html"
 SCRIPTS = [
     str(BASE_DIR / 'package' / 'tysserand_network.py'),
     str(BASE_DIR / 'package' / 'assortativity.py'),
@@ -96,7 +100,6 @@ class MosnaGUI(QMainWindow):
         QTimer.singleShot(0, self._ask_working_dir_at_start)
 
         self.expected_types = {
-            "silent": (bool, type(None)),
 
             ### Tysserand features ###
             "Nodes directory":(str, type(None)),
@@ -178,6 +181,27 @@ class MosnaGUI(QMainWindow):
             return
 
         self._set_ui_enabled(True)
+
+    def _add_html_doc_tab_textedit(self, html_path: Path, tab_title: str = "Documentation"):
+        """
+        J'affiche un fichier HTML externe dans un QTextBrowser.
+        Ce widget est adapté à l'affichage HTML avec gestion des liens.
+        """
+        tab = QWidget()
+        layout = QVBoxLayout(tab)
+
+        view = QTextBrowser()
+        view.setReadOnly(True)
+        view.setOpenExternalLinks(True)  # Les liens s'ouvrent dans le navigateur système
+
+        if html_path.exists():
+            # setSource permet à Qt de gérer correctement les chemins relatifs (CSS, images)
+            view.setSource(QUrl.fromLocalFile(str(html_path.resolve())))
+        else:
+            view.setHtml(f"<h1>Documentation</h1><p>Fichier introuvable : {html_path}</p>")
+
+        layout.addWidget(view)
+        self.tabs.addTab(tab, tab_title)
 
     def choose_working_dir(self, mandatory=False) -> bool:
         """
@@ -474,14 +498,18 @@ class MosnaGUI(QMainWindow):
         self.tabs = QTabWidget()
         layout.addWidget(self.tabs, stretch=1)
 
-        order = ['General', 'Tysserand', 'Assortativity', 'NAS', 'documentation']
+        self._add_html_doc_tab_textedit(DOC_HTML_PATH, tab_title="Documentation")
+        order = ['Tysserand', 'Assortativity', 'NAS']
+
+        """
         general_data = {
             k: v for k, v in self.config_data.items()
-            if not isinstance(v, dict) and k != 'documentation'
+            if not isinstance(v, dict) and k != 'documentation' and k != 'silent'
         }
         self._add_tab("General", "__general__", general_data)
+        """
 
-        for key in order[1:]:
+        for key in order:
             if key == "documentation" and "documentation" in self.config_data:
                 self._add_doc_tab(self.config_data['documentation'])
             elif key in self.config_data and isinstance(self.config_data[key], dict):
