@@ -1,0 +1,12 @@
+.ipynb_checkpoints
+*dask-worker-space*
+.spyproject
+data/
+images/
+batch*
+*.pdf
+*__pychache__*
+*.pyc
+*.png
+*.egg-info*
+*.DS_Store
