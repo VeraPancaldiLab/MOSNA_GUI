@@ -791,7 +791,7 @@ def main():
     app = QApplication(sys.argv)
 
     try:
-        with open("./package/style.qss", encoding="utf-8") as f:
+        with open(BASE_DIR / "package/style.qss", encoding="utf-8") as f:
             app.setStyleSheet(f.read())
     except Exception as e:
         print(f"Impossible to download the style file : {e}")
