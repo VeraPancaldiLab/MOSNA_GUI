@@ -328,6 +328,41 @@ def main():
                     combo.setCurrentText(value)
                 return combo
 
+            if lower_key == "index":
+                container = QWidget()
+                layout = QHBoxLayout(container)
+                layout.setContentsMargins(0, 0, 0, 0)
+
+                mode = QComboBox()
+                mode.addItems(["index", "Custom"])
+
+                edit = QLineEdit()
+
+                if value in (None, "index"):
+                    mode.setCurrentText("index")
+                    edit.setText("index")
+                    edit.setEnabled(False)
+                else:
+                    mode.setCurrentText("Custom")
+                    edit.setText(str(value))
+                    edit.setEnabled(True)
+
+                def toggle_mode():
+                    is_custom = (mode.currentText() == "Custom")
+                    edit.setEnabled(is_custom)
+                    if not is_custom:
+                        edit.setText("")
+
+                mode.currentIndexChanged.connect(toggle_mode)
+
+                layout.addWidget(mode)
+                layout.addWidget(edit)
+
+                container._mode_combo = mode
+                container._value_edit = edit
+
+                return container 
+
             if lower_key == "sample column name":
                 container = QWidget()
                 layout = QHBoxLayout(container)

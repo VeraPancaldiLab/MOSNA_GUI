@@ -6,8 +6,8 @@ ENV_NAME="test-GUI"
 PY_VER="3.10"
 
 # Chemin absolu vers ton script GUI
-MOSNA_SCRIPT="/home/owen.griere/Desktop/Mosna_GUI/GUI_MOSNA.py"
-APP_DIR="/home/owen.griere/Desktop/Mosna_GUI"
+APP_DIR="/home/owen.griere/Desktop/MOSNA_GUI"
+MOSNA_SCRIPT="${APP_DIR}/GUI_MOSNA.py"
 
 # Où créer l'icône + launcher (Desktop)
 DESKTOP_DIR="${HOME}/Desktop"
@@ -28,7 +28,7 @@ conda create -y -n "${ENV_NAME}" -c conda-forge python="${PY_VER}" scanpy
 conda activate "${ENV_NAME}"
 
 echo "[2/4] Installation dépendances"
-conda install -y -c conda-forge "scipy<1.14" "lifelines<0.28" pyside6 pyyaml ipykernel ipywidgets markdown
+conda install -y -c conda-forge "scipy<1.14" pyside6 pyyaml ipykernel ipywidgets markdown
 pip install markdown || true
 
 echo "[3/4] Installation de mosna en editable"
@@ -36,6 +36,7 @@ echo "[3/4] Installation de mosna en editable"
 cd mosna-package
 pip install -e .
 cd ..
+conda install -y -c conda-forge "lifelines<0.28"
 
 echo "[4/4] Création du launcher + icône de bureau"
 

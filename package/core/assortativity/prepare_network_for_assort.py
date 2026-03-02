@@ -6,7 +6,7 @@ from .transform_nodes import transform_nodes
 from .assert_net_assortativity import assert_nodes_assortativity, assert_edges_assortativity
 from ...utils.emit_qt_progress import emit_qt_progress
 
-def prepare_network_for_assort(net_dir, temp_dir, Pheno_col, id_level_1="patient", id_level_2="sample", extension="csv", nodes_index=None):
+def prepare_network_for_assort(net_dir, temp_dir, Pheno_col, id_level_1="patient", id_level_2="sample", extension="csv", nodes_index='index'):
     if id_level_2 is None:
         edges_files = sorted(net_dir.glob(f"edges_{id_level_1}-*.{extension}"))
         nodes_files = sorted(net_dir.glob(f"nodes_{id_level_1}-*.{extension}"))
@@ -33,6 +33,10 @@ def prepare_network_for_assort(net_dir, temp_dir, Pheno_col, id_level_1="patient
     emit_qt_progress(0, len(nodes_files), "[PRE-PROCESSING] Nodes traitement")
     for i, nodes in enumerate(tqdm(nodes_files, desc="[PRE-PROCESSING] Nodes traitement")):
         df_node = opener(nodes)
+        if df_node.index.name == nodes_index:
+            df_node = df_node.reset_index()
+        elif nodes_index == 'index':
+            df_node = df_node.reset_index()
         df_node[nodes_index] = df_node[nodes_index].astype(str)
         df_node = transform_nodes(df_node, Pheno_col, nodes_index, all_classes)
         assert_nodes_assortativity(df_node, Pheno_col)
