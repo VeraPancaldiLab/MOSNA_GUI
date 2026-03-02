@@ -22,7 +22,7 @@ def main():
     BASE_DIR = Path(__file__).resolve().parent
 
     CONFIG_PATH = str(BASE_DIR / 'CONFIG' / 'configuration.yaml')
-    DOC_HTML_PATH = BASE_DIR / "DOC" / "documentation.html"
+    DOC_HTML_PATH = BASE_DIR / 'package' / "DOC" / "documentation.html"
     SCRIPTS = [
         str(BASE_DIR / 'package' / 'tysserand_network.py'),
         str(BASE_DIR / 'package' / 'assortativity.py'),
