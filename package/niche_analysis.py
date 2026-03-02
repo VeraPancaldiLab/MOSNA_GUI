@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+import shutil
 
 from package.utils.read_config import get_config, get_arguments
 from package.utils.assert_params import assert_params
@@ -7,6 +8,8 @@ from package.core.NAS.find_all_pheno import find_all_pheno
 from package.utils.convert_net_dir import convert_net_dir
 from package.core.NAS.assert_net_niches import assert_net_niches
 from package.utils.emit_qt_progress import emit_qt_info
+from package.utils.save_config import save_config
+from package.core.tysserand.draw_tysserand_niches import draw_tysserand_niches
 
 from mosna import mosna
 
@@ -68,7 +71,7 @@ def main():
 
     if with_aggregation:
 
-        save_dir = working_dir / "Output/Niche Analysis/Aggregation"
+        save_dir = working_dir / "Output/Niche Analysis/Aggregation" / config['Saving directory']
         save_dir.mkdir(exist_ok=True, parents=True)
         kwargs = {
             "method": config.get("method", "NAS"),
@@ -101,10 +104,18 @@ def main():
 
         emit_qt_info('[INFO] Niches found for aggregated nodes')
 
+        for path in save_dir.glob("reducer_umap*"):
+            if path.is_dir():
+                shutil.rmtree(path)
+        save_config(save_dir, config)
+
+        X, Y = get_config(config_path)['Tysserand']['X coordinates column'], get_config(config_path)['Tysserand']['Y coordinates column']
+
+        draw_tysserand_niches(net_dir, save_dir, kwargs['id_level_1'], kwargs['id_level_2'], X, Y)
 
     elif per_sample:
 
-        save_dir = save_dir = working_dir / "Output/Niche Analysis/Per sample"
+        save_dir = save_dir = working_dir / "Output/Niche Analysis/Per sample" / config['Saving directory']
         save_dir.mkdir(exist_ok=True, parents=True)
         kwargs = {
             "method": config.get("method", "NAS"),
@@ -136,6 +147,17 @@ def main():
         niches_per_sample(**kwargs)
 
         emit_qt_info('[INFO] Niches found for each samples')
+
+        for path in save_dir.glob("reducer_umap*"):
+            if path.is_dir():
+                shutil.rmtree(path)
+        save_config(save_dir, config)
+
+        X, Y = get_config(config_path)['Tysserand']['X coordinates column'], get_config(config_path)['Tysserand']['Y coordinates column']
+
+        draw_tysserand_niches(net_dir, save_dir, kwargs['id_level_1'], kwargs['id_level_2'], X, Y)
+        
+        
 
 if __name__ == '__main__':
     main()

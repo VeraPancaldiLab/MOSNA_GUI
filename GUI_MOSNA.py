@@ -85,6 +85,7 @@ def main():
         return obj
 
     class MosnaGUI(QMainWindow):
+        
         def __init__(self):
             super().__init__()
             self.setWindowTitle("Mosna Analysis GUI")
@@ -120,6 +121,7 @@ def main():
                 "Index":(str, type(None)),
 
                 ### NAS ###
+                "Saving directory": (str, type(None)),
                 "Niches method": (str, type(None)),
                 "Processing method":(str, type(None)),
                 "order": (str, type(None)),
