@@ -2,18 +2,19 @@
 set -euo pipefail
 
 # --------- Paramètres à adapter ---------
-ENV_NAME="mosna-GUI"
+ENV_NAME="test-GUI"
 PY_VER="3.10"
 
 # Chemin absolu vers ton script GUI
-MOSNA_SCRIPT="/home/owen.griere/Desktop/Mosna_analysis/GUI_MOSNA.py"
+MOSNA_SCRIPT="/home/owen.griere/Desktop/Mosna_GUI/GUI_MOSNA.py"
+APP_DIR="/home/owen.griere/Desktop/Mosna_GUI"
 
 # Où créer l'icône + launcher (Desktop)
 DESKTOP_DIR="${HOME}/Desktop"
 
 # Nom affiché
 APP_NAME="Mosna GUI"
-LAUNCHER_SH="${DESKTOP_DIR}/MosnaGUI.sh"
+LAUNCHER_SH="${APP_DIR}/MosnaGUI.sh"
 DESKTOP_FILE="${DESKTOP_DIR}/MosnaGUI.desktop"
 # ---------------------------------------
 
@@ -56,6 +57,7 @@ Type=Application
 Name=${APP_NAME}
 Comment=Lance l'interface MOSNA dans l'environnement conda
 Exec=/bin/bash -lc "${LAUNCHER_SH}"
+Icon=${APP_DIR}/package/DOC/logo_Mosna_GUI.png
 Terminal=false
 Categories=Science;Utility;
 StartupNotify=true
