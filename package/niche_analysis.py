@@ -6,6 +6,7 @@ from package.utils.assert_params import assert_params
 from package.core.NAS.find_all_pheno import find_all_pheno
 from package.utils.convert_net_dir import convert_net_dir
 from package.core.NAS.assert_net_niches import assert_net_niches
+from package.utils.emit_qt_progress import emit_qt_info
 
 from mosna import mosna
 
@@ -35,22 +36,34 @@ def main():
     if config['Network directory'] == 'Default':
         net_dir = temp_folder
         extension = 'parquet'
-        assert_net_niches(net_dir)
+        assert_net_niches(net_dir, 
+                        config["Patient column name"],
+                        config.get("Sample column name", "sample"),
+                        extension,
+                        config["Phenotype column"])
     else:
         extension = config['Extension']
-        net_dir = config['Network directory']
-        assert_net_niches(net_dir)
+        net_dir = Path(working_dir).expanduser().resolve() / Path(config['Network directory']).expanduser()
+        assert_net_niches(net_dir, 
+                        config["Patient column name"],
+                        config.get("Sample column name", "sample"),
+                        extension,
+                        config["Phenotype column"])
+
         if extension != "parquet":
-            convert_net_dir(net_dir, config["Patient column name"], config.get("Sample column name:", "sample"), extension, temp_folder)
+            convert_net_dir(net_dir, config["Patient column name"], config.get("Sample column name", "sample"), extension, temp_folder)
             extension = 'parquet'
             net_dir = temp_folder
+
+    emit_qt_info('[INFO] Verification and Convertion of the files')
 
     uniq_phenotype = find_all_pheno(net_dir,
                                     extension,
                                     config["Phenotype column"],
                                     config["Patient column name"],
-                                    config.get("Sample column name:", "sample"))
-
+                                    config.get("Sample column name", "sample"))
+    
+    emit_qt_info('[INFO] Phenotypes for all sample found')
     ############################## --- PROCESS --- #######################################
 
     if with_aggregation:
@@ -66,7 +79,7 @@ def main():
             "stat_funcs": config.get("stat_funcs", "default"),
             "stat_names": config.get("stat_names", "default"),
             "id_level_1": config.get("Patient column name", "patient"),
-            "id_level_2": config.get("Sample column name:", "sample"),
+            "id_level_2": config.get("Sample column name", "sample"),
 
             ################ Clustering / réduction
             "reducer_type": config["Aggregated nodes"].get("reducer_type", "umap"),
@@ -86,6 +99,8 @@ def main():
         from package.core.NAS.aggregated_niches import aggregated_niches
         aggregated_niches(**kwargs)
 
+        emit_qt_info('[INFO] Niches found for aggregated nodes')
+
 
     elif per_sample:
 
@@ -100,7 +115,7 @@ def main():
             "stat_funcs": config.get("stat_funcs", "default"),
             "stat_names": config.get("stat_names", "default"),
             "id_level_1": config.get("Patient column name", "patient"),
-            "id_level_2": config.get("Sample column name:", "sample"),
+            "id_level_2": config.get("Sample column name", "sample"),
 
             ############# Clustering / réduction
             "reducer_type": config["Per sample"].get("reducer_type", "umap"),
@@ -119,6 +134,8 @@ def main():
         }
         from package.core.NAS.niches_per_sample import niches_per_sample
         niches_per_sample(**kwargs)
+
+        emit_qt_info('[INFO] Niches found for each samples')
 
 if __name__ == '__main__':
     main()
