@@ -71,7 +71,7 @@ def main():
 
     if with_aggregation:
 
-        save_dir = working_dir / "Output/Niche Analysis/Aggregation" / config['Saving directory']
+        save_dir = working_dir / "Output/Niche_Analysis/Aggregation" / config['Saving directory']
         save_dir.mkdir(exist_ok=True, parents=True)
         kwargs = {
             "method": config.get("method", "NAS"),
@@ -104,7 +104,7 @@ def main():
 
         emit_qt_info('[INFO] Niches found for aggregated nodes')
 
-        for path in save_dir.glob("reducer_umap*"):
+        for path in save_dir.glob("reducer-umap*"):
             if path.is_dir():
                 shutil.rmtree(path)
         save_config(save_dir, config)
@@ -115,7 +115,7 @@ def main():
 
     elif per_sample:
 
-        save_dir = save_dir = working_dir / "Output/Niche Analysis/Per sample" / config['Saving directory']
+        save_dir = save_dir = working_dir / "Output/Niche_Analysis/Per_sample" / config['Saving directory']
         save_dir.mkdir(exist_ok=True, parents=True)
         kwargs = {
             "method": config.get("method", "NAS"),
