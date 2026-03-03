@@ -18,7 +18,7 @@ Assortativity:
   Index: cell
 Niche Analysis:
   Network directory: Default
-  Saving directory: niche_1
+  Saving directory: niche_2
   Extension: parquet
   Patient column name: patient
   Sample column name: null
