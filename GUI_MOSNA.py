@@ -795,7 +795,7 @@ def main():
 
             ext = os.path.splitext(script)[1].lower()
             if ext == ".sh":
-                cmd = ["bash", script]
+                cmd = ["bash", script,"--working_dir", self.working_dir]
             elif ext == ".py":
                 script_path = Path(script)
                 rel = script_path.relative_to(BASE_DIR)
