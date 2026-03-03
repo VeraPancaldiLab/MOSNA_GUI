@@ -11,6 +11,7 @@ from mosna import mosna
 
 def main():
     analyse = "Assortativity"
+    output_dir = "Output"
 
     config_path, working_dir = get_arguments()
     config = get_config(config_path)[analyse]
@@ -18,8 +19,8 @@ def main():
 
     assert_params(analyse, config)
     
-    temp_folder = working_dir / "temp/net_stat_mosna"
-    saving_folder = working_dir / f"Output/{analyse}"
+    temp_folder = working_dir / f"{output_dir}/temp/net_stat_mosna"
+    saving_folder = working_dir / f"{output_dir}/{analyse}"
     temp_folder.mkdir(parents=True, exist_ok=True)
     saving_folder.mkdir(parents=True, exist_ok=True)
 
@@ -29,7 +30,7 @@ def main():
     nodes_index = config["Index"]
 
     if config['Network directory'] == 'Default':
-        net_dir = working_dir / Path('temp/net_dir_mosna')
+        net_dir = working_dir / Path(f'{output_dir}/temp/net_dir_mosna')
         extension = 'parquet'
     else:
         net_dir = Path(working_dir).expanduser().resolve() / Path(config['Network directory']).expanduser()
@@ -47,7 +48,7 @@ def main():
     )
     net_stat = net_stat.set_index("id")
     net_stat.to_csv(saving_folder / "net_stat.csv", index=True)
-    tqdm.write(f"[INFO] Assortativity table saved in {saving_folder}")
+
     emit_qt_info(f"[INFO] Assortativity table saved in {saving_folder}")
 
 if __name__ == '__main__':

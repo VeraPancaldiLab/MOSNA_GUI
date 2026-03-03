@@ -22,6 +22,7 @@ def worker_draw(args):
 
 def main():
     analyse = "Tysserand"
+    output_dir = "Output"
 
     config_path, working_dir = get_arguments()
     config = get_config(config_path)[analyse]
@@ -29,11 +30,10 @@ def main():
 
     assert_params(analyse, config)
 
-    tqdm.write('[INFO] Parameters are read correctly')
     emit_qt_info('[INFO] Parameters are read correctly')
 
-    temp_folder = working_dir / "temp/net_dir_mosna"
-    saving_folder = working_dir / f"Output/{analyse}_Network"
+    temp_folder = working_dir / f"{output_dir}/temp/net_dir_mosna"
+    saving_folder = working_dir / f"{output_dir}/{analyse}_Network"
     temp_folder.mkdir(parents=True, exist_ok=True)
     saving_folder.mkdir(parents=True, exist_ok=True)
 
@@ -61,7 +61,6 @@ def main():
         assert_file_for_tysserand(file, config, config['Extension'])
         emit_qt_progress(i, len(net_dir_list), "[PROCESS] Verification of all file")
 
-    tqdm.write("[INFO] Files are well builded\n")
     emit_qt_info("[INFO] Files are well builded\n")
 
     emit_qt_progress(0, len(args_list), "[MULTI PROCESS] Processing file")
