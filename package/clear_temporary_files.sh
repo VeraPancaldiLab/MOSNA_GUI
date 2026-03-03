@@ -1,3 +1,3 @@
 #!/bin/bash
 
-rm -rf OUTPUT_DATA/temp
+rm -rf $1/temp

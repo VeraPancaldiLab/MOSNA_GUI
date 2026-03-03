@@ -77,6 +77,7 @@ def main():
             "method": config.get("method", "NAS"),
             "net_dir": net_dir,
             "save_dir": save_dir,
+            "temp_dir": temp_folder,
             "pheno_col": config["Phenotype column"], 
             "uniq_phenotype": uniq_phenotype,   
             "stat_funcs": config.get("stat_funcs", "default"),
@@ -121,6 +122,7 @@ def main():
             "method": config.get("method", "NAS"),
             "net_dir": net_dir,
             "save_dir": save_dir,
+            "temp_dir": temp_folder,
             "pheno_col": config["Phenotype column"], 
             "uniq_phenotype": uniq_phenotype,    
             "stat_funcs": config.get("stat_funcs", "default"),
@@ -148,7 +150,7 @@ def main():
 
         emit_qt_info('[INFO] Niches found for each samples')
 
-        for path in save_dir.glob("reducer_umap*"):
+        for path in save_dir.glob("reducer-umap*"):
             if path.is_dir():
                 shutil.rmtree(path)
         save_config(save_dir, config)

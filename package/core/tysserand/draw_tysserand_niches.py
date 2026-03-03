@@ -9,6 +9,17 @@ from package.utils.emit_qt_progress import emit_qt_progress
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+plt.rcParams.update({ "figure.facecolor": "#0b1020", 
+                    "axes.facecolor": "#0b1020", 
+                    "axes.edgecolor": "#b8c1ec", 
+                    "axes.labelcolor": "#e0e6ff", 
+                    "xtick.color": "#cdd6ff",
+                    "ytick.color": "#cdd6ff", 
+                    "text.color": "#e0e6ff", 
+                    "font.size": 14, 
+                    "axes.titleweight": "bold"})
+from matplotlib.collections import LineCollection
+from matplotlib.lines import Line2D
 
 def draw_tysserand_niches(net_dir, save_dir, id_level_1, id_level_2, X, Y):
 
@@ -37,11 +48,16 @@ def draw_tysserand_niches(net_dir, save_dir, id_level_1, id_level_2, X, Y):
                 size_nodes=8,
                 figsize=(30,30)
                 )
+        
+        for line in ax.lines:
+            if isinstance(line, Line2D):
+                line.set_color("white")
+                line.set_alpha(0.8)
+                line.set_linewidth(0.6)
 
-        #fig.set_title("")
-        fig.tight_layout()
+        ax.set_title(f"Network with niches clusters for {file.stem[6:]}")
 
-        fig.savefig(save_dir / f"net_{file.stem[6:]}_niches.png", dpi = 300, bbox_inches="tight")
+        fig.savefig(save_dir / f"net_{file.stem[6:]}_niches.png", dpi = 600, bbox_inches="tight", facecolor=fig.get_facecolor())
         plt.close(fig)
         emit_qt_progress(i,len(files),"[PROCESS] Draw Tysserand with niches labels")
 
