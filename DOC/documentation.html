@@ -128,164 +128,54 @@
 
 <body>
   <header>
-    <h1>Mosna Analysis GUI <span class="badge">Documentation (exemple)</span></h1>
+    <h1>Mosna GUI <span class="badge">Documentation</span></h1>
     <p>
-      Ce document est une documentation fictive destinée à illustrer l’intégration d’une aide utilisateur
-      dans l’interface. Le contenu peut être remplacé par la documentation réelle du projet.
+      The purpose of this documentation is to teach you how to use 
+      this graphical interface to analyse your spatial data using networks.
     </p>
   </header>
 
   <main>
     <div class="card">
-      <h2>1. Objectif de l’interface</h2>
+      <h2>How the interface works</h2>
       <p>
-        Mosna Analysis GUI est une interface graphique conçue pour préparer une configuration
-        YAML et lancer plusieurs scripts d’analyse de façon guidée.
-        L’utilisateur choisit un dossier de travail, ajuste des paramètres par onglets,
-        sauvegarde le fichier de configuration, puis exécute les scripts.
+        The aim is to simply use Tysserand and MOSNA, which allows you to perform your own spatial analysis using a step-by-step operating mode.
       </p>
     </div>
 
     <div class="card">
-      <h2>2. Démarrage et dossier de travail</h2>
+      <h2>Start-up and work directory</h2>
       <p>
-        Au lancement, un choix de dossier est obligatoire. Sans <em>working directory</em>, l’interface est désactivée.
+        When launching, a folder must be selected. Without a <em>working directory</em>, the interface is automatically disabled.
+        This <em>working directory</em>  specifies the location of the Output folder, 
+        where the results will be stored, as well as the intermediate files in temp.
       </p>
-      <ul>
-        <li><strong>Working directory :</strong> emplacement où les scripts écrivent leurs sorties et lisent des données.</li>
-        <li>Si l’utilisateur annule le choix au démarrage, l’application se ferme.</li>
-      </ul>
-
       <div class="hint">
-        Astuce : crée un dossier par analyse (par exemple un dossier par patient ou par batch) pour garder des sorties propres.
+        Tip: create a folder directly when selecting the working directory, it will be your working directory.
       </div>
     </div>
 
     <div class="card">
-      <h2>3. Onglets de configuration</h2>
+      <h2>General functioning</h2>
       <p>
-        Les paramètres sont organisés en onglets. Chaque onglet correspond à une section du fichier YAML.
-        Les champs s’affichent automatiquement selon leur type (texte, booléen, liste, etc.).
+        This interface requires at least one CSV or Parquet file where the cells are referenced and 
+        have coordinates and attributes. This allows nodes and edges to be created via Tysserand.
+        If the coordinates are not present but you already have the edges, you can proceed directly to 
+        the assortativity and niche analysis stage by creating files with specific names and formats.
       </p>
-
-      <table>
-        <thead>
-          <tr>
-            <th>Onglet</th>
-            <th>Contenu</th>
-            <th>Exemples de paramètres</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td><strong>Documentation</strong></td>
-            <td>Page d’aide intégrée (HTML) affichée dans l’interface.</td>
-            <td>Procédure, explications, conventions de fichiers, FAQ.</td>
-          </tr>
-          <tr>
-            <td><strong>Tysserand</strong></td>
-            <td>Paramètres liés à la construction et aux features réseau.</td>
-            <td>Nodes directory, CPU, Edges method, Min neighbors, Extension, colonnes X/Y, phenotype.</td>
-          </tr>
-          <tr>
-            <td><strong>Assortativity</strong></td>
-            <td>Paramètres pour les métriques d’assortativité et analyses associées.</td>
-            <td>Network directory, Phenotype column, Index.</td>
-          </tr>
-          <tr>
-            <td><strong>NAS</strong></td>
-            <td>Paramètres pour l’analyse de niches (clustering, réduction dimensionnelle, statistiques).</td>
-            <td>Niches method, Processing method, clusterer_type, reducer_type, metric, n_neighbors, resolution.</td>
-          </tr>
-        </tbody>
-      </table>
-
+      <div class="card-image">
+        <img src="images/workflow.png" alt="Workflow of the spatial analysis pipeline" style="max-width:900px; width:100%; height:auto;">
+      </div>
       <div class="warn">
-        Attention : si certains champs attendent une convention de nommage (patient / sample), assure-toi que les fichiers en entrée respectent cette convention.
+        <br>Input files must have a specific format: <br>
+        - To run Tysserand, they should be called '*_patient-idpatient_sample-id_sample.extension'<br>
+        - And for directly use Mosna you must avec two file per sample (nodes and edges) 
+        et they must be nammed as nodes_patient-id-patient_sample-id-sample.extension and edges_....<br>
+        <br> Knowing that it is not necessary to have the separation, for example, it can only be patient.
+
       </div>
     </div>
 
-    <div class="card">
-      <h2>4. Sauvegarde de la configuration</h2>
-      <p>
-        Le bouton <strong>Save Config</strong> écrit les paramètres dans le fichier YAML principal.
-        L’interface applique une validation légère des types (entier, float, booléen, liste, etc.).
-      </p>
-      <ul>
-        <li>Les champs vides ou “None” sont enregistrés comme <code>null</code> dans le YAML.</li>
-        <li>Les listes peuvent être saisies avec une syntaxe Python simple, par exemple <code>[1, 2, 3]</code>.</li>
-        <li>Les champs texte multi-lignes sont affichés avec une zone dédiée.</li>
-      </ul>
-    </div>
-
-    <div class="card">
-      <h2>5. Lancement des scripts</h2>
-      <p>
-        La barre de boutons <strong>Run …</strong> lance les scripts définis dans l’application.
-        Les scripts sont exécutés dans un thread séparé pour ne pas bloquer l’interface.
-      </p>
-
-      <h3>Scripts disponibles</h3>
-      <ul>
-        <li><strong>TYSSERAND NETWORK</strong> : construction des réseaux et calcul de features.</li>
-        <li><strong>ASSORTATIVITY</strong> : calcul des métriques d’assortativité.</li>
-        <li><strong>NICHE ANALYSIS</strong> : pipeline NAS / SCAN-IT selon la configuration.</li>
-        <li><strong>CLEAR TEMPORARY FILES</strong> : nettoyage des fichiers temporaires.</li>
-      </ul>
-
-      <h3>Progression et messages</h3>
-      <p>
-        Les scripts peuvent renvoyer des messages “compatibles GUI” sur la sortie standard, par exemple :
-      </p>
-
-      <pre>[QT_INFO] Chargement des données
-[QT_PROGRESS] current=15 total=100 desc=Calcul des features réseau
-[QT_PROGRESS] current=100 total=100 desc=Terminé</pre>
-
-      <p>
-        Ces lignes mettent à jour la barre de progression et le statut dans l’interface.
-      </p>
-    </div>
-
-    <div class="card">
-      <h2>6. Dépannage rapide (exemples)</h2>
-
-      <h3>Le script échoue avec un message long</h3>
-      <p>
-        L’interface affiche un extrait de la sortie dans une boîte de dialogue.
-        En cas de besoin, relance le script en ligne de commande dans le même environnement conda
-        pour obtenir le log complet.
-      </p>
-
-      <h3>Les onglets ne sont pas accessibles au lancement</h3>
-      <p>
-        Cela arrive si aucun dossier de travail n’a été défini. Choisis un dossier valide.
-      </p>
-
-      <h3>Problèmes de dépendances</h3>
-      <p>
-        Si un import échoue, vérifie que l’environnement utilisé est bien celui de la GUI.
-        Exemple :
-      </p>
-      <pre>conda activate mosna-GUI
-python -c "import numpy; import pandas; print('OK')"</pre>
-    </div>
-
-    <div class="card">
-      <h2>7. Contact / support</h2>
-      <p>
-        Cette documentation est fictive. Pour une version projet, tu peux ajouter :
-      </p>
-      <ul>
-        <li>une section “Entrées attendues” (format des nodes/edges, colonnes obligatoires)</li>
-        <li>des exemples de YAML</li>
-        <li>une FAQ sur les erreurs fréquentes</li>
-      </ul>
-      <p>
-        Pour un support interne, indique une adresse ou un canal (mail, Slack, GitLab issues).
-      </p>
-    </div>
-  </main>
 
   <footer>
     Mosna Analysis GUI — Documentation exemple. Dernière mise à jour : 2026-02-27.
