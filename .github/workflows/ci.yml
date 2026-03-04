@@ -17,11 +17,25 @@ jobs:
         with:
           auto-update-conda: true
 
+      - name: Libérer de l'espace disque
+        run: |
+          df -h
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android
+          sudo apt-get clean
+          df -h
+
       - name: Exécution du script setup
         shell: bash -l {0}
         run: |
           chmod +x setup.sh
           ./setup.sh
+
+      - name: Nettoyer les caches conda
+        shell: bash -l {0}
+        run: |
+          conda clean -a -y
+          rm -rf ~/.conda/pkgs
+          rm -rf ~/.cache/pip
 
       - name: Installer un affichage virtuel pour la GUI
         run: |
