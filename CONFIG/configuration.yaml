@@ -1,32 +1,32 @@
 Tysserand:
-  Nodes directory: /home/owen.griere/Desktop/Xenium TRANSCAN/pre_processed_files
+  Nodes directory: /home/owen.griere/Desktop/test_GUI/patient_sample_folder
   Patient column name: patient
-  Sample column name: null
-  Extension: parquet
-  X coordinates column: x
-  Y coordinates column: y
-  Phenotype column: Cell_type
+  Sample column name: sample
+  Extension: csv
+  X coordinates column: X
+  Y coordinates column: Y
+  Phenotype column: phenotype
   Edges method: delaunay
   Min neighbors: 3
   CPU: 20
 Assortativity:
   Network directory: Default
-  Phenotype column: Cell_type
+  Phenotype column: phenotype
   Patient column name: patient
-  Sample column name: null
+  Sample column name: sample
   Extension: csv
-  Index: cell
+  Index: id
 Niche Analysis:
   Network directory: Default
   Saving directory: niche_2
   Extension: parquet
   Patient column name: patient
-  Sample column name: null
+  Sample column name: sample
   Processing method: Aggregated nodes
   Niches method: NAS
-  Phenotype column: Cell_type
+  Phenotype column: phenotype
   Aggregated nodes:
-    order: '2'
+    order: '1'
     stat_funcs: np.mean,np.std
     stat_names: [mean, std]
     clusterer_type: gmm
