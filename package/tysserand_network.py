@@ -22,7 +22,6 @@ def worker_draw(args):
 
 def main():
     analyse = "Tysserand"
-    output_dir = "Output"
 
     config_path, working_dir = get_arguments()
     config = get_config(config_path)[analyse]
@@ -32,8 +31,8 @@ def main():
 
     emit_qt_info('[INFO] Parameters are read correctly')
 
-    temp_folder = working_dir / f"{output_dir}/temp/net_dir_mosna"
-    saving_folder = working_dir / f"{output_dir}/{analyse}_Network"
+    temp_folder = working_dir / "temp/net_dir_mosna"
+    saving_folder = working_dir / "{analyse}_Network"
     temp_folder.mkdir(parents=True, exist_ok=True)
     saving_folder.mkdir(parents=True, exist_ok=True)
 

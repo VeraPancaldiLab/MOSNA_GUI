@@ -17,12 +17,11 @@ def main():
 
     ############################## --- PRE-PROCESS --- ####################################
     analyse = "Niche Analysis"
-    output_dir = "Output"
 
     config_path, working_dir = get_arguments()
     config = get_config(config_path)[analyse]
     working_dir = Path(working_dir)
-    temp_folder = working_dir / f"{output_dir}/temp/net_dir_mosna"
+    temp_folder = working_dir / "temp/net_dir_mosna"
 
     assert_params(analyse, config)
 
@@ -71,7 +70,7 @@ def main():
 
     if with_aggregation:
 
-        save_dir = working_dir / f"{output_dir}/Niche_Analysis/Aggregation" / config['Saving directory']
+        save_dir = working_dir / "Niche_Analysis/Aggregation" / config['Saving directory']
         save_dir.mkdir(exist_ok=True, parents=True)
         kwargs = {
             "method": config.get("method", "NAS"),
@@ -116,7 +115,7 @@ def main():
 
     elif per_sample:
 
-        save_dir = save_dir = working_dir / f"{output_dir}/Niche_Analysis/Per_sample" / config['Saving directory']
+        save_dir = save_dir = working_dir / "Niche_Analysis/Per_sample" / config['Saving directory']
         save_dir.mkdir(exist_ok=True, parents=True)
         kwargs = {
             "method": config.get("method", "NAS"),
