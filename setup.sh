@@ -2,11 +2,11 @@
 set -euo pipefail
 
 # --------- Paramètres à adapter ---------
-ENV_NAME="test-GUI"
+ENV_NAME="mosna-GUI"
 PY_VER="3.10"
 
 # Chemin absolu vers ton script GUI
-APP_DIR="/home/owen.griere/Desktop/MOSNA_GUI"
+APP_DIR="${HOME}/Desktop/MOSNA_GUI"
 MOSNA_SCRIPT="${APP_DIR}/GUI_MOSNA.py"
 
 # Où créer l'icône + launcher (Desktop)
