@@ -32,7 +32,7 @@ def main():
     emit_qt_info('[INFO] Parameters are read correctly')
 
     temp_folder = working_dir / "temp/net_dir_mosna"
-    saving_folder = working_dir / "{analyse}_Network"
+    saving_folder = working_dir / f"{analyse}_Network"
     temp_folder.mkdir(parents=True, exist_ok=True)
     saving_folder.mkdir(parents=True, exist_ok=True)
 
