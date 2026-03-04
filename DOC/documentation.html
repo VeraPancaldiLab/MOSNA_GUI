@@ -176,9 +176,308 @@
       </div>
     </div>
 
+    <div class="card">
+      <h2>How the module is organized</h2>
+      <p>
+          You must know that you're working directory is also you're saving directory.
+      </p>
+      <div class="card-image">
+        <img src="images/architecture.png" alt="architecture of the spatial analysis pipeline" style="max-width:700px; width:100%; height:auto;">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Explanation of Tysserand Networks parameters</h2>
+
+      <table style="width:100%; border-collapse:collapse; margin-top:15px;">
+        <thead>
+          <tr>
+            <th style="background-color:#162cd1; color:white; padding:10px; text-align:center;">Parameter Name</th>
+            <th style="background-color:#162cd1; color:white; padding:10px; text-align:center;">Type</th>
+            <th style="background-color:#162cd1; color:white; padding:10px; text-align:center;">Description</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Nodes directory</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">folder where you store all your spatial data</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Patient column name</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Name of the first level of division for your file for example: 'patient'.</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Sample column name</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Name of the second level of division if it exists.</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Extension</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Extension of all files</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">X coordinates column</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Name of the column containing the X spatial coordinates.</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Y coordinates column</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Name of the column containing the Y spatial coordinates.</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Phenotype column</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Column defining the phenotype of each cell.</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Edges method</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Method used to compute edges.</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Min neighbors</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">int</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Minimum number of neighbors for the KNN edges.</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">CPU</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">int</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Number of CPUs used for the parallelization process.</td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Explanation of Assortativity parameters</h2>
+
+      <table style="width:100%; border-collapse:collapse; margin-top:15px;">
+        <thead>
+          <tr>
+            <th style="background-color:#162cd1; color:white; padding:10px; text-align:center;">Parameter Name</th>
+            <th style="background-color:#162cd1; color:white; padding:10px; text-align:center;">Type</th>
+            <th style="background-color:#162cd1; color:white; padding:10px; text-align:center;">Description</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Network directory</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">folder where you store all your edges and nodes. Default if you run it after Tysserand Run</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Patient column name</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Name of the first level of division for your file for example: 'patient'.</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Sample column name</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Name of the second level of division if it exists.</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Extension</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Extension of all files</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Phenotype column</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Column defining the phenotype of each cell.</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Index</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Name of the column for the cells reference</td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Explanation of Niches Analysis parameters</h2>
+
+      <table style="width:100%; border-collapse:collapse; margin-top:15px;">
+        <thead>
+          <tr>
+            <th style="background-color:#162cd1; color:white; padding:10px; text-align:center;">Parameter Name</th>
+            <th style="background-color:#162cd1; color:white; padding:10px; text-align:center;">Type</th>
+            <th style="background-color:#162cd1; color:white; padding:10px; text-align:center;">Description</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Network directory</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">folder where you store all your edges and nodes. Default if you run it after Tysserand Run</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Saving directory</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Name of the saving folder to multiply the analysis</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Patient column name</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Name of the first level of division for your file for example: 'patient'.</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Sample column name</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Name of the second level of division if it exists.</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Phenotype column</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Column defining the phenotype of each cell.</td>
+          </tr>
+          
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Processing method</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Choose the method of niche analysis</td>
+          </tr>
+          
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Processing method</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Choose the method of processing (per sample (work in progress) or aggregation)</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Niches method</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">string</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">Choose the method of niche analysis (NAS, SCAN-IT (work in progress))</td>
+          </tr>
+
+          <tr>
+            <td colspan="3" style="background-color: #e60f0f; color:white; padding:10px; text-align:center;">Parameters for niches analysis (reduction and clustering of neighbourhood statistics)</td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">order</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> int </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">stat_funcs</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> List </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">stat_names</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> List </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">clusterer_type</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> string </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">n_clusters</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> int </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">reducer_type</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> string </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">metric</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> string </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">resolution</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> float </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">n_neighbors</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> int </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">min_dist</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> float </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">dim_clust</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> int </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">min_cluster_size</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> int </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">k_cluster</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> int </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+          </tr>
+
+          <tr>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;">normalize</td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> string </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Explanation of Assortativity and Niches Analysis</h2>
+      <p>
+          You must know what are the those metrics/analysis
+      </p>
+    </div>
 
   <footer>
-    Mosna Analysis GUI — Documentation exemple. Dernière mise à jour : 2026-02-27.
+    <br>Mosna GUI — Dernière mise à jour : 2026-03-04.
   </footer>
 </body>
 </html>
