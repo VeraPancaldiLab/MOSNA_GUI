@@ -25,6 +25,7 @@ def draw_per_sample(file, X_position, Y_position, Pheno_col, method, min_neighbo
     node = opener(file)
     
     patient, sample = find_sample_from_file(file, patient_colmun, sample_column)
+    patient = int("".join(c for c in patient if c.isdigit()))
 
     clustering = node[Pheno_col]
     uniq = pd.Series(clustering).value_counts().index
@@ -56,14 +57,14 @@ def draw_per_sample(file, X_position, Y_position, Pheno_col, method, min_neighbo
 
     if sample_column is None:
         ax.set_title(f"Tysserand network {patient_colmun} {patient}", fontsize=30)
-        fig.savefig(saving_folder / f"net_{patient}.png", dpi = 600, bbox_inches="tight", facecolor=fig.get_facecolor())
+        fig.savefig(saving_folder / f"net_{patient}.png", dpi = 300, bbox_inches="tight", facecolor=fig.get_facecolor())
         plt.close(fig)
         node.to_parquet(temp_folder / f"nodes_{patient_colmun}-{patient}.parquet")
         edge.to_parquet(temp_folder / f"edges_{patient_colmun}-{patient}.parquet")
 
     else:
         ax.set_title(f"Tysserand network {patient_colmun} {patient} and {sample_column} {sample}", fontsize=30)
-        fig.savefig(saving_folder / f"net_{patient}-{sample}.png", dpi = 600, bbox_inches="tight", facecolor=fig.get_facecolor())
+        fig.savefig(saving_folder / f"net_{patient}-{sample}.png", dpi = 300, bbox_inches="tight", facecolor=fig.get_facecolor())
         plt.close(fig)
         node.to_parquet(temp_folder / f"nodes_{patient_colmun}-{patient}_{sample_column}-{sample}.parquet")
         edge.to_parquet(temp_folder / f"edges_{patient_colmun}-{patient}_{sample_column}-{sample}.parquet")

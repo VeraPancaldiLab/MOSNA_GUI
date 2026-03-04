@@ -57,7 +57,7 @@ def draw_tysserand_niches(net_dir, save_dir, id_level_1, id_level_2, X, Y):
 
         ax.set_title(f"Network with niches clusters for {file.stem[6:]}")
 
-        fig.savefig(save_dir / f"net_{file.stem[6:]}_niches.png", dpi = 600, bbox_inches="tight", facecolor=fig.get_facecolor())
+        fig.savefig(save_dir / f"net_{file.stem[6:]}_niches.png", dpi = 300, bbox_inches="tight", facecolor=fig.get_facecolor())
         plt.close(fig)
         emit_qt_progress(i,len(files),"[PROCESS] Draw Tysserand with niches labels")
 
