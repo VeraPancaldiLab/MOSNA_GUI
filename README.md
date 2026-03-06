@@ -106,19 +106,25 @@ In this step you must fill **NAS** section. This step will generate for you nich
 | Parameter               | Description       |
 |-------------------|-------------------|
 | **order** | Neighborhood order used in **NAS** aggregation. `order=1` uses direct neighbors only, while higher values include more distant neighbors in the graph |
-| **stat_funcs** | Statistical functions applied to aggregated neighbor features in **NAS**, such as `mean`, `std`, `max`, or `median`. |
-| **stat_names** | Names associated with `stat_funcs`, used to label the generated feature columns. |
-| **clusterer_type** | Clustering method used to define niches or groups, for example `gmm`, `spectral`, `hdbscan`, or `leiden`. |
-| **metric** | Distance metric used to compare observations, for example `euclidean`, `manhattan`, or `cosine`. |
+| **stat_funcs** | Statistical functions applied to aggregated neighbor features in **NAS**, such as `mean`, `std`, `max`, or `median` |
+| **stat_names** | Names associated with `stat_funcs`, used to label the generated feature columns |
+| **clusterer_type** | Clustering method used to define niches or groups, for example `gmm`, `spectral`, `hdbscan`, or `leiden` |
+| **metric** | Distance metric used to compare observations, for example `euclidean`, `manhattan`, or `cosine` |
 | **normalize** | Normalization method applied to niche composition features before the predictive model, for example `total`, `obs`, `niche`, or `clr` |
-| **reducer_type** | Dimensionality reduction method applied before clustering, such as `umap`. |
-| **Reducer Parameters** |
-|-------------------|
+| **reducer_type** | Dimensionality reduction method applied before clustering, such as `umap` |
+
+### Reducer Parameters
+
+| Parameter               | Description       |
+|----------|---------|
 | **n_neighbors** (for UMAP) | Number of neighbors used to build the local structure of the data, especially in UMAP or graph construction |
 | **min_dist** (for UMAP) | UMAP parameter controlling how close points can be in the reduced space. Smaller values usually produce tighter groups |
 | **dim_clust** (for UMAP) | Number of dimensions kept in the reduced space for clustering |
-| **Clusterer Parameters** |
-|-------------------|
+
+### Clusterer Parameters
+
+| Parameter               | Description       |
+|----------|---------|
 | **k_cluster** | Number of neighbors used during the clustering step when building or refining the graph structure |
 | **n_clusters** (for gmm and spectral) | Number of clusters to produce for methods that require it, mainly `gmm` and `spectral` |
 | **resolution** (for Leiden) | Granularity parameter specific to **Leiden** clustering. Lower values usually give fewer clusters, higher values give more |
