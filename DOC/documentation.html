@@ -6,122 +6,283 @@
   <title>Mosna GUI — Documentation</title>
   <style>
     :root{
-      --bg: #ffffff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --border: #e5e7eb;
-      --soft: #f9fafb;
+      --bg: #f5f7fb;
+      --surface: rgba(255, 255, 255, 0.78);
+      --surface-strong: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: rgba(148, 163, 184, 0.18);
       --accent: #2563eb;
-      --code: #0f172a;
+      --accent-soft: rgba(37, 99, 235, 0.10);
+      --success-soft: rgba(16, 185, 129, 0.12);
+      --warning-soft: rgba(249, 115, 22, 0.12);
+      --shadow-sm: 0 6px 18px rgba(15, 23, 42, 0.06);
+      --shadow-md: 0 14px 40px rgba(15, 23, 42, 0.10);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --code-bg: #0f172a;
+      --code-text: #e2e8f0;
     }
+
+    *{
+      box-sizing: border-box;
+    }
+
+    html{
+      scroll-behavior: smooth;
+    }
+
     body{
       margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 28%),
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.06), transparent 24%),
+        var(--bg);
       color: var(--text);
-      line-height: 1.55;
+      line-height: 1.65;
+      min-height: 100vh;
     }
+
     header{
-      padding: 18px 22px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: rgba(255, 255, 255, 0.75);
       border-bottom: 1px solid var(--border);
-      background: var(--soft);
+      padding: 22px 28px;
     }
+
     header h1{
       margin: 0;
-      font-size: 20px;
+      font-size: 1.5rem;
       font-weight: 700;
+      letter-spacing: -0.02em;
     }
+
     header p{
-      margin: 6px 0 0 0;
+      margin: 8px 0 0 0;
       color: var(--muted);
-      font-size: 13px;
+      font-size: 0.95rem;
     }
+
     main{
-      padding: 18px 22px 40px 22px;
-      max-width: 980px;
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 28px 22px 48px;
     }
+
     .card{
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 16px;
-      background: #fff;
-      margin: 12px 0;
+      border-radius: var(--radius-lg);
+      padding: 20px 22px;
+      margin: 18px 0;
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
     }
+
+    .card:hover{
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+      border-color: rgba(37, 99, 235, 0.18);
+    }
+
     .card h2{
-      margin: 0 0 10px 0;
-      font-size: 16px;
+      margin: 0 0 12px 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
     }
+
     .card h3{
-      margin: 14px 0 8px 0;
-      font-size: 14px;
+      margin: 18px 0 8px 0;
+      font-size: 0.96rem;
+      font-weight: 600;
+      color: #1e293b;
     }
+
     .badge{
-      display: inline-block;
-      padding: 2px 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
       border-radius: 999px;
-      background: #eef2ff;
-      color: #3730a3;
-      font-size: 12px;
-      vertical-align: middle;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 600;
       margin-left: 8px;
+      border: 1px solid rgba(37, 99, 235, 0.12);
     }
+
+    p{
+      margin: 0 0 10px 0;
+    }
+
     ul{
-      margin: 8px 0 0 18px;
-      padding: 0;
+      margin: 10px 0 0 0;
+      padding-left: 20px;
     }
-    li{ margin: 6px 0; }
-    code, pre{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 12.5px;
+
+    li{
+      margin: 8px 0;
+      color: #1e293b;
     }
+
+    code{
+      font-family: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.88rem;
+      background: rgba(15, 23, 42, 0.05);
+      color: #0f172a;
+      padding: 2px 7px;
+      border-radius: 8px;
+    }
+
     pre{
-      background: #0b1220;
-      color: #e5e7eb;
-      padding: 12px 14px;
-      border-radius: 10px;
+      margin-top: 14px;
+      padding: 16px 18px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #111827 0%, #0f172a 100%);
+      color: var(--code-text);
       overflow-x: auto;
-      border: 1px solid #111827;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
     }
-    .hint{
-      background: #ecfeff;
-      border: 1px solid #a5f3fc;
-      padding: 10px 12px;
-      border-radius: 10px;
-      color: #155e75;
-      margin-top: 10px;
+
+    pre code{
+      background: transparent;
+      color: inherit;
+      padding: 0;
+      border-radius: 0;
     }
+
+    .hint,
     .warn{
-      background: #fff7ed;
-      border: 1px solid #fed7aa;
-      padding: 10px 12px;
-      border-radius: 10px;
+      margin-top: 14px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      font-size: 0.94rem;
+      border: 1px solid transparent;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .hint{
+      background: var(--success-soft);
+      border-color: rgba(16, 185, 129, 0.18);
+      color: #065f46;
+    }
+
+    .warn{
+      background: var(--warning-soft);
+      border-color: rgba(249, 115, 22, 0.20);
       color: #9a3412;
-      margin-top: 10px;
     }
-    a{ color: var(--accent); text-decoration: none; }
-    a:hover{ text-decoration: underline; }
-    footer{
-      padding: 14px 22px;
-      border-top: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 12px;
-      background: var(--soft);
+
+    a{
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+      transition: opacity 0.2s ease;
     }
+
+    a:hover{
+      opacity: 0.82;
+      text-decoration: underline;
+    }
+
     table{
       width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
-      font-size: 13px;
-    }
-    th, td{
+      border-collapse: separate;
+      border-spacing: 0;
+      margin-top: 14px;
+      font-size: 0.92rem;
+      overflow: hidden;
+      border-radius: 16px;
+      background: var(--surface-strong);
+      box-shadow: var(--shadow-sm);
       border: 1px solid var(--border);
-      padding: 8px 10px;
+    }
+
+    th, td{
+      padding: 12px 14px;
       text-align: left;
       vertical-align: top;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.14);
     }
+
     th{
-      background: var(--soft);
+      background: #f8fafc;
       font-weight: 700;
+      color: #0f172a;
+    }
+
+    tr:last-child td{
+      border-bottom: none;
+    }
+
+    tr:hover td{
+      background: rgba(37, 99, 235, 0.03);
+    }
+
+    footer{
+      margin-top: 24px;
+      padding: 18px 28px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.85rem;
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    ::selection{
+      background: rgba(37, 99, 235, 0.18);
+    }
+
+    ::-webkit-scrollbar{
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb{
+      background: rgba(100, 116, 139, 0.35);
+      border-radius: 999px;
+    }
+
+    ::-webkit-scrollbar-track{
+      background: transparent;
+    }
+
+    @media (max-width: 768px){
+      header,
+      main,
+      footer{
+        padding-left: 16px;
+        padding-right: 16px;
+      }
+
+      .card{
+        padding: 16px 16px;
+        border-radius: 16px;
+      }
+
+      header h1{
+        font-size: 1.25rem;
+      }
+
+      table{
+        font-size: 0.88rem;
+      }
+
+      th, td{
+        padding: 10px 12px;
+      }
     }
   </style>
 </head>
