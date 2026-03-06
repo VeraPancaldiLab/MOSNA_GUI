@@ -126,8 +126,8 @@ In this step you must fill **NAS** section. This step will generate for you nich
 | Parameter               | Description       |
 |----------|---------|
 | **k_cluster** | Number of neighbors used during the clustering step when building or refining the graph structure |
-| **n_clusters** (**gmm** and **spectral**) | Number of clusters to produce for methods that require it, mainly `gmm` and `spectral` |
-| **resolution** (**Leiden**) | Granularity parameter specific to **Leiden** clustering. Lower values usually give fewer clusters, higher values give more |
-| **min_cluster_size** (**HDBSCAN**) | Minimum cluster size for **HDBSCAN**. Smaller values allow rare clusters, larger values make clustering more conservative |
+| **n_clusters** (`gmm` and `spectral`) | Number of clusters to produce for methods that require it, mainly `gmm` and `spectral` |
+| **resolution** (`Leiden`) | Granularity parameter specific to **Leiden** clustering. Lower values usually give fewer clusters, higher values give more |
+| **min_cluster_size** (`HDBSCAN`) | Minimum cluster size for **HDBSCAN**. Smaller values allow rare clusters, larger values make clustering more conservative |
 
 
