@@ -3,19 +3,19 @@ Tysserand:
   Patient column name: patient
   Sample column name: sample
   Extension: csv
-  X coordinates column: X
-  Y coordinates column: Y
+  X coordinates column: centroid-0
+  Y coordinates column: centroid-1
   Phenotype column: phenotype
   Edges method: delaunay
   Min neighbors: 3
   CPU: 20
 Assortativity:
   Network directory: Default
-  Phenotype column: phenotype
+  Phenotype column: Phenotype
   Patient column name: patient
   Sample column name: sample
   Extension: csv
-  Index: id
+  Index: Object
 Niche Analysis:
   Network directory: Default
   Saving directory: niche_2
@@ -24,9 +24,9 @@ Niche Analysis:
   Sample column name: sample
   Processing method: Aggregated nodes
   Niches method: NAS
-  Phenotype column: phenotype
+  Phenotype column: Phenotype
   Aggregated nodes:
-    order: '1'
+    order: '2'
     stat_funcs: np.mean,np.std
     stat_names: [mean, std]
     clusterer_type: gmm
