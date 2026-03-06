@@ -25,6 +25,8 @@ Niche Analysis:
   Processing method: Aggregated nodes
   Niches method: NAS
   Phenotype column: Phenotype
+  X coordinates column for niches: centroid-0
+  Y coordinates column for niches: centroid-1
   Aggregated nodes:
     order: '2'
     stat_funcs: np.mean,np.std

@@ -124,6 +124,8 @@ def main():
                 "Saving directory": (str, type(None)),
                 "Niches method": (str, type(None)),
                 "Processing method":(str, type(None)),
+                "X coordinates column for niches":(str, type(None)),
+                "Y coordinates column for niches":(str, type(None)),
                 "order": (str, type(None)),
                 "stat_funcs": (str, type(None)),
                 "stat_names": (list, type(None)),
@@ -365,7 +367,7 @@ def main():
 
                 return container 
 
-            if lower_key == "sample column name":
+            if lower_key in ["sample column name","x coordinates column for niches","y coordinates column for niches"]:
                 container = QWidget()
                 layout = QHBoxLayout(container)
                 layout.setContentsMargins(0, 0, 0, 0)

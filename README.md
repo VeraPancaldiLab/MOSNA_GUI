@@ -91,14 +91,15 @@ In this step you must fill **NAS** section. This step will generate for you nich
 
 | Clé                   | Description       |
 |-----------------------|-------------------|
-|method                 |                   |
-|output_name_file       |                   |
-|IMC_perform            |                   |
-|IF_perform             |                   |
-|panel                  |                   |
-|node_aggregation       |                   | 
-|perform_NAS_all_sample |                   |
-
+| method                 |                   |
+| output_name_file       |                   |
+| IMC_perform            |                   |
+| IF_perform             |                   |
+| panel                  |                   |
+| node_aggregation       |                   | 
+| perform_NAS_all_sample |                   |
+| X coordinates column for niches    |                   |
+| Y coordinates column for niches    |                   |
 
 **Niche clustering parameters:**
 

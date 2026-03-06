@@ -109,9 +109,10 @@ def main():
                 shutil.rmtree(path)
         save_config(save_dir, config)
 
-        X, Y = get_config(config_path)['Tysserand']['X coordinates column'], get_config(config_path)['Tysserand']['Y coordinates column']
-
-        draw_tysserand_niches(net_dir, save_dir, kwargs['id_level_1'], kwargs['id_level_2'], X, Y)
+        X, Y = get_config(config_path)[analyse]['X coordinates column'], get_config(config_path)['Tysserand']['Y coordinates column']
+        
+        if X is None or Y is None:
+            draw_tysserand_niches(net_dir, save_dir, kwargs['id_level_1'], kwargs['id_level_2'], X, Y)
 
     elif per_sample:
 
@@ -154,9 +155,10 @@ def main():
                 shutil.rmtree(path)
         save_config(save_dir, config)
 
-        X, Y = get_config(config_path)['Tysserand']['X coordinates column'], get_config(config_path)['Tysserand']['Y coordinates column']
+        X, Y = get_config(config_path)[analyse]['X coordinates column'], get_config(config_path)['Tysserand']['Y coordinates column']
 
-        draw_tysserand_niches(net_dir, save_dir, kwargs['id_level_1'], kwargs['id_level_2'], X, Y)
+        if X is None or Y is None:
+            draw_tysserand_niches(net_dir, save_dir, kwargs['id_level_1'], kwargs['id_level_2'], X, Y)
         
         
 
