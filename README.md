@@ -117,17 +117,17 @@ In this step you must fill **NAS** section. This step will generate for you nich
 
 | Parameter               | Description       |
 |----------|---------|
-| **n_neighbors** (for UMAP) | Number of neighbors used to build the local structure of the data, especially in UMAP or graph construction |
-| **min_dist** (for UMAP) | UMAP parameter controlling how close points can be in the reduced space. Smaller values usually produce tighter groups |
-| **dim_clust** (for UMAP) | Number of dimensions kept in the reduced space for clustering |
+| **n_neighbors** | Number of neighbors used to build the local structure of the data, especially in UMAP or graph construction |
+| **min_dist** | UMAP parameter controlling how close points can be in the reduced space. Smaller values usually produce tighter groups |
+| **dim_clust** | Number of dimensions kept in the reduced space for clustering |
 
 ### Clusterer Parameters
 
 | Parameter               | Description       |
 |----------|---------|
 | **k_cluster** | Number of neighbors used during the clustering step when building or refining the graph structure |
-| **n_clusters** (for gmm and spectral) | Number of clusters to produce for methods that require it, mainly `gmm` and `spectral` |
-| **resolution** (for Leiden) | Granularity parameter specific to **Leiden** clustering. Lower values usually give fewer clusters, higher values give more |
-| **min_cluster_size** (for HDBSCAN) | Minimum cluster size for **HDBSCAN**. Smaller values allow rare clusters, larger values make clustering more conservative |
+| **n_clusters** (**gmm** and **spectral**) | Number of clusters to produce for methods that require it, mainly `gmm` and `spectral` |
+| **resolution** (**Leiden**) | Granularity parameter specific to **Leiden** clustering. Lower values usually give fewer clusters, higher values give more |
+| **min_cluster_size** (**HDBSCAN**) | Minimum cluster size for **HDBSCAN**. Smaller values allow rare clusters, larger values make clustering more conservative |
 
 
