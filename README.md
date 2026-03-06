@@ -61,16 +61,16 @@ This step generate Tysserand networks for each patient/sample. You must fill **T
 
 | Clé                      | Description       |
 |--------------------------|-------------------|
-| Nodes directory          | folder where you store all your spatial data |
-| Patient column name      | Name of the first level of division for your file for example: 'patient' |
-| Sample column name       | Name of the second level of division if it exists |
-| Extension                | Extension of all files |
-| X coordinates column     | Name of the column containing the X spatial coordinates |
-| Y coordinates column     | Name of the column containing the Y spatial coordinates |
-| Phenotype column         | Column defining the phenotype of each cell |
-| Edges method             | Method used to compute edges | 
-| Min neighbors            | Minimum number of neighbors for the KNN edges |
-| CPU                      | Number of CPUs used for the parallelization process |
+| **Nodes directory**          | folder where you store all your spatial data |
+| **Patient column name**      | Name of the first level of division for your file for example: 'patient' |
+| **Sample column name**       | Name of the second level of division if it exists |
+| **Extension**                | Extension of all files |
+| **X coordinates column**     | Name of the column containing the X spatial coordinates |
+| **Y coordinates column**     | Name of the column containing the Y spatial coordinates |
+| **Phenotype column**         | Column defining the phenotype of each cell |
+| **Edges method**             | Method used to compute edges | 
+| **Min neighbors**            | Minimum number of neighbors for the KNN edges |
+| **CPU**                      | Number of CPUs used for the parallelization process |
 
 ## Step 2: Generate Assortativity
 
@@ -78,12 +78,12 @@ For this step you must fill **Assortativity** section. This step allow you to ge
 
 | Clé                   | Description       |
 |-----------------------|-------------------|
-| Network directory     | Folder where you store all your edges and nodes. Default if you run it after Tysserand Run |
-| Phenotype column      | Name of the first level of division for your file for example: 'patient' |
-| Patient column name   | Name of the second level of division if it exists |
-| Sample column name    | Extension of all files |
-| Extension             | Column defining the phenotype of each cell |
-| Index                 | Name of the column for the cells reference |
+| **Network directory**    | Folder where you store all your edges and nodes. Default if you run it after Tysserand Run |
+| **Phenotype column**      | Name of the first level of division for your file for example: 'patient' |
+| **Patient column name**   | Name of the second level of division if it exists |
+| **Sample column name**    | Extension of all files |
+| **Extension**             | Column defining the phenotype of each cell |
+| **Index**                 | Name of the column for the cells reference |
 
 ## Step 3: Plot Niches Analysis
 
@@ -91,15 +91,15 @@ In this step you must fill **NAS** section. This step will generate for you nich
 
 | Clé                   | Description       |
 |-----------------------|-------------------|
-| Network directory     | Folder where you store all your edges and nodes. Default if you run it after Tysserand Run |
-| Saving directory       | Name of the saving folder to multiply the analysis | 
-| Patient column name | Name of the first level of division for your file for example: 'patient' |
-| Sample column name  | Name of the second level of division if it exists |
-| Phenotype column | Column defining the phenotype of each cell |
-| Processing method | Choose the method of processing (per sample (work in progress) or aggregation) |
-| Niches method | Choose the method of niche analysis (NAS, SCAN-IT (work in progress)) |
-| X coordinates column for niches    | X column if it exist to rebuild all networks with niches clustering |
-| Y coordinates column for niches    | Y column if it exist to rebuild all networks with niches clustering |
+| **Network directory**     | Folder where you store all your edges and nodes. Default if you run it after Tysserand Run |
+| **Saving directory**       | Name of the saving folder to multiply the analysis | 
+| **Patient column name** | Name of the first level of division for your file for example: 'patient' |
+| **Sample column name**  | Name of the second level of division if it exists |
+| **Phenotype column** | Column defining the phenotype of each cell |
+| **Processing method** | Choose the method of processing (per sample (work in progress) or aggregation) |
+| **Niches method** | Choose the method of niche analysis (NAS, SCAN-IT (work in progress)) |
+| **X coordinates column for niches**    | X column if it exist to rebuild all networks with niches clustering |
+| **Y coordinates column for niches**    | Y column if it exist to rebuild all networks with niches clustering |
 
 **Niche clustering parameters:**
 
