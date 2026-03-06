@@ -277,7 +277,7 @@ def main():
                 return combo
             
             if lower_key in ['processing method'] and isinstance(value, str):
-                options = ['Aggregated nodes','Per sample' ,'both']
+                options = ['Aggregated nodes'] #,'Per sample' ,'both']
                 combo = QComboBox()
                 combo.addItems(options)
                 if value in options:
