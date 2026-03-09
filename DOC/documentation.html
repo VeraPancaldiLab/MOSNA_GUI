@@ -551,85 +551,85 @@
           <tr>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;">order</td>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;"> int </td>
-            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> Neighborhood order used in NAS aggregation. 'order=1' uses direct neighbors only, while higher values include more distant neighbors in the graph </td>
           </tr>
 
           <tr>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;">stat_funcs</td>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;"> List </td>
-            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> Statistical functions applied to aggregated neighbor features in NAS, such as 'mean', 'std', 'max', or 'median' </td>
           </tr>
 
           <tr>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;">stat_names</td>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;"> List </td>
-            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> Names associated with 'stat_funcs', used to label the generated feature columns </td>
           </tr>
 
           <tr>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;">clusterer_type</td>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;"> string </td>
-            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> Clustering method used to define niches or groups, for example 'gmm', 'spectral', 'hdbscan', or 'leiden' </td>
           </tr>
 
           <tr>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;">n_clusters</td>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;"> int </td>
-            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> Number of clusters to produce for methods that require it, mainly 'gmm' and 'spectral' </td>
           </tr>
 
           <tr>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;">reducer_type</td>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;"> string </td>
-            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> Dimensionality reduction method applied before clustering, such as 'umap' </td>
           </tr>
 
           <tr>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;">metric</td>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;"> string </td>
-            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> Distance metric used to compare observations, for example 'euclidean', 'manhattan', or 'cosine' </td>
           </tr>
 
           <tr>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;">resolution</td>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;"> float </td>
-            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> Granularity parameter specific to Leiden clustering. Lower values usually give fewer clusters, higher values give more </td>
           </tr>
 
           <tr>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;">n_neighbors</td>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;"> int </td>
-            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> Number of neighbors used to build the local structure of the data, especially in UMAP or graph construction </td>
           </tr>
 
           <tr>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;">min_dist</td>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;"> float </td>
-            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> UMAP parameter controlling how close points can be in the reduced space. Smaller values usually produce tighter groups </td>
           </tr>
 
           <tr>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;">dim_clust</td>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;"> int </td>
-            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> Number of dimensions kept in the reduced space for clustering </td>
           </tr>
 
           <tr>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;">min_cluster_size</td>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;"> int </td>
-            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> Minimum cluster size for HDBSCAN. Smaller values allow rare clusters, larger values make clustering more conservative </td>
           </tr>
 
           <tr>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;">k_cluster</td>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;"> int </td>
-            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> Number of neighbors used during the clustering step when building or refining the graph structure </td>
           </tr>
 
           <tr>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;">normalize</td>
             <td style="border:1px solid #ccc; padding:10px; text-align:center;"> string </td>
-            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> / </td>
+            <td style="border:1px solid #ccc; padding:10px; text-align:center;"> Normalization method applied to niche composition features before the predictive model, for example 'total', 'obs', 'niche', or 'clr' </td>
           </tr>
 
         </tbody>

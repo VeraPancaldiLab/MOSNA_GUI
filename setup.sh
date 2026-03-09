@@ -69,7 +69,7 @@ EOF
     echo "Raccourci créé : ${DESKTOP_FILE}"
     echo "Launcher créé  : ${LAUNCHER_SH}"
     echo
-    echo "Sur GNOME/Ubuntu, il faudra peut-être clic droit sur l'icône -> 'Allow Launching'."
+    echo -e "Sur GNOME/Ubuntu, il faudra peut-être clic droit sur l'icône -> 'Allow Launching'."
 else
     echo "[4/4] Environnement GitHub Actions détecté, création du launcher ignorée"
 fi
