@@ -4,9 +4,9 @@
 - [Tool](#tool)
     - [Tool Architecture](#tool-architecture)
     - [GUI Workflow](#tool-workflow)
-    - [Step 2](#step-1-draw-tysserand-spatial-networks)
-    - [Step 3](#step-2-generate-assortativity)
-    - [Step 4](#step-3-plot-niches-analysis)
+    - [Step 1 - Draw Tysserand Spatial Networks](#step-1-draw-tysserand-spatial-networks)
+    - [Step 2 - Generate Assortativity](#step-2-generate-assortativity)
+    - [Step 3 - Plot Niches Analysis](#step-3-plot-niches-analysis)
 
 # Installation
 
