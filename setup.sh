@@ -43,27 +43,26 @@ if [ "${GITHUB_ACTIONS}" = "false" ]; then
 
     # 4a) Script launcher (active conda + lance la GUI)
     cat > "${LAUNCHER_SH}" <<EOF
-    #!/usr/bin/env bash
-    set -e
-    source "${CONDA_BASE}/etc/profile.d/conda.sh"
-    conda activate "${ENV_NAME}"
-    python "${MOSNA_SCRIPT}"
-    EOF
+#!/usr/bin/env bash
+set -e
+source "${CONDA_BASE}/etc/profile.d/conda.sh"
+conda activate "${ENV_NAME}"
+python "${MOSNA_SCRIPT}"
+EOF
 
     chmod +x "${LAUNCHER_SH}"
 
-    # 4b) Fichier .desktop (icône cliquable)
     cat > "${DESKTOP_FILE}" <<EOF
-    [Desktop Entry]
-    Type=Application
-    Name=${APP_NAME}
-    Comment=Lance l'interface MOSNA dans l'environnement conda
-    Exec=/bin/bash -lc "${LAUNCHER_SH}"
-    Icon=${APP_DIR}/DOC/logo.png
-    Terminal=false
-    Categories=Science;Utility;
-    StartupNotify=true
-    EOF
+[Desktop Entry]
+Type=Application
+Name=${APP_NAME}
+Comment=Lance l'interface MOSNA dans l'environnement conda
+Exec=/bin/bash -lc "${LAUNCHER_SH}"
+Icon=${APP_DIR}/DOC/logo.png
+Terminal=false
+Categories=Science;Utility;
+StartupNotify=true
+EOF
 
     chmod +x "${DESKTOP_FILE}"
 
@@ -71,3 +70,6 @@ if [ "${GITHUB_ACTIONS}" = "false" ]; then
     echo "Launcher créé  : ${LAUNCHER_SH}"
     echo
     echo "Sur GNOME/Ubuntu, il faudra peut-être clic droit sur l'icône -> 'Allow Launching'."
+else
+    echo "[4/4] Environnement GitHub Actions détecté, création du launcher ignorée"
+fi
