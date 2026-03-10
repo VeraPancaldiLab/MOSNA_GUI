@@ -1,5 +1,5 @@
 from package.utils.find_sample import find_sample
-
+import gc
 import pandas as pd
 
 from tysserand import tysserand as ty
@@ -60,5 +60,7 @@ def draw_tysserand_niches(net_dir, save_dir, id_level_1, id_level_2, X, Y):
         fig.savefig(save_dir / f"net_{file.stem[6:]}_niches.png", dpi = 300, bbox_inches="tight", facecolor=fig.get_facecolor())
         plt.close(fig)
         emit_qt_progress(i,len(files),"[PROCESS] Draw Tysserand with niches labels")
+        del edges, pairs, celltypes_color_mapper, node, clustering
+        gc.collect()
 
     return None

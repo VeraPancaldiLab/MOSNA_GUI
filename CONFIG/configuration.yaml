@@ -1,40 +1,40 @@
 Tysserand:
-  Nodes directory: /home/owen.griere/Desktop/test_GUI/patient_sample_folder
+  Nodes directory: /home/owen.griere/Desktop/IMC-IF_Pierre/processed_data/IMC
   Patient column name: patient
   Sample column name: sample
-  Extension: csv
-  X coordinates column: centroid-0
-  Y coordinates column: centroid-1
-  Phenotype column: phenotype
+  Extension: parquet
+  X coordinates column: X_position
+  Y coordinates column: Y_position
+  Phenotype column: Cluster
   Edges method: delaunay
   Min neighbors: 3
   CPU: 20
 Assortativity:
   Network directory: Default
-  Phenotype column: Phenotype
+  Phenotype column: Cluster
   Patient column name: patient
   Sample column name: sample
   Extension: csv
-  Index: Object
+  Index: index
 Niche Analysis:
   Network directory: Default
-  Saving directory: niche_2
+  Saving directory: niche
   Extension: parquet
   Patient column name: patient
   Sample column name: sample
   Processing method: Aggregated nodes
   Niches method: NAS
-  Phenotype column: Phenotype
-  X coordinates column for niches: centroid-0
-  Y coordinates column for niches: centroid-1
+  Phenotype column: Cluster
+  X coordinates column for niches: X_position
+  Y coordinates column for niches: Y_position
   Aggregated nodes:
-    order: '2'
+    order: '1'
     stat_funcs: np.mean,np.std
     stat_names: [mean, std]
     clusterer_type: gmm
     n_clusters: 8
     reducer_type: umap
-    metric: euclidean
+    metric: manhattan
     resolution: 0.01
     n_neighbors: 20
     min_dist: 0.0
