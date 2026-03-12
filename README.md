@@ -30,12 +30,12 @@ but you can also use it directly in terminal by using those command:
 
 ## Tool architecture 
 
-![Mon Image](DOC/images/architecture.png)
+![Mon Image](assets/images/architecture.png)
 
 
 ## Tool Workflow
 
-![Mon Image](DOC/images/workflow.png)
+![Mon Image](assets/images/workflow.png)
 
 
 ### ❗You can directly use Tysserand tool of my own tool instead of run pre-processing if you respect this the following format of your data:

@@ -22,12 +22,12 @@ def main():
     BASE_DIR = Path(__file__).resolve().parent
 
     CONFIG_PATH = str(BASE_DIR / 'CONFIG' / 'configuration.yaml')
-    DOC_HTML_PATH = BASE_DIR / "DOC" / "documentation.html"
+    DOC_HTML_PATH = BASE_DIR / "assets" / "documentation.html"
     SCRIPTS = [
         str(BASE_DIR / 'package' / 'tysserand_network.py'),
         str(BASE_DIR / 'package' / 'assortativity.py'),
         str(BASE_DIR / 'package' / 'niche_analysis.py'),
-        str(BASE_DIR / 'package' / 'clear_temporary_files.sh'),
+        str(BASE_DIR / 'package' / 'clear_temporary.py'),
     ]
 
     class ScriptRunnerThread(QThread):
@@ -796,9 +796,7 @@ def main():
                 return
 
             ext = os.path.splitext(script)[1].lower()
-            if ext == ".sh":
-                cmd = ["bash", script,"--working_dir", self.working_dir]
-            elif ext == ".py":
+            if ext == ".py":
                 script_path = Path(script)
                 rel = script_path.relative_to(BASE_DIR)
                 module = ".".join(rel.with_suffix("").parts)

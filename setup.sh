@@ -38,7 +38,7 @@ pip install -e .
 cd ..
 conda install -y -c conda-forge "lifelines<0.28"
 
-if [ "${GITHUB_ACTIONS:-false}" != "true"]; then
+if [ "${GITHUB_ACTIONS:-false}" != "true" ]; then
     echo "[4/4] Création du launcher + icône de bureau"
 
     # 4a) Script launcher (active conda + lance la GUI)
@@ -58,7 +58,7 @@ Type=Application
 Name=${APP_NAME}
 Comment=Lance l'interface MOSNA dans l'environnement conda
 Exec=/bin/bash -lc "${LAUNCHER_SH}"
-Icon=${APP_DIR}/DOC/logo.png
+Icon=${APP_DIR}/assets/logo.ico
 Terminal=false
 Categories=Science;Utility;
 StartupNotify=true

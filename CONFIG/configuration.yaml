@@ -1,5 +1,5 @@
 Tysserand:
-  Nodes directory: /home/owen.griere/Desktop/IMC-IF_Pierre/processed_data/IMC
+  Nodes directory: /home/owen.griere/Desktop/IMC-IF_Pierre/processed_data/IF_C2
   Patient column name: patient
   Sample column name: sample
   Extension: parquet
@@ -15,7 +15,7 @@ Assortativity:
   Patient column name: patient
   Sample column name: sample
   Extension: csv
-  Index: index
+  Index: CellID
 Niche Analysis:
   Network directory: Default
   Saving directory: niche
