@@ -1,6 +1,7 @@
 # Mosna_analysis
 
-- [Installation](#installation)
+- [Installation Linux](#installation-linux)
+- [Installation Windows](#installation-windows)
 - [Tool](#tool)
     - [Tool Architecture](#tool-architecture)
     - [GUI Workflow](#tool-workflow)
@@ -8,12 +9,23 @@
     - [Step 2 - Generate Assortativity](#step-2-generate-assortativity)
     - [Step 3 - Plot Niches Analysis](#step-3-plot-niches-analysis)
 
-# Installation
+# Installation Linux
 
-clone my repo and run this:
+You must have mininconda or conda :
+
+clone my repo and run this, you can clone it where you want:
 
     chmod +x setup.sh
     ./setup.sh
+
+you will have an App on your Desktop with a documentation 
+
+# Installation Windows
+
+You must have conda or mininconda installed
+download my repo, unzip the file and run this double-click on
+
+    setup_windows.bat
 
 # Tool
 
