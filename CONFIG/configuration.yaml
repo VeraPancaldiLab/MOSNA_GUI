@@ -1,21 +1,21 @@
 Tysserand:
-  Nodes directory: /home/owen.griere/Desktop/IMC-IF_Pierre/processed_data/IF_C2
+  Nodes directory: /home/owen.griere/Desktop/Tobylawrence_PDACIMC/SCRIPT_to_analyse/phenograph_clustering/nodes_phenotyped
   Patient column name: patient
   Sample column name: sample
   Extension: parquet
-  X coordinates column: X_position
-  Y coordinates column: Y_position
-  Phenotype column: Cluster
+  X coordinates column: centroid-0
+  Y coordinates column: centroid-1
+  Phenotype column: Phenotype
   Edges method: delaunay
   Min neighbors: 3
-  CPU: 20
+  CPU: 10
 Assortativity:
   Network directory: Default
-  Phenotype column: Cluster
+  Phenotype column: Phenotype
   Patient column name: patient
   Sample column name: sample
-  Extension: csv
-  Index: CellID
+  Extension: parquet
+  Index: Object
 Niche Analysis:
   Network directory: Default
   Saving directory: niche
