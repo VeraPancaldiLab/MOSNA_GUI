@@ -8,7 +8,7 @@ Tysserand:
   Phenotype column: Phenotype
   Edges method: delaunay
   Min neighbors: 3
-  CPU: 10
+  CPU: 20
 Assortativity:
   Network directory: Default
   Phenotype column: Phenotype

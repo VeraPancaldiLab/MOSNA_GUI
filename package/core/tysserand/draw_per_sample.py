@@ -20,19 +20,15 @@ from mosna import mosna
 from ...utils.read_extension import get_opener
 from ...utils.find_sample_from_file import find_sample_from_file
 
-def draw_per_sample(file, X_position, Y_position, Pheno_col, method, min_neighbors, saving_folder, temp_folder, patient_colmun, sample_column, extension):
+def draw_per_sample(file, X_position, Y_position, pheno_col, clusters_cmap, method, min_neighbors, saving_folder, temp_folder, patient_colmun, sample_column, extension):
     opener = get_opener(extension)
     node = opener(file)
     
     patient, sample = find_sample_from_file(file, patient_colmun, sample_column)
     patient = int("".join(c for c in patient if c.isdigit()))
 
-    clustering = node[Pheno_col]
-    uniq = pd.Series(clustering).value_counts().index
-
-    clusters_cmap = mosna.make_cluster_cmap(uniq)
-    n_colors = len(clusters_cmap)
-    celltypes_color_mapper = {x: clusters_cmap[i % n_colors] for i, x in enumerate(uniq)}
+    
+    clustering = node[pheno_col]
 
     coords = node[[X_position,Y_position]].to_numpy()
     pairs = ty.build_delaunay(coords)
@@ -41,7 +37,7 @@ def draw_per_sample(file, X_position, Y_position, Pheno_col, method, min_neighbo
 
     fig, ax = ty.plot_network(
                 coords, pairs,labels=clustering,
-                color_mapper=celltypes_color_mapper,
+                color_mapper=clusters_cmap,
                 legend_opt={'loc': 'center left', 'bbox_to_anchor': (1.05, 0.5), 'fontsize': 30, 'markerscale': 5},
                 size_nodes=8,
                 figsize=(30,30)
@@ -69,5 +65,5 @@ def draw_per_sample(file, X_position, Y_position, Pheno_col, method, min_neighbo
         node.to_parquet(temp_folder / f"nodes_{patient_colmun}-{patient}_{sample_column}-{sample}.parquet")
         edge.to_parquet(temp_folder / f"edges_{patient_colmun}-{patient}_{sample_column}-{sample}.parquet")
     
-    del pairs, coords, celltypes_color_mapper, clustering, clusters_cmap, node, opener, n_colors, edge
+    del pairs, coords, clustering, clusters_cmap, node, opener, edge
     gc.collect()

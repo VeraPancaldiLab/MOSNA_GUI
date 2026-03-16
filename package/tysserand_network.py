@@ -11,6 +11,7 @@ from package.utils.assert_params import assert_params
 from package.utils.find_sample import find_sample
 from package.core.tysserand.assert_file_for_tysserand import assert_file_for_tysserand
 from package.utils.emit_qt_progress import emit_qt_progress, emit_qt_info
+from package.core.tysserand.generate_cmap import generate_cmap
 
 def worker_draw_wrapper(args):
     result = worker_draw(args)
@@ -40,11 +41,14 @@ def main():
     net_dir_list = find_sample(net_dir, config['Extension'], config["Patient column name"], config["Sample column name"])
 
     cpu_max = verif_cpu(config['CPU'], len(net_dir_list))
+    c_map = generate_cmap(net_dir, config['Phenotype column'], config['Extension'], config["Patient column name"], config["Sample column name"])
+
     args_list = [(
             patient_sample,
             config["X coordinates column"],
             config["Y coordinates column"],
             config["Phenotype column"],
+            c_map,
             config["Edges method"],
             config['Min neighbors'],
             saving_folder,
@@ -59,7 +63,7 @@ def main():
     for i, file in enumerate(tqdm(net_dir_list, desc="[PROCESS] Verification of all file")):
         assert_file_for_tysserand(file, config, config['Extension'])
         emit_qt_progress(i, len(net_dir_list), "[PROCESS] Verification of all file")
-
+    
     emit_qt_info("[INFO] Files are well builded\n")
 
     emit_qt_progress(0, len(args_list), "[MULTI PROCESS] Processing file")
