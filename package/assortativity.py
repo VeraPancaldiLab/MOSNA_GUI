@@ -44,6 +44,7 @@ def main():
                                           id_level_1=id_level_1,
                                           id_level_2=id_level_2, 
                                           extension=extension,
+                                          n_shuffle=config['Number of shuffle'],
     )
     net_stat = net_stat.set_index("id")
     net_stat.to_csv(saving_folder / "net_stat.csv", index=True)

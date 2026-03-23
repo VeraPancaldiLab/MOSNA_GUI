@@ -31,8 +31,8 @@ def main():
     ]
 
     class ScriptRunnerThread(QThread):
-        finished_signal = Signal(bool, int, str)
-        output_line = Signal(str)  # Nouvelle sortie temps réel
+        finished_signal = Signal(bool, int, str, float)
+        output_line = Signal(str)
 
         def __init__(self, command, cwd=None, env=None):
             super().__init__()
@@ -41,11 +41,12 @@ def main():
             self.env = env
 
         def run(self):
+            start_time = time.perf_counter()
             try:
                 proc = subprocess.Popen(
                     self.command,
                     stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
+                    stderr=subprocess.PIPE,
                     text=True,
                     cwd=self.cwd,
                     env=self.env,
@@ -53,22 +54,45 @@ def main():
                     universal_newlines=True
                 )
 
-                collected = []
+                stdout_lines = []
 
-                # Lecture temps réel
                 if proc.stdout is not None:
                     for line in proc.stdout:
                         line = line.rstrip("\n")
-                        collected.append(line)
+                        stdout_lines.append(line)
                         self.output_line.emit(line)
 
+                stderr_output = ""
+                if proc.stderr is not None:
+                    stderr_output = proc.stderr.read()
+
                 returncode = proc.wait()
-                output = "\n".join(collected)
                 success = (returncode == 0)
-                self.finished_signal.emit(success, returncode, output)
+
+                if success:
+                    output = "\n".join(stdout_lines)
+                else:
+                    error_lines = [line.strip() for line in stderr_output.splitlines() if line.strip()]
+
+                    if not error_lines:
+                        error_lines = [line.strip() for line in stdout_lines if line.strip()]
+
+                    output = "Erreur inconnue."
+                    for line in reversed(error_lines):
+                        if (
+                            line != "Traceback (most recent call last):"
+                            and "[QT_PROGRESS]" not in line
+                            and not line.startswith("[INFO]")
+                        ):
+                            output = line
+                            break
+
+                elapsed = time.perf_counter() - start_time
+                self.finished_signal.emit(success, returncode, output, elapsed)
 
             except Exception as e:
-                self.finished_signal.emit(False, -1, f"Error while running the command: {e}")
+                elapsed = time.perf_counter() - start_time
+                self.finished_signal.emit(False, -1, f"Error while running the command: {e}", elapsed)
     class FlowStyleList(list):
         pass
 
@@ -119,6 +143,7 @@ def main():
                 "Network_directory": (str, type(None)),
                 "Phenotype column":(str, type(None)),
                 "Index":(str, type(None)),
+                "Number of shuffle":(int, type(None)),
 
                 ### NAS ###
                 "Saving directory": (str, type(None)),
@@ -142,12 +167,13 @@ def main():
                 "normalize": (str, type(None)),
             }
 
-        def _on_script_finished(self, script, success, returncode, output):
+        def _on_script_finished(self, script, success, returncode, output, elapsed):
             self._progress_stop(success)
             base = os.path.basename(script)
+            time_of_execution = self._format_duration(elapsed)
 
             if success:
-                QMessageBox.information(self, "Success", f"Script completed: {base}")
+                QMessageBox.information(self, "Success", f"Script completed: {base}\n in {time_of_execution}")
                 return
 
             # En cas d'échec, on affiche un extrait lisible.
@@ -160,9 +186,21 @@ def main():
             QMessageBox.critical(
                 self,
                 "Error",
-                f"Script failed: {base}\nExit code: {returncode}\n\nOutput:\n{output}"
+                f"Script failed: {base}\nExit code: {returncode}\nExecution time: {time_of_execution}\n\nOutput:\n{output}"
             )
         
+        def _format_duration(self, seconds: float) -> str:
+            total_seconds = int(round(seconds))
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            secs = total_seconds % 60
+
+            if hours > 0:
+                return f"{hours} h {minutes} min {secs} s"
+            if minutes > 0:
+                return f"{minutes} min {secs} s"
+            return f"{seconds:.2f} s"
+
         def _set_ui_enabled(self, enabled: bool):
 
                 if hasattr(self, "tabs"):
@@ -819,7 +857,7 @@ def main():
             self.script_thread.output_line.connect(self._on_script_output_line)
 
             self.script_thread.finished_signal.connect(
-                lambda success, code, out: self._on_script_finished(script, success, code, out)
+                lambda success, code, out, elapsed: self._on_script_finished(script, success, code, out, elapsed)
             )
 
             self.script_thread.start()

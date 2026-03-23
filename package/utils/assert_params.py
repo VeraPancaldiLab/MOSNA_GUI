@@ -19,6 +19,7 @@ def assert_params(analyse_to_perform, config):
         assert isinstance(config["Sample column name"],str) or isinstance(config['Sample column name'], type(None)), "Sample column name parameter must be str"
         assert isinstance(config["Extension"],str), "Extension parameter must be str"
         assert config["Index"] is None or isinstance(config["Index"],str), "Index parameter must be str"
+        assert isinstance(config['Number of shuffle'],int), 'Number of shuffle must be an integer'
 
     elif analyse_to_perform == "NAS":
         import re
