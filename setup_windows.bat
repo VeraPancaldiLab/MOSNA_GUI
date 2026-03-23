@@ -70,15 +70,16 @@ if exist "%ICON_FILE%" (
 echo.
 
 echo [STEP 1/7] Creating the Conda environment "%ENV_NAME%"...
-call "%CONDA_BAT%" env list | findstr /I /C:"%ENV_NAME%" >nul
-if errorlevel 1 (
-    call "%CONDA_BAT%" create -n %ENV_NAME% python=%PYTHON_VERSION% -y
+
+if exist "%MINICONDA_DIR%\envs\%ENV_NAME%" (
+    echo [INFO] The environment "%ENV_NAME%" already exists.
+) else (
+    echo [INFO] Environment "%ENV_NAME%" not found. Creating it now...
+    call "%CONDA_BAT%" create -n "%ENV_NAME%" python=%PYTHON_VERSION% -y
     if errorlevel 1 (
         echo [ERROR] Failed to create the Conda environment.
         goto :fail
     )
-) else (
-    echo [INFO] The environment "%ENV_NAME%" already exists.
 )
 
 echo.
