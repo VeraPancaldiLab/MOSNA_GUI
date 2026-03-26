@@ -35,9 +35,19 @@ def main():
         net_dir = Path(working_dir).expanduser().resolve() / Path(config['Network directory']).expanduser()
         extension = config["Extension"]
     attributes_col = prepare_network_for_assort(net_dir, temp_folder, Pheno_col, id_level_1, id_level_2, extension, nodes_index)
-
     emit_qt_info(f"[PROCESS] Compute Assortativity")
-    net_stat = mosna.groups_assort_mixmat(temp_folder, 
+    if config['Randomization diagnostic']:
+        net_stat = mosna.groups_assort_mixmat(temp_folder, 
+                                          Pheno_col,
+                                          use_attributes=attributes_col,
+                                          make_onehot=False, 
+                                          id_level_1=id_level_1,
+                                          id_level_2=id_level_2, 
+                                          extension=extension,
+                                          n_shuffle=20
+        )
+    else:
+        net_stat = mosna.groups_assort_mixmat(temp_folder, 
                                           Pheno_col,
                                           use_attributes=attributes_col,
                                           make_onehot=False, 
@@ -45,11 +55,11 @@ def main():
                                           id_level_2=id_level_2, 
                                           extension=extension,
                                           n_shuffle=config['Number of shuffle'],
-    )
-    net_stat = net_stat.set_index("id")
-    net_stat.to_csv(saving_folder / "net_stat.csv", index=True)
+        )
+        net_stat = net_stat.set_index("id")
+        net_stat.to_csv(saving_folder / "net_stat.csv", index=True)
 
-    emit_qt_info(f"[INFO] Assortativity table saved in {saving_folder}")
+        emit_qt_info(f"[INFO] Assortativity table saved in {saving_folder}")
 
 if __name__ == '__main__':
     main()

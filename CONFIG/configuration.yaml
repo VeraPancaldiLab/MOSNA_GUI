@@ -16,9 +16,8 @@ Assortativity:
   Sample column name: sample
   Extension: parquet
   Index: Object
-  Number of shuffle: 50
+  Number of shuffle: 2000
   Randomization diagnostic: false
-  diagnostic method: mean tracking
 Niche Analysis:
   Network directory: Default
   Saving directory: niche

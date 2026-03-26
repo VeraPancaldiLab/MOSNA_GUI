@@ -146,7 +146,6 @@ def main():
                 "Index":(str, type(None)),
                 "Number of shuffle":(int, type(None)),
                 "Randomization diagnostic":(bool, type(None)),
-                "Diagnostic method":(str, type(None)),
 
                 ### NAS ###
                 "Saving directory": (str, type(None)),
@@ -176,7 +175,19 @@ def main():
             time_of_execution = self._format_duration(elapsed)
 
             if success:
-                QMessageBox.information(self, "Success", f"Script completed: {base}\n in {time_of_execution}")
+                if base == "assortativity.py" and self.config_data.get("Assortativity", {}).get("General", {}).get("Randomization diagnostic"):
+                    n_shuffle = self.config_data.get("Assortativity", {}).get("General", {}).get("Number of shuffle", 0)
+                    estimated_total_seconds = elapsed * n_shuffle / 20
+                    diagnostic_time = self._format_duration(estimated_total_seconds)
+                    QMessageBox.information(
+                        self,
+                        "Success",
+                        f"Script completed: {base}\n"
+                        f"- in {time_of_execution}\n"
+                        f"- Diagnostic: estimated {diagnostic_time} for {n_shuffle} shuffles"
+                    )
+                else:
+                    QMessageBox.information(self, "Success", f"Script completed: {base}\n in {time_of_execution}")
                 return
 
             # En cas d'échec, on affiche un extrait lisible.
@@ -311,14 +322,6 @@ def main():
 
             if lower_key in ['niches method'] and isinstance(value, str):
                 options = ['NAS', "SCAN-IT"]
-                combo = QComboBox()
-                combo.addItems(options)
-                if value in options:
-                    combo.setCurrentText(value)
-                return combo
-            
-            if lower_key in ['diagnostic method'] and isinstance(value, str):
-                options = ['mean tracking', "std tracking","assort tracking"]
                 combo = QComboBox()
                 combo.addItems(options)
                 if value in options:
