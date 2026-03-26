@@ -9,6 +9,7 @@ def main():
     from pathlib import Path
     from yaml.representer import SafeRepresenter
     import markdown
+    import time
 
     from PySide6.QtGui import QDesktopServices
     from PySide6.QtWidgets import (
@@ -144,6 +145,8 @@ def main():
                 "Phenotype column":(str, type(None)),
                 "Index":(str, type(None)),
                 "Number of shuffle":(int, type(None)),
+                "Randomization diagnostic":(bool, type(None)),
+                "Diagnostic method":(str, type(None)),
 
                 ### NAS ###
                 "Saving directory": (str, type(None)),
@@ -308,6 +311,14 @@ def main():
 
             if lower_key in ['niches method'] and isinstance(value, str):
                 options = ['NAS', "SCAN-IT"]
+                combo = QComboBox()
+                combo.addItems(options)
+                if value in options:
+                    combo.setCurrentText(value)
+                return combo
+            
+            if lower_key in ['diagnostic method'] and isinstance(value, str):
+                options = ['mean tracking', "std tracking","assort tracking"]
                 combo = QComboBox()
                 combo.addItems(options)
                 if value in options:
