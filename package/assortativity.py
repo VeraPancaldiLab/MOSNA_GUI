@@ -47,7 +47,7 @@ def main():
                                           n_shuffle=20
         )
     else:
-        net_stat = mosna.groups_assort_mixmat(temp_folder, 
+        net_stat = mosna.groups_assort_mixmat(temp_folder,
                                           Pheno_col,
                                           use_attributes=attributes_col,
                                           make_onehot=False, 
