@@ -17,7 +17,7 @@ Assortativity:
   Extension: parquet
   Index: Object
   Number of shuffle: 2000
-  Randomization diagnostic: false
+  Randomization diagnostic: true
 Niche Analysis:
   Network directory: Default
   Saving directory: niche
