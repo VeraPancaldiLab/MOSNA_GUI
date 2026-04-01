@@ -34,7 +34,7 @@ def main():
     else:
         net_dir = Path(working_dir).expanduser().resolve() / Path(config['Network directory']).expanduser()
         extension = config["Extension"]
-    #attributes_col = prepare_network_for_assort(net_dir, temp_folder, Pheno_col, id_level_1, id_level_2, extension, nodes_index)
+        
     emit_qt_info(f"[PROCESS] Compute Assortativity")
     if config['Randomization diagnostic']:
         net_stat = mosna.groups_assort_mixmat(net_dir, 

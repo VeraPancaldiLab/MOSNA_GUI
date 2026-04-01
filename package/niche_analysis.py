@@ -43,6 +43,7 @@ def main():
                         config.get("Sample column name", "sample"),
                         extension,
                         config["Phenotype column"])
+        
     else:
         extension = config['Extension']
         net_dir = Path(working_dir).expanduser().resolve() / Path(config['Network directory']).expanduser()
@@ -109,7 +110,7 @@ def main():
                 shutil.rmtree(path)
         save_config(save_dir, config)
 
-        X, Y = get_config(config_path)[analyse]['X coordinates column'], get_config(config_path)['Tysserand']['Y coordinates column']
+        X, Y = get_config(config_path)[analyse]['X coordinates column for niches'], get_config(config_path)[analyse]['Y coordinates column for niches']
         
         if X is None or Y is None:
             draw_tysserand_niches(net_dir, save_dir, kwargs['id_level_1'], kwargs['id_level_2'], X, Y)
@@ -155,7 +156,7 @@ def main():
                 shutil.rmtree(path)
         save_config(save_dir, config)
 
-        X, Y = get_config(config_path)[analyse]['X coordinates column'], get_config(config_path)['Tysserand']['Y coordinates column']
+        X, Y = get_config(config_path)[analyse]['X coordinates column for niches'], get_config(config_path)[analyse]['Y coordinates column for niches']
 
         if X is None or Y is None:
             draw_tysserand_niches(net_dir, save_dir, kwargs['id_level_1'], kwargs['id_level_2'], X, Y)
