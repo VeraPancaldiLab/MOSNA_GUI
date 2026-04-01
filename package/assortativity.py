@@ -4,7 +4,6 @@ from tqdm import tqdm
 
 from package.utils.read_config import get_config, get_arguments
 from package.utils.assert_params import assert_params
-from package.core.assortativity.prepare_network_for_assort import prepare_network_for_assort
 from package.utils.emit_qt_progress import emit_qt_info
 
 from mosna import mosna
