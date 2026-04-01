@@ -21,7 +21,6 @@ def main():
     config_path, working_dir = get_arguments()
     config = get_config(config_path)[analyse]
     working_dir = Path(working_dir)
-    temp_folder = working_dir / "temp/net_dir_mosna"
 
     assert_params(analyse, config)
 
@@ -33,10 +32,8 @@ def main():
     else:
         per_sample = with_aggregation = True
 
-    
 
     if config['Network directory'] == 'Default':
-        net_dir = temp_folder
         extension = 'parquet'
         assert_net_niches(net_dir, 
                         config["Patient column name"],
@@ -54,9 +51,8 @@ def main():
                         config["Phenotype column"])
 
         if extension != "parquet":
-            convert_net_dir(net_dir, config["Patient column name"], config.get("Sample column name", "sample"), extension, temp_folder)
+            convert_net_dir(net_dir, config["Patient column name"], config.get("Sample column name", "sample"), extension, net_dir)
             extension = 'parquet'
-            net_dir = temp_folder
 
     emit_qt_info('[INFO] Verification and Convertion of the files')
 
@@ -77,7 +73,7 @@ def main():
             "method": config.get("method", "NAS"),
             "net_dir": net_dir,
             "save_dir": save_dir,
-            "temp_dir": temp_folder,
+            "temp_dir": net_dir,
             "pheno_col": config["Phenotype column"], 
             "uniq_phenotype": uniq_phenotype,   
             "stat_funcs": config.get("stat_funcs", "default"),
@@ -123,7 +119,7 @@ def main():
             "method": config.get("method", "NAS"),
             "net_dir": net_dir,
             "save_dir": save_dir,
-            "temp_dir": temp_folder,
+            "temp_dir": net_dir,
             "pheno_col": config["Phenotype column"], 
             "uniq_phenotype": uniq_phenotype,    
             "stat_funcs": config.get("stat_funcs", "default"),

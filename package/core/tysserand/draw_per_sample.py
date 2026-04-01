@@ -26,7 +26,6 @@ def draw_per_sample(file, X_position, Y_position, pheno_col, clusters_cmap, meth
     
     patient, sample = find_sample_from_file(file, patient_colmun, sample_column)
     patient = int("".join(c for c in patient if c.isdigit()))
-
     
     clustering = node[pheno_col]
 

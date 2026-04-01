@@ -5,6 +5,7 @@ import pandas as pd
 from tysserand import tysserand as ty
 from mosna import mosna
 from package.utils.emit_qt_progress import emit_qt_progress
+from package.core.tysserand.generate_cmap import generate_cmap
 
 import matplotlib
 matplotlib.use("Agg")
@@ -18,11 +19,13 @@ plt.rcParams.update({ "figure.facecolor": "#0b1020",
                     "text.color": "#e0e6ff", 
                     "font.size": 14, 
                     "axes.titleweight": "bold"})
+
 from matplotlib.collections import LineCollection
 from matplotlib.lines import Line2D
 
 def draw_tysserand_niches(net_dir, save_dir, id_level_1, id_level_2, X, Y):
 
+    c_map = generate_cmap(net_dir, 'niche', 'parquet', id_level_1, id_level_2)
     files = find_sample(net_dir, 'parquet', id_level_1, id_level_2)
     emit_qt_progress(0,len(files),"[PROCESS] Draw Tysserand with niches labels")
 
@@ -30,11 +33,6 @@ def draw_tysserand_niches(net_dir, save_dir, id_level_1, id_level_2, X, Y):
 
         node = pd.read_parquet(file)
         clustering = node['niches']
-        uniq = pd.Series(clustering).value_counts().index
-        clusters_cmap = mosna.make_cluster_cmap(uniq)
-        n_colors = len(clusters_cmap)
-        celltypes_color_mapper = {x: clusters_cmap[i % n_colors] for i, x in enumerate(uniq)}
-
         coords = node[[X, Y]].to_numpy()
 
         edges_path = file.parent / ("edges_" + file.name[6:])
@@ -43,7 +41,7 @@ def draw_tysserand_niches(net_dir, save_dir, id_level_1, id_level_2, X, Y):
 
         fig, ax = ty.plot_network(
                 coords, pairs,labels=clustering,
-                color_mapper=celltypes_color_mapper,
+                color_mapper=c_map,
                 legend_opt={'loc': 'center left', 'bbox_to_anchor': (1.05, 0.5), 'fontsize': 30, 'markerscale': 5},
                 size_nodes=8,
                 figsize=(30,30)
