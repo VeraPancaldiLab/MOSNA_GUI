@@ -57,12 +57,23 @@ def aggregated_niches(method, net_dir, save_dir, temp_dir ,pheno_col, uniq_pheno
     cell_types = merge_niche_pheno(net_dir, pheno_col, cluster_labels)
 
     emit_qt_info("[PROCESS] Generate Niches Composition")
-    counts = mosna.make_niches_composition(
+    if normalize == 'all':
+        for normalization in ['total', 'niche', 'obs', 'clr', 'niche&obs']:
+            counts = mosna.make_niches_composition(
+                    var=cell_types,
+                    niches=cluster_labels,
+                    var_label=pheno_col,
+                    normalize=normalization
+            )
+            save_dir_norm = save_dir / f'{normalization}'
+            save_dir_norm.mkdir(exist_ok=True, parents=True)
+            mosna_figures(cluster_labels, counts, save_dir_norm)
+    else:
+        counts = mosna.make_niches_composition(
                     var=cell_types,
                     niches=cluster_labels,
                     var_label=pheno_col,
                     normalize=normalize
-    )
+        )
+        mosna_figures(cluster_labels, counts, save_dir)
     emit_qt_progress(3,3, "[PROCESS] Niches Analysis")
-
-    mosna_figures(cluster_labels, counts, save_dir)

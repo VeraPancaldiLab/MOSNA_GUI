@@ -524,7 +524,7 @@ def main():
                 return combo
 
             if lower_key in ['normalize'] and isinstance(value, str):
-                options = ['total', 'niche', 'obs', 'clr', 'niche&obs']
+                options = ['total', 'niche', 'obs', 'clr', 'niche&obs', 'all']
                 combo = QComboBox()
                 combo.addItems(options)
                 if value in options:
