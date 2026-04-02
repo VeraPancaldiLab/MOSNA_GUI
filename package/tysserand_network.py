@@ -67,6 +67,7 @@ def main():
     emit_qt_info("[INFO] Files are well builded\n")
 
     emit_qt_progress(0, len(args_list), "[MULTI PROCESS] Processing file")
+    
     process_map(
         worker_draw_wrapper,
         args_list,

@@ -132,15 +132,10 @@ def main():
                 Y,
                 'niches',
                 c_map,
-                'delaunay',
-                '30',
-                save_dir,
-                'None',
-                kwargs['id_level_1'],
-                kwargs['id_level_2'],
-                'parquet'
-                )
-                for patient_sample in files]
+                'delaunay','30',
+                save_dir,'None',
+                kwargs['id_level_1'],kwargs['id_level_2'],
+                'parquet')for patient_sample in files]
             
             process_map(
                 worker_draw_wrapper,
