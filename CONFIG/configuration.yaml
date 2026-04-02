@@ -37,14 +37,14 @@ Niche Analysis:
     clusterer_type: gmm
     n_clusters: 6
     reducer_type: umap
-    metric: cosine
+    metric: manhattan
     resolution: 0.05
     n_neighbors: 50
     min_dist: 0.0
     dim_clust: 3
     min_cluster_size: 100
     k_cluster: 20
-    normalize: total
+    normalize: all
   Per sample:
     order: '1'
     stat_funcs: np.mean,np.std

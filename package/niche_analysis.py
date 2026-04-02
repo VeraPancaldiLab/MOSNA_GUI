@@ -10,7 +10,6 @@ from package.utils.convert_net_dir import convert_net_dir
 from package.core.NAS.assert_net_niches import assert_net_niches
 from package.utils.emit_qt_progress import emit_qt_info
 from package.utils.save_config import save_config
-from package.core.tysserand.draw_tysserand_niches import draw_tysserand_niches
 from package.utils.verif_cpu import verif_cpu
 from package.core.tysserand.draw_per_sample import draw_per_sample
 from package.utils.find_sample import find_sample
@@ -192,7 +191,7 @@ def main():
         X, Y = config['X coordinates column for niches'], config['Y coordinates column for niches']
 
         if X is not None and Y is not None:
-            draw_tysserand_niches(net_dir, save_dir, kwargs['id_level_1'], kwargs['id_level_2'], X, Y)
+            pass
 
 if __name__ == '__main__':
     main()
