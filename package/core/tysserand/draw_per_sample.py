@@ -20,7 +20,7 @@ from mosna import mosna
 from ...utils.read_extension import get_opener
 from ...utils.find_sample_from_file import find_sample_from_file
 
-def draw_per_sample(file, 
+def draw_per_sample(node_file, 
                     X_position, 
                     Y_position, 
                     pheno_col, 
@@ -31,20 +31,24 @@ def draw_per_sample(file,
                     temp_folder, 
                     patient_colmun, 
                     sample_column, 
-                    extension):
+                    extension,
+                    edges_file = None):
     
     opener = get_opener(extension)
-    node = opener(file)
+    node = opener(node_file)
     
-    patient, sample = find_sample_from_file(file, patient_colmun, sample_column)
+    patient, sample = find_sample_from_file(node_file, patient_colmun, sample_column)
     patient = int("".join(c for c in patient if c.isdigit()))
     
     clustering = node[pheno_col]
 
     coords = node[[X_position,Y_position]].to_numpy()
-    pairs = ty.build_delaunay(coords)
-            
-    pairs = ty.link_solitaries(coords, pairs, method=method, min_neighbors=min_neighbors, verbose=0)
+
+    if edges_file is None:
+        pairs = ty.build_delaunay(coords)
+        pairs = ty.link_solitaries(coords, pairs, method=method, min_neighbors=min_neighbors, verbose=0)
+    else:
+        pairs = pd.read_parquet(edges_file)
 
     fig, ax = ty.plot_network(
                 coords, pairs,labels=clustering,
