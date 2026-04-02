@@ -63,6 +63,6 @@ def assert_params(analyse_to_perform, config):
             assert isinstance(config[verification_process]["min_cluster_size"], int), "min_cluster_size must be int"
             assert isinstance(config[verification_process]["k_cluster"], int), "k_cluster must be int"
             assert isinstance(config[verification_process]["normalize"], str), "normalize must be str"
-            assert config[verification_process]["normalize"] in ['total', 'niche', 'obs', 'clr', 'niche&obs']
+            assert config[verification_process]["normalize"] in ['total', 'niche', 'obs', 'clr', 'niche&obs', 'all']
 
     return None
