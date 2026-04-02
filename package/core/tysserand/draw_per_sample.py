@@ -48,7 +48,7 @@ def draw_per_sample(node_file,
         pairs = ty.build_delaunay(coords)
         pairs = ty.link_solitaries(coords, pairs, method=method, min_neighbors=min_neighbors, verbose=0)
     else:
-        pairs = pd.read_parquet(edges_file)
+        pairs = pd.read_parquet(edges_file).values
 
     fig, ax = ty.plot_network(
                 coords, pairs,labels=clustering,
