@@ -55,7 +55,8 @@ def main():
             temp_folder,
             config["Patient column name"],
             config["Sample column name"],
-            config['Extension']
+            config['Extension'],
+            None
             )
             for patient_sample in net_dir_list]
     
