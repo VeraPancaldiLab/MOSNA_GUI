@@ -1,6 +1,7 @@
 import pandas as pd
 from pathlib import Path
 import shutil
+from tqdm.contrib.concurrent import process_map
 
 from package.utils.read_config import get_config, get_arguments
 from package.utils.assert_params import assert_params
@@ -10,8 +11,19 @@ from package.core.NAS.assert_net_niches import assert_net_niches
 from package.utils.emit_qt_progress import emit_qt_info
 from package.utils.save_config import save_config
 from package.core.tysserand.draw_tysserand_niches import draw_tysserand_niches
+from package.utils.verif_cpu import verif_cpu
+from package.core.tysserand.draw_per_sample import draw_per_sample
+from package.utils.find_sample import find_sample
+from package.core.tysserand.generate_cmap import generate_cmap
 
 from mosna import mosna
+
+def worker_draw_wrapper(args):
+    result = worker_draw(args)
+    return result
+
+def worker_draw(args):
+    return draw_per_sample(*args)
 
 def main():
 
@@ -35,6 +47,7 @@ def main():
 
     if config['Network directory'] == 'Default':
         extension = 'parquet'
+        net_dir = working_dir / "temp/net_dir_mosna"
         assert_net_niches(net_dir, 
                         config["Patient column name"],
                         config.get("Sample column name", "sample"),
@@ -106,10 +119,36 @@ def main():
                 shutil.rmtree(path)
         save_config(save_dir, config)
 
-        X, Y = get_config(config_path)[analyse]['X coordinates column for niches'], get_config(config_path)[analyse]['Y coordinates column for niches']
+        X, Y = config['X coordinates column for niches'], config['Y coordinates column for niches']
         
-        if X is None or Y is None:
-            draw_tysserand_niches(net_dir, save_dir, kwargs['id_level_1'], kwargs['id_level_2'], X, Y)
+        if X is not None and Y is not None:
+            c_map = generate_cmap(net_dir, 'niche', 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
+            files = find_sample(net_dir, 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
+            cpu_max = verif_cpu(config['CPU'], len(files))
+
+            args_list = [(
+                patient_sample,
+                X,
+                Y,
+                'niches',
+                c_map,
+                'delaunay',
+                '30',
+                save_dir,
+                'None',
+                kwargs['id_level_1'],
+                kwargs['id_level_2'],
+                'parquet'
+                )
+                for patient_sample in files]
+            
+            process_map(
+                worker_draw_wrapper,
+                args_list,
+                max_workers=cpu_max,
+                desc=" └─ [MULTI PROCESS] Processing file",
+                chunksize=1
+            )
 
     elif per_sample:
 
@@ -152,12 +191,10 @@ def main():
                 shutil.rmtree(path)
         save_config(save_dir, config)
 
-        X, Y = get_config(config_path)[analyse]['X coordinates column for niches'], get_config(config_path)[analyse]['Y coordinates column for niches']
+        X, Y = config['X coordinates column for niches'], config['Y coordinates column for niches']
 
-        if X is None or Y is None:
+        if X is not None and Y is not None:
             draw_tysserand_niches(net_dir, save_dir, kwargs['id_level_1'], kwargs['id_level_2'], X, Y)
-        
-        
 
 if __name__ == '__main__':
     main()

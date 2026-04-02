@@ -20,7 +20,7 @@ Assortativity:
   Randomization diagnostic: false
 Niche Analysis:
   Network directory: Default
-  Saving directory: niche
+  Saving directory: niche_2
   Extension: parquet
   Patient column name: patient
   Sample column name: sample
@@ -29,6 +29,7 @@ Niche Analysis:
   Phenotype column: Phenotype
   X coordinates column for niches: centroid-0
   Y coordinates column for niches: centroid-1
+  CPU: 20
   Aggregated nodes:
     order: '1'
     stat_funcs: np.mean,np.std

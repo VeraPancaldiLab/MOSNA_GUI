@@ -20,7 +20,19 @@ from mosna import mosna
 from ...utils.read_extension import get_opener
 from ...utils.find_sample_from_file import find_sample_from_file
 
-def draw_per_sample(file, X_position, Y_position, pheno_col, clusters_cmap, method, min_neighbors, saving_folder, temp_folder, patient_colmun, sample_column, extension):
+def draw_per_sample(file, 
+                    X_position, 
+                    Y_position, 
+                    pheno_col, 
+                    clusters_cmap, 
+                    method, 
+                    min_neighbors, 
+                    saving_folder, 
+                    temp_folder, 
+                    patient_colmun, 
+                    sample_column, 
+                    extension):
+    
     opener = get_opener(extension)
     node = opener(file)
     
@@ -54,15 +66,17 @@ def draw_per_sample(file, X_position, Y_position, pheno_col, clusters_cmap, meth
         ax.set_title(f"Tysserand network {patient_colmun} {patient}", fontsize=30)
         fig.savefig(saving_folder / f"net_{patient}.png", dpi = 300, bbox_inches="tight", facecolor=fig.get_facecolor())
         plt.close(fig)
-        node.to_parquet(temp_folder / f"nodes_{patient_colmun}-{patient}.parquet")
-        edge.to_parquet(temp_folder / f"edges_{patient_colmun}-{patient}.parquet")
+        if temp_folder is not None:
+            node.to_parquet(temp_folder / f"nodes_{patient_colmun}-{patient}.parquet")
+            edge.to_parquet(temp_folder / f"edges_{patient_colmun}-{patient}.parquet")
 
     else:
         ax.set_title(f"Tysserand network {patient_colmun} {patient} and {sample_column} {sample}", fontsize=30)
         fig.savefig(saving_folder / f"net_{patient}-{sample}.png", dpi = 300, bbox_inches="tight", facecolor=fig.get_facecolor())
         plt.close(fig)
-        node.to_parquet(temp_folder / f"nodes_{patient_colmun}-{patient}_{sample_column}-{sample}.parquet")
-        edge.to_parquet(temp_folder / f"edges_{patient_colmun}-{patient}_{sample_column}-{sample}.parquet")
+        if temp_folder is not None:
+            node.to_parquet(temp_folder / f"nodes_{patient_colmun}-{patient}_{sample_column}-{sample}.parquet")
+            edge.to_parquet(temp_folder / f"edges_{patient_colmun}-{patient}_{sample_column}-{sample}.parquet")
     
     del pairs, coords, clustering, clusters_cmap, node, opener, edge
     gc.collect()
