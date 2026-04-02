@@ -126,6 +126,9 @@ def main():
             files = find_sample(net_dir, 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
             cpu_max = verif_cpu(config['CPU'], len(files))
 
+            save_dir = save_dir / 'Tysserand_Network_Niches'
+            save_dir.mkdir(exist_ok=True, parents=True)
+
             args_list = [(
                 patient_sample,
                 X,
