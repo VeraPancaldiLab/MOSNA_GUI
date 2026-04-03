@@ -1,14 +1,14 @@
 import pandas as pd
 from pathlib import Path
 import shutil
-from tqdm.contrib.concurrent import process_map
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from package.utils.read_config import get_config, get_arguments
 from package.utils.assert_params import assert_params
 from package.core.NAS.find_all_pheno import find_all_pheno
 from package.utils.convert_net_dir import convert_net_dir
 from package.core.NAS.assert_net_niches import assert_net_niches
-from package.utils.emit_qt_progress import emit_qt_info
+from package.utils.emit_qt_progress import emit_qt_info, emit_qt_progress
 from package.utils.save_config import save_config
 from package.utils.verif_cpu import verif_cpu
 from package.core.tysserand.draw_per_sample import draw_per_sample
@@ -17,10 +17,6 @@ from package.core.tysserand.generate_cmap import generate_cmap
 from package.utils.find_sample_from_file import find_sample_from_file
 
 from mosna import mosna
-
-def worker_draw_wrapper(args):
-    result = worker_draw(args)
-    return result
 
 def worker_draw(args):
     return draw_per_sample(*args)
@@ -122,7 +118,7 @@ def main():
         X, Y = config['X coordinates column for niches'], config['Y coordinates column for niches']
         
         if X is not None and Y is not None:
-            c_map = generate_cmap(net_dir, 'niche', 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
+            c_map = generate_cmap(net_dir, 'niches', 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
             files = find_sample(net_dir, 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
             cpu_max = verif_cpu(config['CPU'], len(files))
 
@@ -141,13 +137,23 @@ def main():
                 'parquet', '/'.join(node_file.rsplit('/', 1)[:-1] + [node_file.rsplit('/', 1)[-1].replace('nodes_', 'edges_', 1)])
                 ) for node_file in files]
             
-            process_map(
-                worker_draw_wrapper,
-                args_list,
-                max_workers=cpu_max,
-                desc=" └─ [MULTI PROCESS] Processing file",
-                chunksize=1
-            )
+            results = [None] * len(args_list)
+            total = len(args_list)
+            finished = 0
+
+            with ProcessPoolExecutor(max_workers=cpu_max) as executor:
+                future_to_index = {
+                    executor.submit(worker_draw, args): (i, args[0])
+                    for i, args in enumerate(args_list)
+                }
+
+                for future in as_completed(future_to_index):
+                    index, patient_sample = future_to_index[future]
+                    results[index] = future.result()
+                    patient_sample = str(Path(patient_sample).stem[6:])
+
+                    finished += 1
+                    emit_qt_progress(finished, total, f"[MULTI PROCESS] Processing file - {patient_sample} DONE")
 
     elif per_sample:
         from package.core.NAS.niches_per_sample import niches_per_sample
@@ -163,8 +169,10 @@ def main():
             else:
                 patient, sample = find_sample_from_file(file, config.get("Patient column name", "patient"), config.get("Sample column name", "sample"))
                 data_info.append([patient, sample])
+        emit_qt_info('[INFO] Niches found for each samples')
 
-        for sample in data_info:
+        emit_qt_progress(0, len(data_info), "[PROCESS] Niches Analysis per sample")
+        for i, sample in enumerate(data_info):
             if config.get("Sample column name", "sample") is None:
                 patient_sample = f'{config.get("Patient column name", "patient")}-{sample[0]}'
             else:
@@ -201,8 +209,6 @@ def main():
             
             niches_per_sample(**kwargs)
 
-            emit_qt_info('[INFO] Niches found for each samples')
-
             for path in save_dir_sample.glob("reducer-umap*"):
                 if path.is_dir():
                     shutil.rmtree(path)
@@ -211,7 +217,7 @@ def main():
             X, Y = config['X coordinates column for niches'], config['Y coordinates column for niches']
 
             if X is not None and Y is not None:
-                c_map = generate_cmap(net_dir, 'niche', 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
+                c_map = generate_cmap(net_dir, 'niches', 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
                 files = find_sample(net_dir, 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
                 cpu_max = verif_cpu(config['CPU'], len(files))
 
@@ -233,6 +239,8 @@ def main():
                     'parquet',
                     edge_file]
                 draw_per_sample(args_list)
+            
+            emit_qt_progress(i, len(data_info), "[PROCESS] Niches Analysis per sample")
 
 if __name__ == '__main__':
     main()
