@@ -26,9 +26,9 @@ Niche Analysis:
   Sample column name: sample
   Processing method: Aggregated nodes
   Niches method: NAS
-  Phenotype column: Phenotype
-  X coordinates column for niches: centroid-0
-  Y coordinates column for niches: centroid-1
+  Phenotype column: null
+  X coordinates column for niches: null
+  Y coordinates column for niches: null
   CPU: 20
   Aggregated nodes:
     order: '1'
