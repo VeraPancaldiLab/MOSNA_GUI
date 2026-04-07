@@ -832,7 +832,7 @@ class ParametersPanel(QWidget):
 class MosnaGUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("MOSNA Analysis — Napari layout rewritten")
+        self.setWindowTitle("MOSNA Graphic Interface")
         self.working_dir = None
         self.script_thread = None
         self.config_data = {}
