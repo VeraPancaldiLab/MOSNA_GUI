@@ -134,7 +134,8 @@ def main():
                 'delaunay',3,
                 save_dir,'None',
                 kwargs['id_level_1'],kwargs['id_level_2'],
-                'parquet', '/'.join(node_file.rsplit('/', 1)[:-1] + [node_file.rsplit('/', 1)[-1].replace('nodes_', 'edges_', 1)])
+                'parquet',
+                node_file.parent / node_file.name.replace('nodes_', 'edges_', 1)
                 ) for node_file in files]
             
             results = [None] * len(args_list)

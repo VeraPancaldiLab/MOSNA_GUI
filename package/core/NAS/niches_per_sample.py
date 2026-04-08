@@ -16,16 +16,12 @@ def niches_per_sample(method, net_dir, save_dir, data_info ,pheno_col, uniq_phen
             net_dir=net_dir,
             attributes_col=pheno_col,
             data_info=data_info,
-            use_attributes=uniq_phenotype, 
+            use_attributes=uniq_phenotype,
             make_onehot=True,
             stat_funcs=stat_funcs,
             stat_names=stat_names,
             id_level_1=id_level_1,
             id_level_2=id_level_2,
-            parallel_groups='max',
-            memory_limit='max',
-            save_intermediate_results=False, 
-            dir_save_interm=None,
             verbose=0,
     )
 
@@ -44,7 +40,6 @@ def niches_per_sample(method, net_dir, save_dir, data_info ,pheno_col, uniq_phen
         min_dist=min_dist,
         dim_clust=dim_clust,
         min_cluster_size=min_cluster_size,
-        use_gpu=False,
         k_cluster=k_cluster,
         verbose=0,
     )
