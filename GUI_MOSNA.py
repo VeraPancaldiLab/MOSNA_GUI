@@ -162,6 +162,7 @@ class BrowserPanel(QWidget):
         self._current_results = []
         self._build()
         self.load_from_config()
+        self.working_dir = None
 
     def _build(self):
         layout = QVBoxLayout(self)
@@ -216,8 +217,8 @@ class BrowserPanel(QWidget):
         layout.addWidget(naming_group)
 
         actions = QHBoxLayout()
-        self.refresh_btn = QPushButton("Refresh list")
-        self.apply_btn = QPushButton("Apply to config")
+        self.refresh_btn = QPushButton("Refresh Nodes")
+        self.apply_btn = QPushButton("Refresh Networks")
         actions.addWidget(self.refresh_btn)
         actions.addWidget(self.apply_btn)
         layout.addLayout(actions)
@@ -228,8 +229,8 @@ class BrowserPanel(QWidget):
         self.results_label = QLabel("No file discovered yet.")
 
         self.results_table = QTableWidget()
-        self.results_table.setColumnCount(3)
-        self.results_table.setHorizontalHeaderLabels(["Patient", "Sample", "Nodes file"])
+        self.results_table.setColumnCount(4)
+        self.results_table.setHorizontalHeaderLabels(["Patient", "Sample", "Nodes files", "Edges files"])
         self.results_table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.results_table.setSelectionBehavior(QTableWidget.SelectRows)
         self.results_table.setSelectionMode(QTableWidget.SingleSelection)
@@ -247,8 +248,52 @@ class BrowserPanel(QWidget):
         self.network_dir_btn.clicked.connect(lambda: self._browse_dir(self.network_dir_edit, "Choose network directory"))
         self.network_dir_mode.currentIndexChanged.connect(self._toggle_network_dir_mode)
         self.refresh_btn.clicked.connect(self.refresh_files)
-        self.apply_btn.clicked.connect(self.emit_browser_config)
+        self.apply_btn.clicked.connect(self.refresh_network_folder)
         self.results_table.itemSelectionChanged.connect(self._emit_selected_sample)
+
+    def refresh_network_folder(self):
+        values = self.get_browser_values()
+        network_directory = values["network_directory"]
+        extension = values["extension"]
+        patient_column_name = values["patient_column_name"]
+        sample_column_name = values["sample_column_name"]
+
+        if network_directory in (None, "", "Default"):
+            if self.working_dir is None:
+                QMessageBox.warning(
+                    self,
+                    "Missing path",
+                    "Working directory is required to resolve the default network folder."
+                )
+                return
+            nodes_dir = self.working_dir / "temp" / "net_dir_mosna"
+        else:
+            nodes_dir = Path(network_directory)
+
+        if not nodes_dir.is_dir():
+            QMessageBox.warning(
+                self,
+                "Invalid path",
+                "Network directory must be a valid folder."
+            )
+            return
+
+        if not patient_column_name:
+            QMessageBox.warning(
+                self,
+                "Missing value",
+                "Patient column name is required to build the filename pattern."
+            )
+            return
+
+        selected_sample_name = sample_column_name if sample_column_name else None
+        nodes_files = find_sample(nodes_dir, extension, patient_column_name, selected_sample_name)
+
+        self._populate_results_table(nodes_files, values, use_network_for_edges=True)
+        self.browserConfigChanged.emit(self.get_browser_values())
+
+    def set_working_dir(self, working_dir):
+        self.working_dir = Path(working_dir) if working_dir else None
 
     def _browse_dir(self, line_edit, title):
         path = QFileDialog.getExistingDirectory(self, title)
@@ -304,6 +349,21 @@ class BrowserPanel(QWidget):
     def emit_browser_config(self):
         self.browserConfigChanged.emit(self.get_browser_values())
 
+    def _apply_default_and_refresh(self):
+        """
+        Force l'utilisation du dossier par défaut lié au working directory,
+        puis recharge la liste et met à jour la configuration en mémoire.
+        """
+        default_dir = self._resolve_default_network_dir()
+
+        if default_dir is not None:
+            self.nodes_dir_edit.setText("")
+            self.network_dir_mode.setCurrentText("Default")
+            self.network_dir_edit.setText("")
+
+        self.refresh_files()
+        self.browserConfigChanged.emit(self.get_browser_values())
+
     def refresh_files(self):
         values = self.get_browser_values()
         nodes_directory = values["nodes_directory"]
@@ -311,54 +371,37 @@ class BrowserPanel(QWidget):
         patient_column_name = values["patient_column_name"]
         sample_column_name = values["sample_column_name"]
 
-        if not nodes_directory or not os.path.isdir(nodes_directory):
-            QMessageBox.warning(self, "Invalid path", "Nodes directory must be a valid folder.")
-            return
-
-        if not patient_column_name:
-            QMessageBox.warning(self, "Missing value", "Patient column name is required to build the filename pattern.")
+        if not nodes_directory:
+            QMessageBox.warning(
+                self,
+                "Missing path",
+                "Nodes directory is required for Refresh Table."
+            )
             return
 
         nodes_dir = Path(nodes_directory)
+        if not nodes_dir.is_dir():
+            QMessageBox.warning(
+                self,
+                "Invalid path",
+                "Nodes directory must be a valid folder."
+            )
+            return
+
+        if not patient_column_name:
+            QMessageBox.warning(
+                self,
+                "Missing value",
+                "Patient column name is required to build the filename pattern."
+            )
+            return
+
         selected_sample_name = sample_column_name if sample_column_name else None
         nodes_files = find_sample(nodes_dir, extension, patient_column_name, selected_sample_name)
 
-        filtered_results = []
-        for nodes_path in nodes_files:
-            meta = self._build_metadata_from_nodes(nodes_path, values)
-            if meta is None:
-                continue
-            filtered_results.append(meta)
+        self._populate_results_table(nodes_files, values, use_network_for_edges=False)
 
-        self._current_results = filtered_results
-        self.results_table.clearContents()
-        self.results_table.setRowCount(0)
-
-        if not filtered_results:
-            self.results_label.setText("No file matches the current pattern.")
-            self.results_table.setEnabled(False)
-            return
-
-        self.results_table.setRowCount(len(filtered_results))
-
-        for row, meta in enumerate(filtered_results):
-            patient_item = QTableWidgetItem(meta.get("patient_value") or "")
-            sample_item = QTableWidgetItem(meta.get("sample_value") or "")
-            nodes_item = QTableWidgetItem(Path(meta["nodes_path"]).name)
-
-            patient_item.setData(Qt.UserRole, meta)
-
-            self.results_table.setItem(row, 0, patient_item)
-            self.results_table.setItem(row, 1, sample_item)
-            self.results_table.setItem(row, 2, nodes_item)
-
-        self.results_table.resizeColumnsToContents()
-        self.results_label.setText(f"{len(filtered_results)} file(s) found.")
-        self.results_table.setEnabled(True)
-        self.results_table.selectRow(0)
-        self._emit_selected_sample()
-
-    def _build_metadata_from_nodes(self, nodes_path, browser_values):
+    def _build_metadata_from_nodes(self, nodes_path, browser_values, use_network_for_edges=False):
         nodes_path = Path(nodes_path)
         extension = browser_values["extension"]
         network_directory = browser_values["network_directory"]
@@ -370,12 +413,39 @@ class BrowserPanel(QWidget):
             sample_column_name,
         )
 
+        if network_directory in (None, "", "Default"):
+            resolved_network_dir = (
+                Path(self.working_dir) / "temp" / "net_dir_mosna"
+                if self.working_dir is not None
+                else None
+            )
+        else:
+            resolved_network_dir = Path(network_directory)
+
         edges_path = None
-        if network_directory not in (None, "", "Default") and Path(network_directory).is_dir():
-            candidate_name = self._build_edges_name(nodes_path.name)
-            candidate_path = Path(network_directory) / candidate_name
-            if candidate_path.exists():
-                edges_path = candidate_path
+        if use_network_for_edges:
+            network_directory = browser_values["network_directory"]
+
+            if network_directory in (None, "", "Default"):
+                resolved_network_dir = (
+                    Path(self.working_dir) / "temp" / "net_dir_mosna"
+                    if self.working_dir is not None
+                    else None
+                )
+            else:
+                resolved_network_dir = Path(network_directory)
+
+            if resolved_network_dir is not None and resolved_network_dir.is_dir():
+                candidate_name = self._build_edges_name(nodes_path.name)
+                candidate_path = resolved_network_dir / candidate_name
+
+                if candidate_path.exists():
+                    edges_path = candidate_path
+                else:
+                    stem_suffix = nodes_path.stem.removeprefix("nodes_")
+                    matches = sorted(resolved_network_dir.glob(f"edges_{stem_suffix}.*"))
+                    if matches:
+                        edges_path = matches[0]
 
         label = patient_value or nodes_path.stem
         if sample_value:
@@ -445,7 +515,51 @@ class BrowserPanel(QWidget):
 
         return item.data(Qt.UserRole)
 
+    def _populate_results_table(self, nodes_files, values, use_network_for_edges):
+        filtered_results = []
+        for nodes_path in nodes_files:
+            meta = self._build_metadata_from_nodes(
+                nodes_path,
+                values,
+                use_network_for_edges=use_network_for_edges,
+            )
+            if meta is None:
+                continue
+            filtered_results.append(meta)
 
+        self._current_results = filtered_results
+        self.results_table.clearContents()
+        self.results_table.setRowCount(0)
+
+        if not filtered_results:
+            self.results_label.setText("No file matches the current pattern.")
+            self.results_table.setEnabled(False)
+            return
+
+        self.results_table.setRowCount(len(filtered_results))
+
+        for row, meta in enumerate(filtered_results):
+            patient_item = QTableWidgetItem(meta.get("patient_value") or "")
+            sample_item = QTableWidgetItem(meta.get("sample_value") or "")
+            nodes_item = QTableWidgetItem(Path(meta["nodes_path"]).name)
+
+            edges_name = ""
+            if meta.get("edges_path"):
+                edges_name = Path(meta["edges_path"]).name
+            edges_item = QTableWidgetItem(edges_name)
+
+            patient_item.setData(Qt.UserRole, meta)
+
+            self.results_table.setItem(row, 0, patient_item)
+            self.results_table.setItem(row, 1, sample_item)
+            self.results_table.setItem(row, 2, nodes_item)
+            self.results_table.setItem(row, 3, edges_item)
+
+        self.results_table.resizeColumnsToContents()
+        self.results_label.setText(f"{len(filtered_results)} file(s) found.")
+        self.results_table.setEnabled(True)
+        self.results_table.selectRow(0)
+        self._emit_selected_sample()
 class ImageViewerPanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -934,6 +1048,7 @@ class MosnaGUI(QMainWindow):
 
         self.working_dir = str(Path(path).expanduser().resolve())
         self.wd_label.setText(f"Working directory: {self.working_dir}")
+        self.browser.set_working_dir(self.working_dir)
         return True
 
     def _on_sample_selected(self, meta):
@@ -952,9 +1067,6 @@ class MosnaGUI(QMainWindow):
 
             columns = list(df.columns)
             self.params.set_nodes_columns(columns)
-            self.viewer.set_status(
-                f"Selected sample — patient: {patient} | sample: {sample} | {len(columns)} columns detected"
-            )
         except Exception as e:
             self.viewer.set_status(f"Could not read nodes file: {e}")
 
@@ -1097,7 +1209,6 @@ class MosnaGUI(QMainWindow):
         if m:
             return f"{m} min {s} s"
         return f"{seconds:.2f} s"
-
 
 def main():
     app = QApplication(sys.argv)

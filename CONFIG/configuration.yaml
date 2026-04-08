@@ -3,32 +3,32 @@ Tysserand:
   Patient column name: patient
   Sample column name: sample
   Extension: parquet
-  X coordinates column: centroid-0
-  Y coordinates column: centroid-1
-  Phenotype column: Phenotype
+  X coordinates column: null
+  Y coordinates column: null
+  Phenotype column: null
   Edges method: delaunay
   Min neighbors: 3
   CPU: 20
 Assortativity:
   Network directory: Default
-  Phenotype column: Phenotype
+  Phenotype column: null
   Patient column name: patient
   Sample column name: sample
   Extension: parquet
-  Index: Object
-  Number of shuffle: 100
+  Index: index
+  Number of shuffle: 2000
   Randomization diagnostic: false
 Niche Analysis:
   Network directory: Default
-  Saving directory: niche_2
+  Saving directory: niche_1
   Extension: parquet
   Patient column name: patient
   Sample column name: sample
   Processing method: Aggregated nodes
   Niches method: NAS
-  Phenotype column: null
-  X coordinates column for niches: null
-  Y coordinates column for niches: null
+  Phenotype column: Phenotype
+  X coordinates column for niches: centroid-0
+  Y coordinates column for niches: centroid-1
   CPU: 20
   Aggregated nodes:
     order: '1'
@@ -50,13 +50,13 @@ Niche Analysis:
     stat_funcs: np.mean,np.std
     stat_names: [mean, std]
     clusterer_type: gmm
-    n_clusters: 15
+    n_clusters: 6
     reducer_type: umap
-    metric: euclidean
+    metric: manhattan
     resolution: 0.001
-    n_neighbors: 15
+    n_neighbors: 50
     min_dist: 0.0
-    dim_clust: 2
+    dim_clust: 3
     min_cluster_size: 1
-    k_cluster: 15
-    normalize: obs
+    k_cluster: 20
+    normalize: all
