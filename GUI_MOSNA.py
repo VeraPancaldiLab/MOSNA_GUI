@@ -785,6 +785,7 @@ class ImageViewerPanel(QWidget):
 
     def set_analysis_images(self, data):
         self.tysserand_tab.set_images(
+            [],
             data.get("tysserand", {}).get("patients", {}),
         )
         self.assortativity_tab.set_images(
