@@ -5,6 +5,9 @@ from tqdm import tqdm
 from package.utils.read_config import get_config, get_arguments
 from package.utils.assert_params import assert_params
 from package.utils.emit_qt_progress import emit_qt_info
+from package.core.assortativity.assort_figures_abundance import assort_figures_abundance
+from package.core.assortativity.assort_figures_heatmap import assort_figures_heatmap
+from package.core.assortativity.assort_figures_mixing_matrix import assort_figures_mixing_matrix
 
 from mosna import mosna
 
@@ -17,9 +20,7 @@ def main():
 
     assert_params(analyse, config)
     
-    temp_folder = working_dir / "temp/net_stat_mosna"
     saving_folder = working_dir / f"{analyse}"
-    temp_folder.mkdir(parents=True, exist_ok=True)
     saving_folder.mkdir(parents=True, exist_ok=True)
 
     Pheno_col = config["Phenotype column"]
@@ -57,6 +58,11 @@ def main():
         net_stat.to_csv(saving_folder / "net_stat.csv", index=True)
 
         emit_qt_info(f"[INFO] Assortativity table saved in {saving_folder}")
+
+        assort_figures_mixing_matrix(net_stat, saving_folder, is_sample=id_level_2)
+        assort_figures_heatmap(net_stat, saving_folder)
+        assort_figures_abundance(net_stat, saving_folder)
+
 
 if __name__ == '__main__':
     main()

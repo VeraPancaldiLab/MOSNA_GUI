@@ -5,17 +5,18 @@ import sys
 import ast
 import time
 import subprocess
-
+import signal
 import yaml
 import pandas as pd
 
-from PySide6.QtCore import Qt, QThread, Signal, QTimer
+from PySide6.QtCore import Qt, QThread, Signal, QTimer, QUrl
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
     QFileDialog,
     QFormLayout,
+    QStackedWidget,
     QFrame,
     QGroupBox,
     QHBoxLayout,
@@ -27,19 +28,19 @@ from PySide6.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSplitter,
-    QStackedWidget,
     QTabWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
     QTableWidget,
     QTableWidgetItem,
+    QTextBrowser,
 )
-
 
 BASE_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = BASE_DIR / "CONFIG" / "configuration.yaml"
 DOC_HTML_PATH = BASE_DIR / "assets" / "documentation.html"
+LOGO_PATH = BASE_DIR / "assets" / "logo.ico"
 
 SCRIPTS = [
     BASE_DIR / "package" / "tysserand_network.py",
@@ -47,7 +48,6 @@ SCRIPTS = [
     BASE_DIR / "package" / "niche_analysis.py",
     BASE_DIR / "package" / "clear_temporary.py",
 ]
-
 
 class FlowStyleList(list):
     pass
@@ -84,7 +84,6 @@ def find_sample(net_dir, extension, patient_column_name, sample_column_name=None
         )
     return nodes_files
 
-
 class ScriptRunnerThread(QThread):
     finished_signal = Signal(bool, int, str, float)
     output_line = Signal(str)
@@ -94,11 +93,13 @@ class ScriptRunnerThread(QThread):
         self.command = command
         self.cwd = cwd
         self.env = env
+        self.proc = None
+        self._stop_requested = False
 
     def run(self):
         start_time = time.perf_counter()
         try:
-            proc = subprocess.Popen(
+            self.proc = subprocess.Popen(
                 self.command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -107,35 +108,40 @@ class ScriptRunnerThread(QThread):
                 env=self.env,
                 bufsize=1,
                 universal_newlines=True,
+                start_new_session=True,
             )
 
             stdout_lines = []
-            if proc.stdout:
-                for line in proc.stdout:
+            if self.proc.stdout:
+                for line in self.proc.stdout:
                     line = line.rstrip("\n")
                     stdout_lines.append(line)
                     self.output_line.emit(line)
 
-            stderr_output = proc.stderr.read() if proc.stderr else ""
-            returncode = proc.wait()
-            success = returncode == 0
+            stderr_output = self.proc.stderr.read() if self.proc.stderr else ""
+            returncode = self.proc.wait()
 
-            if success:
-                output = "\n".join(stdout_lines)
+            if self._stop_requested:
+                success = False
+                output = "Process interrupted by user."
             else:
-                error_lines = [l.strip() for l in stderr_output.splitlines() if l.strip()]
-                if not error_lines:
-                    error_lines = [l.strip() for l in stdout_lines if l.strip()]
+                success = returncode == 0
+                if success:
+                    output = "\n".join(stdout_lines)
+                else:
+                    error_lines = [l.strip() for l in stderr_output.splitlines() if l.strip()]
+                    if not error_lines:
+                        error_lines = [l.strip() for l in stdout_lines if l.strip()]
 
-                output = "Erreur inconnue."
-                for line in reversed(error_lines):
-                    if (
-                        line != "Traceback (most recent call last):"
-                        and "[QT_PROGRESS]" not in line
-                        and not line.startswith("[INFO]")
-                    ):
-                        output = line
-                        break
+                    output = "Erreur inconnue."
+                    for line in reversed(error_lines):
+                        if (
+                            line != "Traceback (most recent call last):"
+                            and "[QT_PROGRESS]" not in line
+                            and not line.startswith("[INFO]")
+                        ):
+                            output = line
+                            break
 
             elapsed = time.perf_counter() - start_time
             self.finished_signal.emit(success, returncode, output, elapsed)
@@ -144,6 +150,28 @@ class ScriptRunnerThread(QThread):
             elapsed = time.perf_counter() - start_time
             self.finished_signal.emit(False, -1, f"Error while running: {e}", elapsed)
 
+        finally:
+            self.proc = None
+
+    def stop(self):
+        """
+        Essaie d'interrompre proprement le processus comme un Ctrl+C.
+        Si le processus ne s'arrête pas, on pourra ensuite forcer davantage.
+        """
+        self._stop_requested = True
+
+        if self.proc is None:
+            return
+
+        try:
+            if self.proc.poll() is None:
+                os.killpg(os.getpgid(self.proc.pid), signal.SIGINT)
+        except Exception:
+            try:
+                if self.proc.poll() is None:
+                    self.proc.terminate()
+            except Exception:
+                pass
 
 class BrowserPanel(QWidget):
     """
@@ -349,21 +377,6 @@ class BrowserPanel(QWidget):
     def emit_browser_config(self):
         self.browserConfigChanged.emit(self.get_browser_values())
 
-    def _apply_default_and_refresh(self):
-        """
-        Force l'utilisation du dossier par défaut lié au working directory,
-        puis recharge la liste et met à jour la configuration en mémoire.
-        """
-        default_dir = self._resolve_default_network_dir()
-
-        if default_dir is not None:
-            self.nodes_dir_edit.setText("")
-            self.network_dir_mode.setCurrentText("Default")
-            self.network_dir_edit.setText("")
-
-        self.refresh_files()
-        self.browserConfigChanged.emit(self.get_browser_values())
-
     def refresh_files(self):
         values = self.get_browser_values()
         nodes_directory = values["nodes_directory"]
@@ -560,6 +573,171 @@ class BrowserPanel(QWidget):
         self.results_table.setEnabled(True)
         self.results_table.selectRow(0)
         self._emit_selected_sample()
+
+class AnalysisImageTab(QWidget):
+    """
+    Ce widget représente un onglet d'analyse unique dans le viewer.
+    Il gère deux sous-vues :
+    - les images globales
+    - les images associées au patient sélectionné
+
+    Les images patient sont regroupées par identifiant patient.
+    Le sample éventuel reste visible dans le nom du fichier.
+    """
+
+    def __init__(self, analysis_name, logo_path, parent=None):
+        super().__init__(parent)
+        self.analysis_name = analysis_name
+        self.logo_path = Path(logo_path)
+        self.global_images = []
+        self.patient_images = {}
+        self.is_tysserand = self.analysis_name.lower() == "tysserand"
+
+        self._build()
+
+    def _build(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(6, 6, 6, 6)
+        layout.setSpacing(6)
+
+        top_row = QHBoxLayout()
+        top_row.addWidget(QLabel("Patient"))
+
+        self.patient_combo = QComboBox()
+        self.patient_combo.addItem("— Aucun patient —")
+        top_row.addWidget(self.patient_combo)
+
+        top_row.addStretch()
+        layout.addLayout(top_row)
+
+        if self.is_tysserand:
+            self.image_tabs = QTabWidget()
+            layout.addWidget(self.image_tabs)
+        else:
+            self.content_tabs = QTabWidget()
+
+            self.global_tabs = QTabWidget()
+            self.patient_tabs = QTabWidget()
+
+            self.content_tabs.addTab(self.global_tabs, "Global")
+            self.content_tabs.addTab(self.patient_tabs, "Patient")
+
+            layout.addWidget(self.content_tabs)
+
+        self.patient_combo.currentIndexChanged.connect(self._refresh_patient_view)
+
+    def set_images(self, global_images, patient_images):
+        """
+        Cette méthode reçoit les données déjà triées pour une analyse donnée.
+        - global_images est une liste de chemins d'images globales
+        - patient_images est un dictionnaire : patient -> liste de chemins
+        """
+        self.global_images = list(global_images)
+        self.patient_images = {
+            str(patient): list(images)
+            for patient, images in patient_images.items()
+        }
+
+        self._refresh_global_view()
+        self._refresh_patient_combo()
+        self._refresh_patient_view()
+
+    def _build_logo_scroll(self):
+        label = QLabel()
+        label.setAlignment(Qt.AlignCenter)
+
+        pix = QPixmap(str(self.logo_path))
+        if not pix.isNull():
+            label.setPixmap(
+                pix.scaled(500, 500, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            )
+        else:
+            label.setText("Logo not found.")
+
+        scroll = QScrollArea()
+        scroll.setWidget(label)
+        scroll.setWidgetResizable(True)
+        return scroll
+
+    def _build_image_scroll(self, image_path):
+        pix = QPixmap(str(image_path))
+        if pix.isNull():
+            return None
+
+        label = QLabel()
+        label.setAlignment(Qt.AlignCenter)
+        label.setPixmap(
+            pix.scaled(1000, 800, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        )
+
+        scroll = QScrollArea()
+        scroll.setWidget(label)
+        scroll.setWidgetResizable(True)
+        return scroll
+
+    def _populate_tabs_with_images(self, tab_widget, image_paths):
+        while tab_widget.count():
+            tab_widget.removeTab(0)
+
+        if not image_paths:
+            tab_widget.addTab(self._build_logo_scroll(), "")
+            return
+
+        valid_count = 0
+        for img_path in image_paths:
+            scroll = self._build_image_scroll(img_path)
+            if scroll is None:
+                continue
+
+            title = Path(img_path).stem
+            tab_widget.addTab(scroll, title)
+            valid_count += 1
+
+        if valid_count == 0:
+            tab_widget.addTab(self._build_logo_scroll(), "")
+
+    def _refresh_global_view(self):
+        if self.is_tysserand:
+            return
+        self._populate_tabs_with_images(self.global_tabs, self.global_images)
+
+    def _refresh_patient_combo(self):
+        current = self.patient_combo.currentText()
+
+        self.patient_combo.blockSignals(True)
+        self.patient_combo.clear()
+
+        patients = sorted(self.patient_images.keys())
+        if not patients:
+            self.patient_combo.addItem("— Aucun patient —")
+        else:
+            self.patient_combo.addItems(patients)
+
+        index = self.patient_combo.findText(current)
+        if index >= 0:
+            self.patient_combo.setCurrentIndex(index)
+        else:
+            self.patient_combo.setCurrentIndex(0)
+
+        self.patient_combo.blockSignals(False)
+
+    def _refresh_patient_view(self):
+        patient = self.patient_combo.currentText().strip()
+
+        if patient.startswith("—"):
+            if self.is_tysserand:
+                self._populate_tabs_with_images(self.image_tabs, [])
+            else:
+                self._populate_tabs_with_images(self.patient_tabs, [])
+            return
+
+        images = self.patient_images.get(patient, [])
+
+        if self.is_tysserand:
+            self._populate_tabs_with_images(self.image_tabs, images)
+        else:
+            self._populate_tabs_with_images(self.patient_tabs, images)
+
 class ImageViewerPanel(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -573,42 +751,56 @@ class ImageViewerPanel(QWidget):
         header.setObjectName("PanelHeader")
         layout.addWidget(header)
 
-        self._stack = QStackedWidget()
-        self._placeholder = QLabel("No output to display.\nRun a script to generate images.")
-        self._placeholder.setAlignment(Qt.AlignCenter)
-        self._stack.addWidget(self._placeholder)
+        self._tabs = QTabWidget()
 
-        self._img_tabs = QTabWidget()
-        self._stack.addWidget(self._img_tabs)
-        layout.addWidget(self._stack, stretch=1)
+        self._images_page = QWidget()
+        images_layout = QVBoxLayout(self._images_page)
+        images_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.analysis_tabs = QTabWidget()
+        self.tysserand_tab = AnalysisImageTab("Tysserand", LOGO_PATH)
+        self.assortativity_tab = AnalysisImageTab("Assortativity", LOGO_PATH)
+        self.niches_tab = AnalysisImageTab("Niches", LOGO_PATH)
+
+        self.analysis_tabs.addTab(self.tysserand_tab, "Tysserand")
+        self.analysis_tabs.addTab(self.assortativity_tab, "Assortativity")
+        self.analysis_tabs.addTab(self.niches_tab, "Niches")
+
+        images_layout.addWidget(self.analysis_tabs)
+        self._tabs.addTab(self._images_page, "Images")
+
+        self._doc_view = QTextBrowser()
+        self._doc_view.setOpenExternalLinks(True)
+        self._tabs.addTab(self._doc_view, "Documentation")
+
+        layout.addWidget(self._tabs, stretch=1)
 
         self._status_label = QLabel("No script running.")
         self._progress = QProgressBar()
         self._progress.setRange(0, 1)
         self._progress.setValue(0)
+
         layout.addWidget(self._status_label)
         layout.addWidget(self._progress)
 
-    def show_image(self, path, title=None):
-        pix = QPixmap(path)
-        if pix.isNull():
-            return
+    def set_analysis_images(self, data):
+        self.tysserand_tab.set_images(
+            data.get("tysserand", {}).get("patients", {}),
+        )
+        self.assortativity_tab.set_images(
+            data.get("assortativity", {}).get("global", []),
+            data.get("assortativity", {}).get("patients", {}),
+        )
+        self.niches_tab.set_images(
+            data.get("niches", {}).get("global", []),
+            data.get("niches", {}).get("patients", {}),
+        )
+        self._tabs.setCurrentIndex(0)
 
-        label = QLabel()
-        label.setAlignment(Qt.AlignCenter)
-        label.setPixmap(pix.scaled(900, 700, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-
-        scroll = QScrollArea()
-        scroll.setWidget(label)
-        scroll.setWidgetResizable(True)
-
-        self._img_tabs.addTab(scroll, title or Path(path).stem)
-        self._stack.setCurrentIndex(1)
-
-    def clear_images(self):
-        while self._img_tabs.count():
-            self._img_tabs.removeTab(0)
-        self._stack.setCurrentIndex(0)
+    def load_documentation(self, html_path):
+        html_path = Path(html_path)
+        if html_path.is_file():
+            self._doc_view.setSource(QUrl.fromLocalFile(str(html_path.resolve())))
 
     def set_status(self, text):
         self._status_label.setText(text)
@@ -690,6 +882,10 @@ class ParametersPanel(QWidget):
 
         self.save_btn = QPushButton("💾 Save Config")
         layout.addWidget(self.save_btn)
+
+        self.stop_btn = QPushButton("⏹ Stop")
+        self.stop_btn.setEnabled(False)
+        layout.addWidget(self.stop_btn)
 
         self.run_buttons = []
         for script in SCRIPTS:
@@ -1005,6 +1201,7 @@ class MosnaGUI(QMainWindow):
         splitter.addWidget(self.browser)
 
         self.viewer = ImageViewerPanel()
+        self.viewer.load_documentation(DOC_HTML_PATH)
         splitter.addWidget(self.viewer)
 
         self.params = ParametersPanel(self.config_data)
@@ -1023,9 +1220,18 @@ class MosnaGUI(QMainWindow):
         self.browser.sampleSelected.connect(self._on_sample_selected)
         self.browser.browserConfigChanged.connect(self._apply_browser_values_to_config)
         self.params.save_btn.clicked.connect(self._save_config)
+        self.params.stop_btn.clicked.connect(self._stop_script)
 
         for btn, script in zip(self.params.run_buttons, SCRIPTS):
             btn.clicked.connect(lambda _, s=script: self._run_script(s))
+
+    def _stop_script(self):
+        if self.script_thread is None or not self.script_thread.isRunning():
+            return
+
+        self.viewer.set_status("Stopping process...")
+        self.script_thread.stop()
+        self.params.stop_btn.setEnabled(False)
 
     def _set_ui_enabled(self, enabled):
         self.browser.setEnabled(enabled)
@@ -1049,6 +1255,7 @@ class MosnaGUI(QMainWindow):
         self.working_dir = str(Path(path).expanduser().resolve())
         self.wd_label.setText(f"Working directory: {self.working_dir}")
         self.browser.set_working_dir(self.working_dir)
+        self._refresh_viewer_from_working_dir()
         return True
 
     def _on_sample_selected(self, meta):
@@ -1157,6 +1364,7 @@ class MosnaGUI(QMainWindow):
         self.script_thread.finished_signal.connect(
             lambda ok, code, out, elapsed: self._on_finished(script_path, ok, code, out, elapsed)
         )
+        self.params.stop_btn.setEnabled(True)
         self.script_thread.start()
 
     def _on_output_line(self, line):
@@ -1180,19 +1388,22 @@ class MosnaGUI(QMainWindow):
                 self.viewer.set_progress(cur, tot)
 
     def _on_finished(self, script_path, success, returncode, output, elapsed):
+        self.params.stop_btn.setEnabled(False)
         self.viewer.progress_stop(success)
         duration = self._format_duration(elapsed)
 
         if success:
             self.viewer.set_status(f"✅ {script_path.name} completed in {duration}")
-            self.viewer.clear_images()
-            if self.working_dir:
-                for pattern in ("*.png", "*.jpg", "*.jpeg", "*.svg"):
-                    for img in sorted(Path(self.working_dir).rglob(pattern)):
-                        self.viewer.show_image(str(img))
+            analysis_images = self._collect_analysis_images()
+            self.viewer.set_analysis_images(analysis_images)
             return
 
         output = (output or "").strip()[:4000]
+
+        if output == "Process interrupted by user.":
+            self.viewer.set_status(f"⏹ {script_path.name} stopped after {duration}")
+            return
+
         self.viewer.set_status(f"❌ {script_path.name} failed in {duration}")
         QMessageBox.critical(
             self,
@@ -1209,6 +1420,100 @@ class MosnaGUI(QMainWindow):
         if m:
             return f"{m} min {s} s"
         return f"{seconds:.2f} s"
+
+    def _list_images_in_folder(self, folder):
+        images = []
+        for pattern in ("*.png", "*.jpg", "*.jpeg", "*.svg"):
+            images.extend(sorted(folder.glob(pattern)))
+        return images
+
+    def _extract_patient_sample(self, stem, prefix):
+        pattern = rf"^{re.escape(prefix)}_(.+)$"
+        match = re.match(pattern, stem)
+        if not match:
+            return None, None
+
+        suffix = match.group(1).strip()
+        parts = suffix.split("-")
+
+        if len(parts) == 1:
+            return parts[0], None
+
+        if len(parts) >= 2:
+            return parts[0], parts[1]
+
+        return None, None
+
+    def _collect_analysis_images(self):
+        result = {
+            "tysserand": {"patients": {}},
+            "assortativity": {"global": [], "patients": {}},
+            "niches": {"global": [], "patients": {}},
+        }
+
+        if not self.working_dir:
+            return result
+
+        working_dir = Path(self.working_dir)
+
+        self._collect_tysserand_images(working_dir / "Tysserand_Network", result["tysserand"])
+        self._collect_assortativity_images(working_dir / "Assortativity", result["assortativity"])
+        self._collect_niches_images(working_dir / "Niches_Analysis", result["niches"])
+
+        return result
+
+    def _collect_tysserand_images(self, folder, target):
+        if not folder.is_dir():
+            return
+
+        for img in self._list_images_in_folder(folder):
+            patient, sample = self._extract_patient_sample(img.stem, "net")
+            target["patients"].setdefault(patient, []).append(img)
+
+    def _collect_assortativity_images(self, folder, target):
+        if not folder.is_dir():
+            return
+
+        for item in sorted(folder.iterdir()):
+            if item.is_file() and item.suffix.lower() in {".png", ".jpg", ".jpeg", ".svg"}:
+                target["global"].append(item)
+
+        patient_dir = folder / "assort_files"
+        if patient_dir.is_dir():
+            for img in self._list_images_in_folder(patient_dir):
+                patient, sample = self._extract_patient_sample(img.stem, "heatmap_zscore")
+                if patient is None:
+                    continue
+                target["patients"].setdefault(patient, []).append(img)
+
+    def _collect_niches_images(self, folder, target):
+        if not folder.is_dir():
+            return
+
+        for img in self._list_images_in_folder(folder):
+            stem = img.stem
+
+            if stem.startswith("global_"):
+                target["global"].append(img)
+                continue
+
+            patient, sample = self._extract_patient_sample(stem, "niches")
+            if patient is None:
+                target["global"].append(img)
+            else:
+                target["patients"].setdefault(patient, []).append(img)
+
+    def _refresh_viewer_from_working_dir(self):
+        """
+        Cette méthode recharge le viewer à partir des images déjà présentes
+        dans le working directory, sans attendre l'exécution d'un script.
+        """
+        if not self.working_dir:
+            return
+
+        analysis_images = self._collect_analysis_images()
+        self.viewer.set_analysis_images(analysis_images)
+        self.viewer.set_status("Images loaded from working directory.")
 
 def main():
     app = QApplication(sys.argv)

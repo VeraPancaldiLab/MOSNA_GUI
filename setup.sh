@@ -22,24 +22,20 @@ DESKTOP_FILE="${DESKTOP_DIR}/MosnaGUI.desktop"
 CONDA_BASE="$(conda info --base)"
 source "${CONDA_BASE}/etc/profile.d/conda.sh"
 
-echo "[1/4] Création de l'environnement conda ${ENV_NAME}"
-conda create -y -n "${ENV_NAME}" -c conda-forge python="${PY_VER}" scanpy
+echo "[1/3] Création de l'environnement conda ${ENV_NAME}"
+conda create -y -n "${ENV_NAME}" -c conda-forge python="${PY_VER}" scanpy "scipy==1.13" pyside6 pyyaml ipykernel ipywidgets markdown
 
 conda activate "${ENV_NAME}"
 
-echo "[2/4] Installation dépendances"
-conda install -y -c conda-forge "scipy<1.14" pyside6 pyyaml ipykernel ipywidgets markdown
-pip install markdown || true
-
-echo "[3/4] Installation de mosna en editable"
+echo "[2/3] Installation de mosna en editable"
 # adapte si besoin
 cd mosna-package
 pip install -e .
 cd ..
-conda install -y -c conda-forge "lifelines<0.28"
+conda install -y -c conda-forge "lifelines"
 
 if [ "${GITHUB_ACTIONS:-false}" != "true" ]; then
-    echo "[4/4] Création du launcher + icône de bureau"
+    echo "[3/3] Création du launcher + icône de bureau"
 
     # 4a) Script launcher (active conda + lance la GUI)
     cat > "${LAUNCHER_SH}" <<EOF
