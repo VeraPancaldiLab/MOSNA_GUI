@@ -64,12 +64,14 @@ def main():
             extension = 'parquet'
 
     emit_qt_info('[INFO] Verification and Convertion of the files')
-    
-    uniq_phenotype = find_all_pheno(net_dir,
+    if config["Phenotype column"] == config["Column to aggregate"]:
+        uniq_phenotype = find_all_pheno(net_dir,
                                     extension,
                                     config["Phenotype column"],
                                     config["Patient column name"],
                                     config.get("Sample column name", "sample"))
+    else:
+        uniq_phenotype = config["Column to aggregate"]
     
     emit_qt_info('[INFO] Phenotypes for all sample found')
     

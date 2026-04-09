@@ -10,6 +10,9 @@ def aggregated_niches(method, net_dir, save_dir, temp_dir ,attributes_col, pheno
     
     emit_qt_info("[PROCESS] Spatial Omic Features for all networks")
     emit_qt_progress(0,3, "[PROCESS] Niches Analysis")
+    make_onehot = False
+    if isinstance(attributes_col, str):
+        make_onehot = True
     if (temp_dir / 'var_aggreg.parquet').exists():
         var_aggreg = pd.read_parquet(temp_dir / 'var_aggreg.parquet')
     else:
@@ -20,7 +23,7 @@ def aggregated_niches(method, net_dir, save_dir, temp_dir ,attributes_col, pheno
             edges_dir=net_dir,
             attributes_col=attributes_col,
             use_attributes=uniq_pheno,
-            make_onehot=True,
+            make_onehot=make_onehot,
             stat_funcs=stat_funcs,
             stat_names=stat_names,
             id_level_1=id_level_1,
