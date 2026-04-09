@@ -60,7 +60,8 @@ def main():
         emit_qt_info(f"[INFO] Assortativity table saved in {saving_folder}")
 
         assort_figures_mixing_matrix(net_stat, saving_folder, is_sample=id_level_2)
-        assort_figures_heatmap(net_stat, saving_folder)
+        assort_figures_heatmap(net_stat, saving_folder, True)
+        assort_figures_heatmap(net_stat, saving_folder, False)
         assort_figures_abundance(net_stat, saving_folder)
 
 
