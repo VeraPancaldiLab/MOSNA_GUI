@@ -27,13 +27,12 @@ def assert_params(analyse_to_perform, config):
         assert isinstance(config['Saving directory'], str), 'Saving directory need to be a str'
         assert re.fullmatch(r"^[A-Za-z0-9_\- ]+$", config["Saving directory"]), 'The saving folder name is not valid'
 
-        assert isinstance(config["Phenotype column"],str), "Phenotype column parameter must be str"
+        assert isinstance(config["Column to aggregate"],(str, list)), "Column to aggregate parameter must be str or list"
         assert isinstance(config["Patient column name"],str), "Patient column name parameter must be str"
         assert isinstance(config["Sample column name"],str) or isinstance(config['Sample column name'], type(None)), "Sample column name parameter must be str"
         assert isinstance(config["Extension"],str), "Extension parameter must be str"
         assert isinstance(config["Processing method"], str), "Processing method must be str"
         assert isinstance(config["Niches method"], str), "Niches method must be str"
-        assert isinstance(config["Phenotype column"], str), "Phenotype column must be str"
 
         if config["Processing method"] == "Aggregated nodes":
             verification_list = ['Aggregated nodes']

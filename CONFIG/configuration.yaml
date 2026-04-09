@@ -3,15 +3,15 @@ Tysserand:
   Patient column name: patient
   Sample column name: sample
   Extension: parquet
-  X coordinates column: centroid-0
-  Y coordinates column: centroid-1
-  Phenotype column: Phenotype
+  X coordinates column: null
+  Y coordinates column: null
+  Phenotype column: null
   Edges method: delaunay
   Min neighbors: 3
   CPU: 20
 Assortativity:
   Network directory: Default
-  Phenotype column: Phenotype
+  Phenotype column: null
   Patient column name: patient
   Sample column name: sample
   Extension: parquet
@@ -26,7 +26,8 @@ Niche Analysis:
   Sample column name: sample
   Processing method: Aggregated nodes
   Niches method: NAS
-  Phenotype column: null
+  Phenotype column: Phenotype
+  Column to aggregate: Phenotype
   X coordinates column for niches: null
   Y coordinates column for niches: null
   CPU: 20

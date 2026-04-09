@@ -4,7 +4,7 @@ from package.utils.emit_qt_progress import emit_qt_progress, emit_qt_info
 from package.core.NAS.merge_niche_pheno import merge_niche_pheno
 from package.core.NAS.mosna_figures import mosna_figures
 
-def aggregated_niches(method, net_dir, save_dir, temp_dir ,pheno_col, uniq_phenotype, stat_funcs, stat_names, id_level_1, id_level_2, 
+def aggregated_niches(method, net_dir, save_dir, temp_dir ,attributes_col, pheno_col, uniq_pheno, stat_funcs, stat_names, id_level_1, id_level_2, 
                      reducer_type, clusterer_type, n_neighbors, metric, n_clusters, resolution, min_dist, dim_clust, 
                      min_cluster_size, k_cluster, normalize):
     
@@ -18,8 +18,8 @@ def aggregated_niches(method, net_dir, save_dir, temp_dir ,pheno_col, uniq_pheno
             net_dir=net_dir,
             nodes_dir=net_dir,
             edges_dir=net_dir,
-            attributes_col=pheno_col,
-            use_attributes=uniq_phenotype, 
+            attributes_col=attributes_col,
+            use_attributes=uniq_pheno,
             make_onehot=True,
             stat_funcs=stat_funcs,
             stat_names=stat_names,

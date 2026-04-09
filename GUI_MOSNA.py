@@ -9,8 +9,8 @@ import signal
 import yaml
 import pandas as pd
 
-from PySide6.QtCore import Qt, QThread, Signal, QTimer, QUrl
-from PySide6.QtGui import QPixmap
+from PySide6.QtCore import Qt, QThread, Signal, QTimer, QUrl, QSize
+from PySide6.QtGui import QPixmap, QAction, QColor, QPainter, QPen, QBrush
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -35,6 +35,9 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QTextBrowser,
+    QMenu,
+    QToolButton,
+    QWidgetAction,
 )
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -820,6 +823,224 @@ class ImageViewerPanel(QWidget):
         self._progress.setRange(0, 100)
         self._progress.setValue(100 if success else 0)
 
+class SquareIndicator(QWidget):
+    """
+    Petit carré affiché à gauche du nom de colonne.
+    Il est rempli quand l'élément est sélectionné.
+    """
+
+    def __init__(self, checked=False, parent=None):
+        super().__init__(parent)
+        self._checked = checked
+        self.setFixedSize(14, 14)
+
+    def set_checked(self, checked):
+        self._checked = bool(checked)
+        self.update()
+
+    def is_checked(self):
+        return self._checked
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+
+        rect = self.rect().adjusted(1, 1, -1, -1)
+
+        painter.setPen(QPen(Qt.black, 1))
+
+        if self._checked:
+            painter.setBrush(QBrush(Qt.black))
+        else:
+            painter.setBrush(Qt.NoBrush)
+
+        painter.drawRect(rect)
+
+class MultiSelectOptionWidget(QWidget):
+    """
+    Une ligne du menu avec un carré et un texte.
+    Un clic sur la ligne inverse l'état sans fermer le menu.
+    """
+
+    toggled = Signal(str, bool)
+
+    def __init__(self, text, checked=False, parent=None):
+        super().__init__(parent)
+        self.text_value = text
+        self.checked = bool(checked)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(8, 4, 8, 4)
+        layout.setSpacing(8)
+
+        self.indicator = SquareIndicator(self.checked)
+        self.label = QLabel(text)
+
+        layout.addWidget(self.indicator)
+        layout.addWidget(self.label)
+        layout.addStretch()
+
+        self.setCursor(Qt.PointingHandCursor)
+
+    def set_checked(self, checked):
+        self.checked = bool(checked)
+        self.indicator.set_checked(self.checked)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.set_checked(not self.checked)
+            self.toggled.emit(self.text_value, self.checked)
+        super().mousePressEvent(event)
+
+class MenuTextRow(QWidget):
+    clicked = Signal()
+
+    def __init__(self, text, parent=None):
+        super().__init__(parent)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(8, 4, 8, 4)
+        layout.setSpacing(8)
+
+        self.label = QLabel(text)
+        layout.addWidget(self.label)
+        layout.addStretch()
+
+        self.setCursor(Qt.PointingHandCursor)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.clicked.emit()
+        super().mousePressEvent(event)
+
+class MultiSelectColumnsWidget(QWidget):
+    """
+    Ce widget permet de sélectionner une ou plusieurs colonnes.
+    Le bouton ouvre un menu qui reste ouvert pendant les sélections.
+
+    La valeur retournée suit cette logique :
+    - aucune sélection : None
+    - une seule colonne : str
+    - plusieurs colonnes : list[str]
+    """
+
+    def __init__(self, columns=None, selected=None, parent=None):
+        super().__init__(parent)
+        self._columns = list(columns or [])
+        self._selected = []
+        self._option_widgets = {}
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self.button = QToolButton()
+        self.button.setPopupMode(QToolButton.InstantPopup)
+        self.button.setToolButtonStyle(Qt.ToolButtonTextOnly)
+
+        self.menu = QMenu(self.button)
+        self.button.setMenu(self.menu)
+
+        layout.addWidget(self.button)
+
+        self.set_columns(self._columns, selected=selected)
+
+    def set_columns(self, columns, selected=None):
+        self._columns = list(columns or [])
+
+        if selected is None:
+            selected_values = set(self._selected)
+        elif isinstance(selected, str):
+            selected_values = {selected}
+        else:
+            selected_values = set(selected)
+
+        self.menu.clear()
+        self._option_widgets.clear()
+
+        self._add_control_row("Select all", self.select_all)
+        self._add_control_row("Clear all", self.clear_all)
+        self.menu.addSeparator()
+
+        for col in self._columns:
+            row_widget = MultiSelectOptionWidget(col, checked=(col in selected_values))
+            row_widget.toggled.connect(self._on_option_toggled)
+
+            action = QWidgetAction(self.menu)
+            action.setDefaultWidget(row_widget)
+            self.menu.addAction(action)
+
+            self._option_widgets[col] = row_widget
+
+        self._update_internal_selected()
+        self._update_button_text()
+
+    def _add_control_row(self, text, callback):
+        row_widget = MenuTextRow(text)
+        row_widget.clicked.connect(callback)
+
+        action = QWidgetAction(self.menu)
+        action.setDefaultWidget(row_widget)
+        self.menu.addAction(action)
+
+    def _on_option_toggled(self, text, checked):
+        self._update_internal_selected()
+        self._update_button_text()
+
+    def _update_internal_selected(self):
+        self._selected = [
+            name for name, widget in self._option_widgets.items()
+            if widget.checked
+        ]
+
+    def get_selected_values(self):
+        return list(self._selected)
+
+    def set_selected_values(self, values):
+        if values is None:
+            selected_values = set()
+        elif isinstance(values, str):
+            selected_values = {values}
+        else:
+            selected_values = set(values)
+
+        for name, widget in self._option_widgets.items():
+            widget.set_checked(name in selected_values)
+
+        self._update_internal_selected()
+        self._update_button_text()
+
+    def select_all(self):
+        for widget in self._option_widgets.values():
+            widget.set_checked(True)
+        self._update_internal_selected()
+        self._update_button_text()
+
+    def clear_all(self):
+        for widget in self._option_widgets.values():
+            widget.set_checked(False)
+        self._update_internal_selected()
+        self._update_button_text()
+
+    def get_value(self):
+        values = self.get_selected_values()
+        if not values:
+            return None
+        if len(values) == 1:
+            return values[0]
+        return values
+
+    def _update_button_text(self):
+        values = self.get_selected_values()
+
+        if not values:
+            self.button.setText("— select column(s) —")
+        elif len(values) == 1:
+            self.button.setText(values[0])
+        elif len(values) <= 3:
+            self.button.setText(", ".join(values))
+        else:
+            self.button.setText(f"{len(values)} columns selected")
+
 class ParametersPanel(QWidget):
     """
     Ici, on garde tous les autres paramètres du YAML.
@@ -852,6 +1073,10 @@ class ParametersPanel(QWidget):
         "Edges method": ["delaunay", "knn"],
         "stat_funcs": ["np.mean,np.std", "np.mean"],
         "normalize": ["total", "niche", "obs", "clr", "niche&obs", "all"],
+    }
+
+    MULTI_COLUMN_FIELDS = {
+        "Column to aggregate",
     }
 
     def __init__(self, config_data, parent=None):
@@ -930,6 +1155,13 @@ class ParametersPanel(QWidget):
         tab_widget.addTab(scroll, title)
 
     def _get_widget(self, key, value):
+        if key in self.MULTI_COLUMN_FIELDS:
+            widget = MultiSelectColumnsWidget(
+                columns=self._nodes_columns,
+                selected=value,
+            )
+            return widget
+
         if key in self.COLUMN_FIELDS:
             combo = QComboBox()
             combo.addItems(["— select column —"] + self._nodes_columns)
@@ -1069,6 +1301,11 @@ class ParametersPanel(QWidget):
                     widget.addItems(["— select column —"] + self._nodes_columns)
                     if current in self._nodes_columns:
                         widget.setCurrentText(current)
+
+                if key in self.MULTI_COLUMN_FIELDS and isinstance(widget, MultiSelectColumnsWidget):
+                    current = widget.get_selected_values()
+                    widget.set_columns(self._nodes_columns, selected=current)
+
                 if key == "Index" and hasattr(widget, "_value_combo"):
                     current = widget._value_combo.currentText()
                     widget._value_combo.clear()
@@ -1097,6 +1334,9 @@ class ParametersPanel(QWidget):
             if value.startswith("—"):
                 return None
             return value or None
+        
+        if isinstance(widget, MultiSelectColumnsWidget):
+            return widget.get_value()
 
         if isinstance(widget, QTextEdit):
             val = widget.toPlainText().strip()

@@ -48,7 +48,7 @@ def main():
                         config["Patient column name"],
                         config.get("Sample column name", "sample"),
                         extension,
-                        config["Phenotype column"])
+                        config["Column to aggregate"])
         
     else:
         extension = config['Extension']
@@ -57,14 +57,14 @@ def main():
                         config["Patient column name"],
                         config.get("Sample column name", "sample"),
                         extension,
-                        config["Phenotype column"])
+                        config["Column to aggregate"])
 
         if extension != "parquet":
             convert_net_dir(net_dir, config["Patient column name"], config.get("Sample column name", "sample"), extension, net_dir)
             extension = 'parquet'
 
     emit_qt_info('[INFO] Verification and Convertion of the files')
-
+    
     uniq_phenotype = find_all_pheno(net_dir,
                                     extension,
                                     config["Phenotype column"],
@@ -72,6 +72,7 @@ def main():
                                     config.get("Sample column name", "sample"))
     
     emit_qt_info('[INFO] Phenotypes for all sample found')
+    
     ############################## --- PROCESS --- #######################################
 
     if with_aggregation:
@@ -83,8 +84,9 @@ def main():
             "net_dir": net_dir,
             "save_dir": save_dir,
             "temp_dir": net_dir,
-            "pheno_col": config["Phenotype column"], 
-            "uniq_phenotype": uniq_phenotype,   
+            "attributes_col": config["Column to aggregate"], 
+            "pheno_col": config['Phenotype column'],
+            "uniq_pheno": uniq_phenotype,   
             "stat_funcs": config.get("stat_funcs", "default"),
             "stat_names": config.get("stat_names", "default"),
             "id_level_1": config.get("Patient column name", "patient"),
@@ -185,7 +187,7 @@ def main():
                 "net_dir": net_dir,
                 "save_dir": save_dir_sample,
                 "data_info": sample,
-                "pheno_col": config["Phenotype column"], 
+                "pheno_col": config["Column to aggregate"], 
                 "uniq_phenotype": uniq_phenotype,    
                 "stat_funcs": config.get("stat_funcs", "default"),
                 "stat_names": config.get("stat_names", "default"),
