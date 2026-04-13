@@ -1,7 +1,7 @@
 Tysserand:
-  Nodes directory: /home/owen.griere/Desktop/Tobylawrence_PDACIMC/SCRIPT_to_analyse/phenograph_clustering/nodes_phenotyped
+  Nodes directory: /home/owen.griere/Desktop/Xenium_analysis/Analysis_with_less_phenotypes/nodes
   Patient column name: patient
-  Sample column name: sample
+  Sample column name: null
   Extension: parquet
   X coordinates column: null
   Y coordinates column: null
@@ -11,34 +11,34 @@ Tysserand:
   CPU: 20
 Assortativity:
   Network directory: Default
-  Phenotype column: null
+  Phenotype column: phenotype
   Patient column name: patient
-  Sample column name: sample
+  Sample column name: null
   Extension: parquet
-  Index: index
-  Number of shuffle: 100
+  Index: cell_id
+  Number of shuffle: 1000
   Randomization diagnostic: false
 Niche Analysis:
   Network directory: Default
   Saving directory: niche_1
   Extension: parquet
   Patient column name: patient
-  Sample column name: sample
+  Sample column name: null
   Processing method: Aggregated nodes
   Niches method: NAS
-  Phenotype column: Phenotype
-  Column to aggregate: Phenotype
+  Phenotype column: null
+  Column to aggregate: null
   X coordinates column for niches: null
   Y coordinates column for niches: null
-  CPU: 20
+  CPU: 7
   Aggregated nodes:
     order: '1'
     stat_funcs: np.mean,np.std
     stat_names: [mean, std]
     clusterer_type: gmm
-    n_clusters: 6
+    n_clusters: 12
     reducer_type: umap
-    metric: manhattan
+    metric: euclidean
     resolution: 0.05
     n_neighbors: 50
     min_dist: 0.0

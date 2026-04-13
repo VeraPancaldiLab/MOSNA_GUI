@@ -8,6 +8,7 @@ from package.utils.emit_qt_progress import emit_qt_info
 from package.core.assortativity.assort_figures_abundance import assort_figures_abundance
 from package.core.assortativity.assort_figures_heatmap import assort_figures_heatmap
 from package.core.assortativity.assort_figures_mixing_matrix import assort_figures_mixing_matrix
+from package.core.assortativity.assort_figures_mixing_matrix_without_diag import assort_figures_mixing_matrix_without_diag
 
 from mosna import mosna
 
@@ -60,6 +61,7 @@ def main():
         emit_qt_info(f"[INFO] Assortativity table saved in {saving_folder}")
 
         assort_figures_mixing_matrix(net_stat, saving_folder, is_sample=id_level_2)
+        assort_figures_mixing_matrix_without_diag(net_stat, saving_folder, is_sample=id_level_2)
         assort_figures_heatmap(net_stat, saving_folder, True)
         assort_figures_heatmap(net_stat, saving_folder, False)
         assort_figures_abundance(net_stat, saving_folder)

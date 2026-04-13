@@ -1538,8 +1538,6 @@ class MosnaGUI(QMainWindow):
         niche["Sample column name"] = browser_values["sample_column_name"]
         niche["Extension"] = browser_values["extension"]
 
-        self.viewer.set_status("Browser values copied into in-memory configuration.")
-
     def _merge_browser_and_parameters(self):
         self._apply_browser_values_to_config(self.browser.get_browser_values())
         collected = self.params.collect_config()
@@ -1753,8 +1751,6 @@ class MosnaGUI(QMainWindow):
             return
 
         analysis_images = self._collect_analysis_images()
-        self.viewer.set_analysis_images(analysis_images)
-        self.viewer.set_status("Images loaded from working directory.")
 
 def main():
     app = QApplication(sys.argv)

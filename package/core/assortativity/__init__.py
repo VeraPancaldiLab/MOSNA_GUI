@@ -3,7 +3,7 @@ from .transform_nodes import transform_nodes
 from .assort_figures_abundance import assort_figures_abundance
 from .assort_figures_heatmap import assort_figures_heatmap
 from .assort_figures_mixing_matrix import assort_figures_mixing_matrix
-
+from .assort_figures_mixing_matrix_without_diag import assort_figures_mixing_matrix_without_diag
 
 __all__ = ["transform_nodes",
            "assert_edges_assortativity",
@@ -11,4 +11,5 @@ __all__ = ["transform_nodes",
            "assort_figures_mixing_matrix",
            "assort_figures_heatmap",
            "assort_figures_abundance",
+           "assort_figures_mixing_matrix_without_diag"
 ]
