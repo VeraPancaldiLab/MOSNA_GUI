@@ -232,10 +232,6 @@ class BrowserPanel(QWidget):
         network_row_layout.addWidget(self.network_dir_btn)
         source_form.addRow("Network directory", network_row)
 
-        self.extension_combo = QComboBox()
-        self.extension_combo.addItems(["csv", "parquet"])
-        source_form.addRow("Extension", self.extension_combo)
-
         layout.addWidget(source_group)
 
         naming_group = QGroupBox("Pattern used to find files")
@@ -245,6 +241,10 @@ class BrowserPanel(QWidget):
         self.sample_column_edit = QLineEdit()
         naming_form.addRow("Patient column name", self.patient_column_edit)
         naming_form.addRow("Sample column name", self.sample_column_edit)
+        self.extension_combo = QComboBox()
+        self.extension_combo.addItems(["csv", "parquet", "tsv"])
+        naming_form.addRow("Extension", self.extension_combo)
+
         layout.addWidget(naming_group)
 
         actions = QHBoxLayout()
@@ -1632,7 +1632,18 @@ class MosnaGUI(QMainWindow):
         duration = self._format_duration(elapsed)
 
         if success:
-            self.viewer.set_status(f"✅ {script_path.name} completed in {duration}")
+            randomization_diagnostic = self.config_data.get("Assortativity", {}).get(
+                "Randomization diagnostic", False
+            )
+            if randomization_diagnostic and script_path.name == 'assortativity.py':
+                shuffle = self.config_data.get("Assortativity", {}).get(
+                    "Number of shuffle", None
+                )
+                duration_diagnostic = self._format_duration((elapsed - 30) * shuffle/20)
+                self.viewer.set_status(f"✅ {script_path.name} completed in {duration} - The shuffling will take {duration_diagnostic} to run with {shuffle} shuffles")
+            else:
+                self.viewer.set_status(f"✅ {script_path.name} completed in {duration}")
+
             analysis_images = self._collect_analysis_images()
             self.viewer.set_analysis_images(analysis_images)
             return

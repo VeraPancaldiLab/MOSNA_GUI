@@ -29,7 +29,7 @@ def main():
     config_path, working_dir = get_arguments()
     config = get_config(config_path)[analyse]
     working_dir = Path(working_dir)
-
+    
     assert_params(analyse, config)
 
     with_aggregation = per_sample = False
@@ -76,7 +76,7 @@ def main():
     emit_qt_info('[INFO] Phenotypes for all sample found')
     
     ############################## --- PROCESS --- #######################################
-
+    
     if with_aggregation:
 
         save_dir = working_dir / "Niche_Analysis/Aggregation" / config['Saving directory']
@@ -122,6 +122,7 @@ def main():
         X, Y = config['X coordinates column for niches'], config['Y coordinates column for niches']
         
         if X is not None and Y is not None:
+            
             c_map = generate_cmap(net_dir, 'niches', 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
             files = find_sample(net_dir, 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
             cpu_max = verif_cpu(config['CPU'], len(files))
@@ -139,12 +140,13 @@ def main():
                 save_dir,'None',
                 kwargs['id_level_1'],kwargs['id_level_2'],
                 'parquet',
-                node_file.parent / node_file.name.replace('nodes_', 'edges_', 1)
+                Path(node_file).parent / node_file.name.replace('nodes_', 'edges_', 1)
                 ) for node_file in files]
             
             results = [None] * len(args_list)
             total = len(args_list)
             finished = 0
+            emit_qt_progress(finished, total, f"[MULTI PROCESS] Processing file")
 
             with ProcessPoolExecutor(max_workers=cpu_max) as executor:
                 future_to_index = {
@@ -153,12 +155,8 @@ def main():
                 }
 
                 for future in as_completed(future_to_index):
-                    index, patient_sample = future_to_index[future]
-                    results[index] = future.result()
-                    patient_sample = str(Path(patient_sample).stem[6:])
-
                     finished += 1
-                    emit_qt_progress(finished, total, f"[MULTI PROCESS] Processing file - {patient_sample} DONE")
+                    emit_qt_progress(finished, total, f"[MULTI PROCESS] Processing file")
 
     elif per_sample:
         from package.core.NAS.niches_per_sample import niches_per_sample
@@ -243,7 +241,7 @@ def main():
                     kwargs['id_level_1'],kwargs['id_level_2'],
                     'parquet',
                     edge_file]
-                draw_per_sample(args_list)
+                draw_per_sample(*args_list)
             
             emit_qt_progress(i, len(data_info), "[PROCESS] Niches Analysis per sample")
 

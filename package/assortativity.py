@@ -46,6 +46,7 @@ def main():
                                           extension=extension,
                                           n_shuffle=20
         )
+
     else:
         net_stat = mosna.groups_assort_mixmat(net_dir,
                                           Pheno_col,

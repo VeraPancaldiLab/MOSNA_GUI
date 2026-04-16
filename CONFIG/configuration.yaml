@@ -1,7 +1,7 @@
 Tysserand:
-  Nodes directory: /home/owen.griere/Desktop/Xenium_analysis/Analysis_with_less_phenotypes/nodes
+  Nodes directory: /home/owen.griere/Desktop/MOSNA_GUI/test/patient_sample_folder
   Patient column name: patient
-  Sample column name: null
+  Sample column name: chunk
   Extension: parquet
   X coordinates column: null
   Y coordinates column: null
@@ -11,36 +11,36 @@ Tysserand:
   CPU: 20
 Assortativity:
   Network directory: Default
-  Phenotype column: phenotype
+  Phenotype column: null
   Patient column name: patient
-  Sample column name: null
+  Sample column name: chunk
   Extension: parquet
-  Index: cell_id
-  Number of shuffle: 1000
-  Randomization diagnostic: false
+  Index: null
+  Number of shuffle: 2000
+  Randomization diagnostic: true
 Niche Analysis:
   Network directory: Default
   Saving directory: niche_1
   Extension: parquet
   Patient column name: patient
-  Sample column name: null
+  Sample column name: chunk
   Processing method: Aggregated nodes
   Niches method: NAS
-  Phenotype column: null
-  Column to aggregate: null
-  X coordinates column for niches: null
-  Y coordinates column for niches: null
-  CPU: 7
+  Phenotype column: phenotype
+  Column to aggregate: phenotype
+  X coordinates column for niches: x_centroid
+  Y coordinates column for niches: y_centroid
+  CPU: 20
   Aggregated nodes:
     order: '1'
     stat_funcs: np.mean,np.std
     stat_names: [mean, std]
     clusterer_type: gmm
-    n_clusters: 12
+    n_clusters: 8
     reducer_type: umap
-    metric: euclidean
+    metric: manhattan
     resolution: 0.05
-    n_neighbors: 50
+    n_neighbors: 20
     min_dist: 0.0
     dim_clust: 3
     min_cluster_size: 100
