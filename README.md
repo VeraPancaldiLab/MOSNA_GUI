@@ -5,6 +5,7 @@
 - [Tool](#tool)
     - [Tool Architecture](#tool-architecture)
     - [GUI Workflow](#tool-workflow)
+    - [Step 0 - Setup your Network or Node directory](#step-0-setup-your-network-or-node-directory)
     - [Step 1 - Draw Tysserand Spatial Networks](#step-1-draw-tysserand-spatial-networks)
     - [Step 2 - Generate Assortativity](#step-2-generate-assortativity)
     - [Step 3 - Plot Niches Analysis](#step-3-plot-niches-analysis)
@@ -20,9 +21,8 @@ clone my repo and run this, you can clone it where you want:
 
 you will have an App on your Desktop with a documentation 
 
-# Installation Windows
+# Installation Windows (Work in Progress)
 
-You must have conda or mininconda installed
 download my repo, unzip the file and run this double-click on
 
     setup_windows.bat
@@ -32,13 +32,15 @@ download my repo, unzip the file and run this double-click on
 The purpose of this tool is to facilitate the using of MOSNA and Tysserand, two package made by PancaldiLAB to build spatial networks and to analyse them with statistics.
 This tool provide a GUI to generate easily the networks and other spatial analyse.
 
+![Mon Image](assets/images/GUI.png)
+
 but you can also use it directly in terminal by using those command:
 
     conda activate mosna-GUI
 
-    python -m package.tysserand_network --file CONFIG/configuration.yaml --working_dir ~/Desktop/
-    python -m package.assortativity --file CONFIG/configuration.yaml --working_dir ~/Desktop/
-    python -m package.niche_analysis --file CONFIG/configuration.yaml --working_dir ~/Desktop/
+    python -m package.tysserand_network --file CONFIG/configuration.yaml --working_dir ~/path_to_your_output_directory/
+    python -m package.assortativity --file CONFIG/configuration.yaml --working_dir ~/path_to_your_output_directory/
+    python -m package.niche_analysis --file CONFIG/configuration.yaml --working_dir ~/path_to_your_output_directory/
 
 ## Tool architecture 
 
@@ -57,7 +59,7 @@ but you can also use it directly in terminal by using those command:
 - file could be Pandas DataFrame so table with .csv or .parquet extension
 
 Tab for the following file format:
-- .csv or .parquet
+- .csv or .parquet (tsv in test)
 
 | Index  | CellID  | patient | Sample | X_position | Y_position | Phenotypes |
 |--------|---------|---------|--------|------------|------------|------------|
@@ -65,7 +67,15 @@ Tab for the following file format:
 |  ...   |    ...     |      ...   |     ...   |     ...       |   ...         |     ...       |
 | Cell N |    ...     |     ...    |    ...    |    ...        |     ...       |    ...        |
 
+## Step 0: Setup your Network or Node directory
 
+| Parameter                      | Description       |
+|--------------------------|-------------------|
+| **Nodes directory**          | folder where you store all your spatial data |
+| **Network directory**    | Folder where you store all your edges and nodes. Default if you run it after Tysserand Run |
+| **Patient column name**      | Name of the first level of division for your file for example: 'patient' |
+| **Sample column name**       | Name of the second level of division if it exists |
+| **Extension**                | Extension of all files |
 
 ## Step 1: Draw Tysserand Spatial Networks
 
@@ -73,10 +83,6 @@ This step generate Tysserand networks for each patient/sample. You must fill **T
 
 | Parameter                      | Description       |
 |--------------------------|-------------------|
-| **Nodes directory**          | folder where you store all your spatial data |
-| **Patient column name**      | Name of the first level of division for your file for example: 'patient' |
-| **Sample column name**       | Name of the second level of division if it exists |
-| **Extension**                | Extension of all files |
 | **X coordinates column**     | Name of the column containing the X spatial coordinates |
 | **Y coordinates column**     | Name of the column containing the Y spatial coordinates |
 | **Phenotype column**         | Column defining the phenotype of each cell |
@@ -90,12 +96,10 @@ For this step you must fill **Assortativity** section. This step allow you to ge
 
 | Parameter                   | Description       |
 |-----------------------|-------------------|
-| **Network directory**    | Folder where you store all your edges and nodes. Default if you run it after Tysserand Run |
 | **Phenotype column**      | Name of the first level of division for your file for example: 'patient' |
-| **Patient column name**   | Name of the second level of division if it exists |
-| **Sample column name**    | Extension of all files |
-| **Extension**             | Column defining the phenotype of each cell |
 | **Index**                 | Name of the column for the cells reference |
+| **Number of shuffle**     | Number of shuffling to generate the randomization matrix for the assortativity |
+| **Randomization diagnostic** | Test how much it will take approximatively for the number of shuffle selected |
 
 ## Step 3: Plot Niches Analysis
 
@@ -103,15 +107,14 @@ In this step you must fill **NAS** section. This step will generate for you nich
 
 | Parameter                   | Description       |
 |-----------------------|-------------------|
-| **Network directory**     | Folder where you store all your edges and nodes. Default if you run it after Tysserand Run |
 | **Saving directory**       | Name of the saving folder to multiply the analysis | 
-| **Patient column name** | Name of the first level of division for your file for example: 'patient' |
-| **Sample column name**  | Name of the second level of division if it exists |
-| **Phenotype column** | Column defining the phenotype of each cell |
 | **Processing method** | Choose the method of processing (per sample (work in progress) or aggregation) |
 | **Niches method** | Choose the method of niche analysis (NAS, SCAN-IT (work in progress)) |
+| **Phenotype column** | Column defining the phenotype of each cell |
+| **Column to aggregate** | Columns use in aggretated network |
 | **X coordinates column for niches**    | X column if it exist to rebuild all networks with niches clustering |
 | **Y coordinates column for niches**    | Y column if it exist to rebuild all networks with niches clustering |
+| **CPU** | Number of CPUs used for the parallelization process |
 
 **Niche clustering parameters:**
 
@@ -122,7 +125,7 @@ In this step you must fill **NAS** section. This step will generate for you nich
 | **stat_names** | Names associated with `stat_funcs`, used to label the generated feature columns |
 | **clusterer_type** | Clustering method used to define niches or groups, for example `gmm`, `spectral`, `hdbscan`, or `leiden` |
 | **metric** | Distance metric used to compare observations, for example `euclidean`, `manhattan`, or `cosine` |
-| **normalize** | Normalization method applied to niche composition features before the predictive model, for example `total`, `obs`, `niche`, or `clr` |
+| **normalize** | Normalization method applied to niche composition features before the predictive model, for example `total`, `obs`, `niche`, `clr` or `all` |
 | **reducer_type** | Dimensionality reduction method applied before clustering, such as `umap` |
 
 ### Reducer Parameters

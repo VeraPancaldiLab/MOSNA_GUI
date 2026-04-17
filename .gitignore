@@ -1,5 +1,6 @@
 MosnaGUI.sh
 test/generate_net.py
+CONFIG/configuration.yaml
 
 __pycache__/
 *.pyc

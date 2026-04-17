@@ -1,7 +1,7 @@
 Tysserand:
-  Nodes directory: /home/owen.griere/Desktop/MOSNA_GUI/test/patient_sample_folder
+  Nodes directory: /home/owen.griere/Desktop/IMC-IF_Pierre/processed_data/IMC
   Patient column name: patient
-  Sample column name: chunk
+  Sample column name: sample
   Extension: parquet
   X coordinates column: null
   Y coordinates column: null
@@ -11,25 +11,25 @@ Tysserand:
   CPU: 20
 Assortativity:
   Network directory: Default
-  Phenotype column: null
+  Phenotype column: Cluster
   Patient column name: patient
-  Sample column name: chunk
+  Sample column name: sample
   Extension: parquet
-  Index: null
-  Number of shuffle: 2000
-  Randomization diagnostic: true
+  Index: CellID
+  Number of shuffle: 200
+  Randomization diagnostic: false
 Niche Analysis:
   Network directory: Default
   Saving directory: niche_1
   Extension: parquet
   Patient column name: patient
-  Sample column name: chunk
+  Sample column name: sample
   Processing method: Aggregated nodes
   Niches method: NAS
-  Phenotype column: phenotype
-  Column to aggregate: phenotype
-  X coordinates column for niches: x_centroid
-  Y coordinates column for niches: y_centroid
+  Phenotype column: Cluster
+  Column to aggregate: Cluster
+  X coordinates column for niches: X_position
+  Y coordinates column for niches: Y_position
   CPU: 20
   Aggregated nodes:
     order: '1'
