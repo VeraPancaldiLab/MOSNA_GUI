@@ -121,7 +121,7 @@ def main():
 
         X, Y = config['X coordinates column for niches'], config['Y coordinates column for niches']
         
-        if X is not None and Y is not None:
+        if X is not None and Y is not None and config['Plot_Network']:
             
             c_map = generate_cmap(net_dir, 'niches', 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
             files = find_sample(net_dir, 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
@@ -219,7 +219,7 @@ def main():
 
             X, Y = config['X coordinates column for niches'], config['Y coordinates column for niches']
 
-            if X is not None and Y is not None:
+            if X is not None and Y is not None and config['Plot_Network']:
                 c_map = generate_cmap(net_dir, 'niches', 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
                 files = find_sample(net_dir, 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
                 cpu_max = verif_cpu(config['CPU'], len(files))

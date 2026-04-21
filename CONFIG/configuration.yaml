@@ -28,6 +28,7 @@ Niche Analysis:
   Niches method: NAS
   Phenotype column: null
   Column to aggregate: null
+  Plot_Network: false
   X coordinates column for niches: null
   Y coordinates column for niches: null
   CPU: 10
