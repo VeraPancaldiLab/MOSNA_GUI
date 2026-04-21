@@ -74,18 +74,19 @@ def force_inline_lists(obj):
 
 
 def find_sample(net_dir, extension, patient_column_name, sample_column_name=None):
-    """
-    Cette fonction reprend la logique du fichier find_sample.py.
-    Ici, les noms des paramètres correspondent réellement au rôle qu'ils jouent.
-    Le dossier net_dir doit être un objet Path.
-    """
     if sample_column_name is None:
-        nodes_files = sorted(net_dir.glob(f"nodes_{patient_column_name}-*.{extension}"))
-    else:
-        nodes_files = sorted(
-            net_dir.glob(f"nodes_{patient_column_name}-*_{sample_column_name}-*.{extension}")
+        pattern = re.compile(
+            rf"^nodes_{re.escape(patient_column_name)}-[^_]+\.{re.escape(extension)}$"
         )
-    return nodes_files
+    else:
+        pattern = re.compile(
+            rf"^nodes_{re.escape(patient_column_name)}-[^_]+_{re.escape(sample_column_name)}-[^_]+\.{re.escape(extension)}$"
+        )
+
+    return sorted(
+        path for path in net_dir.iterdir()
+        if path.is_file() and pattern.match(path.name)
+    )
 
 class ScriptRunnerThread(QThread):
     finished_signal = Signal(bool, int, str, float)
