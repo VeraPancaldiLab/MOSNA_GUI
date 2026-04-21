@@ -5,7 +5,7 @@ Tysserand:
   Extension: parquet
   X coordinates column: X_position
   Y coordinates column: Y_position
-  Phenotype column: Cluster
+  Phenotype column: layer
   Edges method: delaunay
   Min neighbors: 3
   CPU: 20
@@ -28,7 +28,6 @@ Niche Analysis:
   Niches method: NAS
   Phenotype column: null
   Column to aggregate: null
-  Plot_Network: false
   X coordinates column for niches: null
   Y coordinates column for niches: null
   CPU: 10
