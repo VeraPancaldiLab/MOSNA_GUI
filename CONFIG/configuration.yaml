@@ -1,11 +1,11 @@
 Tysserand:
   Nodes directory: /home/owen.griere/Desktop/IMC-IF_Pierre/processed_data/IF_C2_all_layers/huge
   Patient column name: patient
-  Sample column name: null
+  Sample column name: sample
   Extension: parquet
-  X coordinates column: X_position
-  Y coordinates column: Y_position
-  Phenotype column: layer
+  X coordinates column: null
+  Y coordinates column: null
+  Phenotype column: null
   Edges method: delaunay
   Min neighbors: 3
   CPU: 20
@@ -13,7 +13,7 @@ Assortativity:
   Network directory: Default
   Phenotype column: null
   Patient column name: patient
-  Sample column name: null
+  Sample column name: sample
   Extension: parquet
   Index: index
   Number of shuffle: 200
@@ -23,14 +23,15 @@ Niche Analysis:
   Saving directory: niche_1
   Extension: parquet
   Patient column name: patient
-  Sample column name: null
+  Sample column name: sample
   Processing method: Aggregated nodes
   Niches method: NAS
-  Phenotype column: null
-  Column to aggregate: null
-  X coordinates column for niches: null
-  Y coordinates column for niches: null
-  CPU: 10
+  Phenotype column: Cluster
+  Column to aggregate: Cluster
+  Plot Network: false
+  X coordinates column for niches: X_position
+  Y coordinates column for niches: Y_position
+  CPU: 20
   Aggregated nodes:
     order: '1'
     stat_funcs: np.mean,np.std

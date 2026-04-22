@@ -176,7 +176,7 @@ def main():
 
         emit_qt_progress(0, len(data_info), "[PROCESS] Niches Analysis per sample")
         for i, sample in enumerate(data_info):
-            if config.get("Sample column name", "sample") is None:
+            if config.get("Sample column name") is None:
                 patient_sample = f'{config.get("Patient column name", "patient")}-{sample[0]}'
             else:
                 patient_sample = f'{config.get("Patient column name", "patient")}-{sample[0]}_{config.get("Sample column name", "sample")}-{sample[1]}'
