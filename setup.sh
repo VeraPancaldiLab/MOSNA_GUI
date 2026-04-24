@@ -1,71 +1,219 @@
 #!/usr/bin/env bash
+# =============================================================
+#  MOSNA GUI — Linux / macOS installer
+#  Usage:  bash setup.sh [--no-shortcut] [--dev]
+#  Requirements: conda or miniconda reachable in PATH
+# =============================================================
+
 set -euo pipefail
 
-# --------- Paramètres à adapter ---------
+# ── Colour helpers ────────────────────────────────────────────
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
+CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
+info()    { echo -e "${CYAN}[INFO]${RESET}  $*"; }
+success() { echo -e "${GREEN}[OK]${RESET}    $*"; }
+warn()    { echo -e "${YELLOW}[WARN]${RESET}  $*"; }
+error()   { echo -e "${RED}[ERROR]${RESET} $*" >&2; }
+step()    { echo -e "\n${BOLD}── $* ──${RESET}"; }
+
+# ── Parse arguments ───────────────────────────────────────────
+CREATE_SHORTCUT=true
+DEV_MODE=false
+for arg in "$@"; do
+    case "$arg" in
+        --no-shortcut) CREATE_SHORTCUT=false ;;
+        --dev)         DEV_MODE=true ;;
+        --help|-h)
+            echo "Usage: bash setup.sh [--no-shortcut] [--dev]"
+            echo "  --no-shortcut   Skip desktop launcher creation"
+            echo "  --dev           Install mosna-package in editable mode"
+            exit 0 ;;
+        *) warn "Unknown argument: $arg" ;;
+    esac
+done
+
+# ── Project paths ─────────────────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_NAME="mosna-GUI"
 PY_VER="3.10"
-
-# Chemin absolu vers ton script GUI
-APP_DIR="${HOME}/Desktop/MOSNA_GUI"
-MOSNA_SCRIPT="${APP_DIR}/GUI_MOSNA.py"
-
-# Où créer l'icône + launcher (Desktop)
+MOSNA_PACKAGE_DIR="${SCRIPT_DIR}/mosna-package"
+GUI_SCRIPT="${SCRIPT_DIR}/GUI_MOSNA.py"
+LAUNCHER_SH="${SCRIPT_DIR}/MosnaGUI.sh"
 DESKTOP_DIR="${HOME}/Desktop"
-
-# Nom affiché
 APP_NAME="Mosna GUI"
-LAUNCHER_SH="${APP_DIR}/MosnaGUI.sh"
-DESKTOP_FILE="${DESKTOP_DIR}/MosnaGUI.desktop"
-# ---------------------------------------
+ICON_FILE="${SCRIPT_DIR}/assets/logo.ico"
 
-# Init conda pour que conda activate marche dans un script
-CONDA_BASE="$(conda info --base)"
+# ── Banner ────────────────────────────────────────────────────
+echo -e "${BOLD}"
+echo "╔══════════════════════════════════════════════╗"
+echo "║         MOSNA GUI — Linux/macOS Setup        ║"
+echo "╚══════════════════════════════════════════════╝"
+echo -e "${RESET}"
+info "Project directory : ${SCRIPT_DIR}"
+info "Conda environment  : ${ENV_NAME}  (Python ${PY_VER})"
+echo ""
+
+# ── Step 0: Sanity checks ─────────────────────────────────────
+step "Step 0/4 — Sanity checks"
+
+if [ ! -f "${GUI_SCRIPT}" ]; then
+    error "GUI_MOSNA.py not found in ${SCRIPT_DIR}"
+    error "Run this script from the project root directory."
+    exit 1
+fi
+
+if [ ! -d "${MOSNA_PACKAGE_DIR}" ]; then
+    error "mosna-package directory not found: ${MOSNA_PACKAGE_DIR}"
+    exit 1
+fi
+
+# Detect conda
+if ! command -v conda &>/dev/null; then
+    error "conda is not available in your PATH."
+    echo ""
+    echo "  Please install Miniconda first:"
+    echo "  https://docs.conda.io/en/latest/miniconda.html"
+    echo ""
+    echo "  Then open a new terminal and re-run this script."
+    exit 1
+fi
+
+CONDA_BASE="$(conda info --base 2>/dev/null)"
+if [ -z "${CONDA_BASE}" ]; then
+    error "Cannot determine conda base directory."
+    exit 1
+fi
+
+# shellcheck source=/dev/null
 source "${CONDA_BASE}/etc/profile.d/conda.sh"
+success "conda found at ${CONDA_BASE}"
 
-echo "[1/3] Création de l'environnement conda ${ENV_NAME}"
-conda create -y -n "${ENV_NAME}" -c conda-forge python="${PY_VER}" scanpy "scipy==1.13" pyside6 pyyaml ipykernel ipywidgets markdown
+# ── Step 1: Create / reuse environment ───────────────────────
+step "Step 1/4 — Conda environment"
+
+if conda env list | awk '{print $1}' | grep -qx "${ENV_NAME}"; then
+    warn "Environment '${ENV_NAME}' already exists — skipping creation."
+    warn "To rebuild from scratch:  conda env remove -n ${ENV_NAME}"
+else
+    info "Creating environment '${ENV_NAME}' with Python ${PY_VER} ..."
+    conda create -y -n "${ENV_NAME}" \
+        -c conda-forge \
+        python="${PY_VER}" \
+        scanpy \
+        "scipy==1.13" \
+        pyside6 \
+        pyyaml \
+        ipykernel \
+        ipywidgets \
+        markdown \
+        tqdm \
+        lifelines
+    success "Environment created."
+fi
 
 conda activate "${ENV_NAME}"
 
-echo "[2/3] Installation de mosna en editable"
-# adapte si besoin
-cd mosna-package
-pip install -e .
-cd ..
-conda install -y -c conda-forge "lifelines"
+# ── Step 2: Install mosna-package ────────────────────────────
+step "Step 2/4 — mosna-package"
 
-if [ "${GITHUB_ACTIONS:-false}" != "true" ]; then
-    echo "[3/3] Création du launcher + icône de bureau"
+cd "${MOSNA_PACKAGE_DIR}"
+if ${DEV_MODE}; then
+    info "Installing mosna-package in editable/dev mode ..."
+    pip install -e . --quiet
+else
+    info "Installing mosna-package ..."
+    pip install . --quiet
+fi
+cd "${SCRIPT_DIR}"
+success "mosna-package installed."
 
-    # 4a) Script launcher (active conda + lance la GUI)
-    cat > "${LAUNCHER_SH}" <<EOF
+# ── Step 3: Verify key imports ────────────────────────────────
+step "Step 3/4 — Verifying imports"
+
+python - <<'PYCHECK'
+import importlib, sys
+missing = []
+for mod in ["PySide6", "yaml", "pandas", "mosna"]:
+    if importlib.util.find_spec(mod) is None:
+        missing.append(mod)
+if missing:
+    print(f"[ERROR] Missing modules after install: {', '.join(missing)}", file=sys.stderr)
+    sys.exit(1)
+print("[OK] All required modules are importable.")
+PYCHECK
+success "All Python dependencies satisfied."
+
+# ── Step 4: Desktop launcher ──────────────────────────────────
+step "Step 4/4 — Desktop launcher"
+
+# Always regenerate MosnaGUI.sh with current resolved paths
+cat > "${LAUNCHER_SH}" <<LAUNCHEOF
 #!/usr/bin/env bash
+# Auto-generated by setup.sh — do not edit manually
 set -e
+export QT_IMAGEIO_MAXALLOC=2048
 source "${CONDA_BASE}/etc/profile.d/conda.sh"
 conda activate "${ENV_NAME}"
-python "${MOSNA_SCRIPT}"
-EOF
+cd "${SCRIPT_DIR}"
+python "${GUI_SCRIPT}"
+LAUNCHEOF
+chmod +x "${LAUNCHER_SH}"
+success "Launcher created: ${LAUNCHER_SH}"
 
-    chmod +x "${LAUNCHER_SH}"
+if ${CREATE_SHORTCUT}; then
+    OS="$(uname -s)"
 
-    cat > "${DESKTOP_FILE}" <<EOF
+    if [ "${OS}" = "Linux" ]; then
+        DESKTOP_FILE="${DESKTOP_DIR}/MosnaGUI.desktop"
+        mkdir -p "${DESKTOP_DIR}"
+
+        ICON_LINE=""
+        [ -f "${ICON_FILE}" ] && ICON_LINE="Icon=${ICON_FILE}"
+
+        cat > "${DESKTOP_FILE}" <<DESKEOF
 [Desktop Entry]
 Type=Application
 Name=${APP_NAME}
-Comment=Lance l'interface MOSNA dans l'environnement conda
+Comment=Spatial network analysis GUI (MOSNA + Tysserand)
 Exec=/bin/bash -lc "${LAUNCHER_SH}"
-Icon=${APP_DIR}/assets/logo.ico
+${ICON_LINE}
 Terminal=false
-Categories=Science;Utility;
+Categories=Science;Biology;Utility;
 StartupNotify=true
-EOF
+DESKEOF
+        chmod +x "${DESKTOP_FILE}"
 
-    chmod +x "${DESKTOP_FILE}"
+        # Mark trusted on GNOME (suppresses the "untrusted" warning)
+        if command -v gio &>/dev/null; then
+            gio set "${DESKTOP_FILE}" metadata::trusted true 2>/dev/null || true
+        fi
 
-    echo "Raccourci créé : ${DESKTOP_FILE}"
-    echo "Launcher créé  : ${LAUNCHER_SH}"
-    echo
-    echo -e "Sur GNOME/Ubuntu, il faudra peut-être clic droit sur l'icône -> 'Allow Launching'."
+        success "Desktop shortcut: ${DESKTOP_FILE}"
+        warn "On GNOME: right-click the icon → 'Allow Launching' if still needed."
+
+    elif [ "${OS}" = "Darwin" ]; then
+        DESKTOP_FILE="${DESKTOP_DIR}/MosnaGUI.command"
+        cp "${LAUNCHER_SH}" "${DESKTOP_FILE}"
+        chmod +x "${DESKTOP_FILE}"
+        success "macOS launcher: ${DESKTOP_FILE}"
+        warn "Double-click MosnaGUI.command to start."
+        warn "If blocked by Gatekeeper: System Settings → Privacy & Security → Allow."
+
+    else
+        warn "Unknown OS '${OS}' — desktop shortcut skipped."
+        warn "Launch manually with:  bash ${LAUNCHER_SH}"
+    fi
 else
-    echo "[4/4] Environnement GitHub Actions détecté, création du launcher ignorée"
+    info "Desktop shortcut skipped (--no-shortcut)."
 fi
+
+# ── Done ──────────────────────────────────────────────────────
+echo ""
+echo -e "${GREEN}${BOLD}"
+echo "╔══════════════════════════════════════════════╗"
+echo "║        Installation complete  ✓              ║"
+echo "╚══════════════════════════════════════════════╝"
+echo -e "${RESET}"
+echo "  To launch manually:"
+echo -e "    ${CYAN}bash ${LAUNCHER_SH}${RESET}"
+echo ""

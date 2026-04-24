@@ -45,6 +45,13 @@ CONFIG_PATH = BASE_DIR / "CONFIG" / "configuration.yaml"
 DOC_HTML_PATH = BASE_DIR / "assets" / "documentation.html"
 LOGO_PATH = BASE_DIR / "assets" / "logo.ico"
 
+# Add project root to sys.path so package imports work when run directly
+import sys as _sys
+if str(BASE_DIR) not in _sys.path:
+    _sys.path.insert(0, str(BASE_DIR))
+
+from package.utils.find_sample import find_sample  # noqa: E402 — after path setup
+
 SCRIPTS = [
     BASE_DIR / "package" / "tysserand_network.py",
     BASE_DIR / "package" / "assortativity.py",
@@ -72,21 +79,6 @@ def force_inline_lists(obj):
         return FlowStyleList(force_inline_lists(i) for i in obj)
     return obj
 
-
-def find_sample(net_dir, extension, patient_column_name, sample_column_name=None):
-    if sample_column_name is None:
-        pattern = re.compile(
-            rf"^nodes_{re.escape(patient_column_name)}-[^_]+\.{re.escape(extension)}$"
-        )
-    else:
-        pattern = re.compile(
-            rf"^nodes_{re.escape(patient_column_name)}-[^_]+_{re.escape(sample_column_name)}-[^_]+\.{re.escape(extension)}$"
-        )
-
-    return sorted(
-        path for path in net_dir.iterdir()
-        if path.is_file() and pattern.match(path.name)
-    )
 
 class ScriptRunnerThread(QThread):
     finished_signal = Signal(bool, int, str, float)
@@ -201,7 +193,7 @@ class BrowserPanel(QWidget):
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(8)
 
-        header = QLabel("🔎 Browser")
+        header = QLabel("Browser")
         header.setObjectName("PanelHeader")
         layout.addWidget(header)
 
@@ -606,9 +598,8 @@ class AnalysisImageTab(QWidget):
 
         top_row = QHBoxLayout()
         top_row.addWidget(QLabel("Patient"))
-
         self.patient_combo = QComboBox()
-        self.patient_combo.addItem("— Aucun patient —")
+        self.patient_combo.addItem("— No patient selected —")
         top_row.addWidget(self.patient_combo)
 
         top_row.addStretch()
@@ -670,13 +661,31 @@ class AnalysisImageTab(QWidget):
 
         label = QLabel()
         label.setAlignment(Qt.AlignCenter)
-        label.setPixmap(
-            pix.scaled(1000, 800, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        )
+        label.setScaledContents(False)
+        # Store original pixmap for dynamic rescaling
+        label._original_pix = pix
+        label.setPixmap(pix)
 
         scroll = QScrollArea()
         scroll.setWidget(label)
         scroll.setWidgetResizable(True)
+
+        # Rescale image to fit the scroll area when it is resized
+        original_resizeEvent = scroll.resizeEvent
+        def _on_resize(event, lbl=label, sc=scroll):
+            if hasattr(lbl, "_original_pix") and not lbl._original_pix.isNull():
+                available = sc.viewport().size()
+                lbl.setPixmap(
+                    lbl._original_pix.scaled(
+                        available.width() - 4,
+                        available.height() - 4,
+                        Qt.KeepAspectRatio,
+                        Qt.SmoothTransformation,
+                    )
+                )
+            original_resizeEvent(event)
+
+        scroll.resizeEvent = _on_resize
         return scroll
 
     def _populate_tabs_with_images(self, tab_widget, image_paths):
@@ -713,7 +722,7 @@ class AnalysisImageTab(QWidget):
 
         patients = sorted(self.patient_images.keys())
         if not patients:
-            self.patient_combo.addItem("— Aucun patient —")
+            self.patient_combo.addItem("— No patient —")
         else:
             self.patient_combo.addItems(patients)
 
@@ -750,13 +759,15 @@ class ImageViewerPanel(QWidget):
     def _build(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
-        header = QLabel("🖼 Viewer")
+        header = QLabel("Viewer")
         header.setObjectName("PanelHeader")
         layout.addWidget(header)
 
         self._tabs = QTabWidget()
 
+        # ── Images page ──────────────────────────────────────
         self._images_page = QWidget()
         images_layout = QVBoxLayout(self._images_page)
         images_layout.setContentsMargins(0, 0, 0, 0)
@@ -773,19 +784,75 @@ class ImageViewerPanel(QWidget):
         images_layout.addWidget(self.analysis_tabs)
         self._tabs.addTab(self._images_page, "Images")
 
+        # ── Log page ─────────────────────────────────────────
+        self._log_page = QWidget()
+        log_layout = QVBoxLayout(self._log_page)
+        log_layout.setContentsMargins(6, 6, 6, 6)
+        log_layout.setSpacing(4)
+
+        log_header_row = QHBoxLayout()
+        log_header_row.addWidget(QLabel("Script output"))
+        log_clear_btn = QPushButton("Clear")
+        log_clear_btn.setMaximumWidth(80)
+        log_header_row.addStretch()
+        log_header_row.addWidget(log_clear_btn)
+        log_layout.addLayout(log_header_row)
+
+        self._log_view = QTextEdit()
+        self._log_view.setReadOnly(True)
+        self._log_view.setObjectName("LogView")
+        self._log_view.setPlaceholderText("Script output will appear here…")
+        log_layout.addWidget(self._log_view)
+        log_clear_btn.clicked.connect(self._log_view.clear)
+
+        self._tabs.addTab(self._log_page, "Log")
+
+        # ── Documentation page ───────────────────────────────
         self._doc_view = QTextBrowser()
         self._doc_view.setOpenExternalLinks(True)
         self._tabs.addTab(self._doc_view, "Documentation")
 
         layout.addWidget(self._tabs, stretch=1)
 
-        self._status_label = QLabel("No script running.")
+        # ── Status bar area ──────────────────────────────────
+        status_bar = QWidget()
+        status_bar.setObjectName("StatusBar")
+        status_layout = QVBoxLayout(status_bar)
+        status_layout.setContentsMargins(8, 4, 8, 4)
+        status_layout.setSpacing(3)
+
+        self._status_label = QLabel("Ready.")
+        self._status_label.setObjectName("RunStatusLabel")
         self._progress = QProgressBar()
         self._progress.setRange(0, 1)
         self._progress.setValue(0)
 
-        layout.addWidget(self._status_label)
-        layout.addWidget(self._progress)
+        status_layout.addWidget(self._status_label)
+        status_layout.addWidget(self._progress)
+        layout.addWidget(status_bar)
+
+    def append_log(self, line: str):
+        """Append a coloured line to the log panel."""
+        if "[ERROR]" in line or "❌" in line:
+            colour = "#ff6b6b"
+        elif "[WARN]" in line or "⚠" in line:
+            colour = "#f9ca24"
+        elif "[OK]" in line or "✅" in line:
+            colour = "#6bdd9a"
+        elif "[INFO]" in line or "[QT_INFO]" in line:
+            colour = "#74b9ff"
+        elif "[QT_PROGRESS]" in line:
+            colour = "#a29bfe"
+        else:
+            colour = "#dfe6e9"
+
+        escaped = line.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        self._log_view.append(f'<span style="color:{colour};">{escaped}</span>')
+        # Auto-scroll to bottom
+        sb = self._log_view.verticalScrollBar()
+        sb.setValue(sb.maximum())
+        # Switch to log tab while running
+        self._tabs.setCurrentIndex(1)
 
     def set_analysis_images(self, data):
         self.tysserand_tab.set_images(
@@ -807,6 +874,20 @@ class ImageViewerPanel(QWidget):
         if html_path.is_file():
             self._doc_view.setSource(QUrl.fromLocalFile(str(html_path.resolve())))
 
+    def set_progress_color(self, obj_name: str):
+        """Apply the gradient matching the run button that was clicked."""
+        STEP_GRADIENTS = {
+            "RunTysserand": "qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #1a6882,stop:1 #28a0c8)",
+            "RunAssort":    "qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #5030a0,stop:1 #7850c8)",
+            "RunNiches":    "qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #206840,stop:1 #30a060)",
+            "RunClear":     "qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #503040,stop:1 #704050)",
+        }
+        gradient = STEP_GRADIENTS.get(obj_name,
+            "qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #3060c0,stop:1 #5090d8)")
+        self._progress.setStyleSheet(
+            f"QProgressBar::chunk {{ background: {gradient}; border-radius: 6px; }}"
+        )
+
     def set_status(self, text):
         self._status_label.setText(text)
 
@@ -816,13 +897,19 @@ class ImageViewerPanel(QWidget):
                 self._progress.setRange(0, total)
             self._progress.setValue(min(current, total))
 
-    def progress_start(self, title):
+    def progress_start(self, title, step_obj_name=""):
         self._status_label.setText(title)
         self._progress.setRange(0, 0)
+        if step_obj_name:
+            self.set_progress_color(step_obj_name)
 
     def progress_stop(self, success):
         self._progress.setRange(0, 100)
         self._progress.setValue(100 if success else 0)
+        if not success:
+            self._progress.setStyleSheet(
+                "QProgressBar::chunk { background: #8b2020; border-radius: 6px; }"
+            )
 
 class SquareIndicator(QWidget):
     """
@@ -1090,8 +1177,9 @@ class ParametersPanel(QWidget):
     def _build(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(6)
 
-        header = QLabel("⚙ Parameters")
+        header = QLabel("Parameters")
         header.setObjectName("PanelHeader")
         layout.addWidget(header)
 
@@ -1107,19 +1195,46 @@ class ParametersPanel(QWidget):
             if sec not in preferred_order and isinstance(data, dict):
                 self._add_section_tab(sec, data)
 
-        self.save_btn = QPushButton("💾 Save Config")
-        layout.addWidget(self.save_btn)
+        # ── Action bar ────────────────────────────────────────
+        action_bar = QWidget()
+        action_bar.setObjectName("ActionBar")
+        action_layout = QVBoxLayout(action_bar)
+        action_layout.setContentsMargins(4, 6, 4, 4)
+        action_layout.setSpacing(5)
 
-        self.stop_btn = QPushButton("⏹ Stop")
+        save_stop_row = QHBoxLayout()
+        self.save_btn = QPushButton("Save Config")
+        self.save_btn.setObjectName("SaveButton")
+        save_stop_row.addWidget(self.save_btn, stretch=3)
+
+        self.stop_btn = QPushButton("Stop")
+        self.stop_btn.setObjectName("StopButton")
         self.stop_btn.setEnabled(False)
-        layout.addWidget(self.stop_btn)
+        save_stop_row.addWidget(self.stop_btn, stretch=1)
+        action_layout.addLayout(save_stop_row)
+
+        # Per-step run buttons with distinct colours
+        RUN_CONFIGS = [
+            ("tysserand_network", "Step 1 — Tysserand",    "RunTysserand"),
+            ("assortativity",     "Step 2 — Assortativity", "RunAssort"),
+            ("niche_analysis",    "Step 3 — Niche Analysis", "RunNiches"),
+            ("clear_temporary",   "Clear Temp Files",        "RunClear"),
+        ]
 
         self.run_buttons = []
         for script in SCRIPTS:
-            name = script.stem.replace("_", " ").upper()
-            btn = QPushButton(f"▶ {name}")
+            stem = script.stem
+            label, obj_name = f"▶ {stem}", "RunButton"
+            for key, lbl, obj in RUN_CONFIGS:
+                if stem == key:
+                    label, obj_name = lbl, obj
+                    break
+            btn = QPushButton(label)
+            btn.setObjectName(obj_name)
             self.run_buttons.append(btn)
-            layout.addWidget(btn)
+            action_layout.addWidget(btn)
+
+        layout.addWidget(action_bar)
 
     def _add_section_tab(self, section, data):
         tab = QWidget()
@@ -1140,15 +1255,46 @@ class ParametersPanel(QWidget):
 
         self.tabs.addTab(tab, section)
 
+    # Tooltips shown on parameter labels (ⓘ hover)
+    PARAM_TOOLTIPS = {
+        "order":            "Neighborhood order for NAS aggregation.\n1 = direct neighbors only, 2 = includes 2nd-degree neighbors.",
+        "stat_funcs":       "Statistical functions applied to neighbor features (e.g. np.mean, np.std).",
+        "stat_names":       "Names associated with stat_funcs, used to label output columns.",
+        "clusterer_type":   "Clustering algorithm used to define niches: gmm, leiden, hdbscan, spectral, ecg.",
+        "metric":           "Distance metric for comparing observations: euclidean, manhattan or cosine.",
+        "normalize":        "Normalization applied to niche features before the model:\ntotal, niche, obs, clr, niche&obs, all.",
+        "reducer_type":     "Dimensionality reduction applied before clustering (currently: umap).",
+        "n_neighbors":      "Number of neighbors used to build the local graph structure (UMAP / KNN).",
+        "min_dist":         "UMAP parameter: how tightly points can cluster in reduced space.\nSmaller = tighter groups.",
+        "dim_clust":        "Number of dimensions kept after reduction, used for clustering.",
+        "k_cluster":        "Neighbors used during the clustering graph construction step.",
+        "n_clusters":       "Number of clusters to produce (gmm, spectral).",
+        "resolution":       "Leiden granularity. Lower → fewer clusters, higher → more clusters.",
+        "min_cluster_size": "HDBSCAN minimum cluster size. Smaller allows rarer clusters.",
+        "Number of shuffle":"Number of randomizations to build the null distribution for assortativity.",
+        "Edges method":     "Delaunay: triangulation-based. KNN: k nearest neighbours.",
+        "Min neighbors":    "Minimum number of neighbors for KNN edge generation.",
+        "CPU":              "Number of CPU cores for parallel processing.",
+    }
+
     def _add_form(self, tab_widget, title, section_key, data):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         inner = QWidget()
         form = QFormLayout(inner)
+        form.setSpacing(8)
+        form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
         for k, v in data.items():
             label = QLabel(k)
+            tip = self.PARAM_TOOLTIPS.get(k)
+            if tip:
+                label.setToolTip(tip)
+                label.setText(f"{k} ⓘ")
+                label.setObjectName("SmallInfo")
             field = self._get_widget(k, v)
+            if tip and hasattr(field, "setToolTip"):
+                field.setToolTip(tip)
             form.addRow(label, field)
             self.entries.setdefault(section_key, {})[k] = field
 
@@ -1465,7 +1611,9 @@ class MosnaGUI(QMainWindow):
         self.params.stop_btn.clicked.connect(self._stop_script)
 
         for btn, script in zip(self.params.run_buttons, SCRIPTS):
-            btn.clicked.connect(lambda _, s=script: self._run_script(s))
+            btn.clicked.connect(
+                lambda _, s=script, b=btn: self._run_script(s, b.objectName())
+            )
 
     def _stop_script(self):
         if self.script_thread is None or not self.script_thread.isRunning():
@@ -1570,7 +1718,7 @@ class MosnaGUI(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save config:\n{e}")
 
-    def _run_script(self, script_path):
+    def _run_script(self, script_path, step_obj_name: str = ""):
         self._save_config()
 
         if self.working_dir is None:
@@ -1598,7 +1746,7 @@ class MosnaGUI(QMainWindow):
         env["PYTHONPATH"] = str(BASE_DIR) if not existing else str(BASE_DIR) + os.pathsep + existing
         env["ENABLE_QT_PROGRESS"] = "1"
 
-        self.viewer.progress_start(f"Running: {script_path.name}")
+        self.viewer.progress_start(f"Running: {script_path.name}", step_obj_name)
         self.script_thread = ScriptRunnerThread(cmd, cwd=self.working_dir, env=env)
         self.script_thread.output_line.connect(self._on_output_line)
         self.script_thread.finished_signal.connect(
@@ -1610,6 +1758,9 @@ class MosnaGUI(QMainWindow):
     def _on_output_line(self, line):
         if not line:
             return
+
+        # Always feed raw line into the log panel
+        self.viewer.append_log(line)
 
         if line.startswith("[QT_INFO]"):
             self.viewer.set_status(line.replace("[QT_INFO]", "").strip())
@@ -1652,7 +1803,7 @@ class MosnaGUI(QMainWindow):
         output = (output or "").strip()[:4000]
 
         if output == "Process interrupted by user.":
-            self.viewer.set_status(f"⏹ {script_path.name} stopped after {duration}")
+            self.viewer.set_status(f"{script_path.name} stopped after {duration}")
             return
 
         self.viewer.set_status(f"❌ {script_path.name} failed in {duration}")
@@ -1756,13 +1907,14 @@ class MosnaGUI(QMainWindow):
 
     def _refresh_viewer_from_working_dir(self):
         """
-        Cette méthode recharge le viewer à partir des images déjà présentes
-        dans le working directory, sans attendre l'exécution d'un script.
+        Reload the viewer from images already present in the working directory,
+        without waiting for a script to be executed.
         """
         if not self.working_dir:
             return
 
         analysis_images = self._collect_analysis_images()
+        self.viewer.set_analysis_images(analysis_images)
 
 def main():
     app = QApplication(sys.argv)

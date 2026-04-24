@@ -1,148 +1,233 @@
-# Mosna_analysis
+# MOSNA GUI
 
-- [Installation Linux](#installation-linux)
-- [Installation Windows](#installation-windows)
-- [Tool](#tool)
-    - [Tool Architecture](#tool-architecture)
-    - [GUI Workflow](#tool-workflow)
-    - [Step 0 - Setup your Network or Node directory](#step-0-setup-your-network-or-node-directory)
-    - [Step 1 - Draw Tysserand Spatial Networks](#step-1-draw-tysserand-spatial-networks)
-    - [Step 2 - Generate Assortativity](#step-2-generate-assortativity)
-    - [Step 3 - Plot Niches Analysis](#step-3-plot-niches-analysis)
+A graphical interface for [MOSNA](https://github.com/PancaldiLab/MOSNA) and [Tysserand](https://github.com/PancaldiLab/tysserand) — spatial network construction and analysis tools developed by **PancaldiLAB**.
 
-# Installation Linux
+---
 
-You must have mininconda or conda :
+## Table of contents
 
-clone my repo and run this, you can clone it where you want:
+- [Quick start](#quick-start)
+  - [Linux / macOS](#linux--macos)
+  - [Windows](#windows)
+- [Launching the app](#launching-the-app)
+- [Requirements](#requirements)
+- [Tool overview](#tool-overview)
+  - [Architecture](#architecture)
+  - [Workflow](#workflow)
+  - [Input data format](#input-data-format)
+  - [Step 0 — Project setup](#step-0--project-setup)
+  - [Step 1 — Tysserand spatial networks](#step-1--tysserand-spatial-networks)
+  - [Step 2 — Assortativity](#step-2--assortativity)
+  - [Step 3 — Niche Analysis](#step-3--niche-analysis)
+- [CLI usage](#cli-usage)
+- [Configuration reference](#configuration-reference)
 
-    chmod +x setup.sh
-    ./setup.sh
+---
 
-you will have an App on your Desktop with a documentation 
+## Quick start
 
-# Installation Windows (Work in Progress)
+### Linux / macOS
 
-download my repo, unzip the file and run this double-click on
+> **Requirement:** [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or Anaconda must be installed and available in your `PATH`.
 
-    setup_windows.bat
+```bash
+git clone <repo-url> MOSNA_GUI
+cd MOSNA_GUI
+bash setup.sh
+```
 
-# Tool
+Options:
 
-The purpose of this tool is to facilitate the using of MOSNA and Tysserand, two package made by PancaldiLAB to build spatial networks and to analyse them with statistics.
-This tool provide a GUI to generate easily the networks and other spatial analyse.
+| Flag | Effect |
+|---|---|
+| `--no-shortcut` | Skip desktop launcher creation |
+| `--dev` | Install `mosna-package` in editable mode (`pip install -e`) |
 
-![Mon Image](assets/images/GUI.png)
+The script will:
+1. Create a `mosna-GUI` conda environment (Python 3.10)
+2. Install all scientific dependencies via conda-forge
+3. Install `mosna-package` into the environment
+4. Generate `MosnaGUI.sh` and a Desktop shortcut
 
-but you can also use it directly in terminal by using those command:
+### Windows
 
-    conda activate mosna-GUI
+> **Requirement:** No pre-requisite needed — Miniconda is downloaded automatically if absent.
 
-    python -m package.tysserand_network --file CONFIG/configuration.yaml --working_dir ~/path_to_your_output_directory/
-    python -m package.assortativity --file CONFIG/configuration.yaml --working_dir ~/path_to_your_output_directory/
-    python -m package.niche_analysis --file CONFIG/configuration.yaml --working_dir ~/path_to_your_output_directory/
+1. Download or clone this repository
+2. Double-click `setup_windows.bat`
 
-## Tool architecture 
+The installer will:
+1. Detect or download/install Miniconda silently
+2. Create a `mosna-GUI` conda environment (Python 3.10)
+3. Install all dependencies
+4. Install `mosna-package`
+5. Generate `MosnaGUI.bat` and a Desktop shortcut
 
-![Mon Image](assets/images/architecture.png)
+---
 
+## Launching the app
 
-## Tool Workflow
+| Platform | Command |
+|---|---|
+| Linux / macOS | `bash MosnaGUI.sh` or double-click the Desktop shortcut |
+| Windows | Double-click `MosnaGUI.bat` or the Desktop shortcut |
+| Any (manual) | `conda activate mosna-GUI && python GUI_MOSNA.py` |
 
-![Mon Image](assets/images/workflow.png)
+---
 
+## Requirements
 
-### ❗You can directly use Tysserand tool of my own tool instead of run pre-processing if you respect this the following format of your data:
+| Dependency | Version |
+|---|---|
+| Python | 3.10 |
+| PySide6 | ≥ 6.5 |
+| scanpy | ≥ 1.9 |
+| scipy | 1.13 |
+| pandas | ≥ 2.0 |
+| mosna | from `mosna-package/` |
 
-❗ You must respect few things: 
+Full list: [`requirements.txt`](requirements.txt)
 
-- file could be Pandas DataFrame so table with .csv or .parquet extension
+---
 
-Tab for the following file format:
-- .csv or .parquet (tsv in test)
+## Tool overview
 
-| Index  | CellID  | patient | Sample | X_position | Y_position | Phenotypes |
-|--------|---------|---------|--------|------------|------------|------------|
-| Cell 1 |    ...     |    ...     |     ...   |     ...       |   ...         |    ...        |
-|  ...   |    ...     |      ...   |     ...   |     ...       |   ...         |     ...       |
-| Cell N |    ...     |     ...    |    ...    |    ...        |     ...       |    ...        |
+### Architecture
 
-## Step 0: Setup your Network or Node directory
+```
+MOSNA_GUI/
+├── GUI_MOSNA.py          ← Main GUI entry point
+├── package/
+│   ├── tysserand_network.py   ← Step 1 runner
+│   ├── assortativity.py       ← Step 2 runner
+│   ├── niche_analysis.py      ← Step 3 runner
+│   ├── core/                  ← Analysis cores
+│   ├── utils/                 ← Shared utilities
+│   └── style.qss              ← Qt stylesheet
+├── CONFIG/
+│   └── configuration.yaml.example   ← Config template
+├── mosna-package/         ← MOSNA Python package (unchanged)
+├── setup.sh               ← Linux/macOS installer
+└── setup_windows.bat      ← Windows installer
+```
 
-| Parameter                      | Description       |
-|--------------------------|-------------------|
-| **Nodes directory**          | folder where you store all your spatial data |
-| **Network directory**    | Folder where you store all your edges and nodes. Default if you run it after Tysserand Run |
-| **Patient column name**      | Name of the first level of division for your file for example: 'patient' |
-| **Sample column name**       | Name of the second level of division if it exists |
-| **Extension**                | Extension of all files |
+### Workflow
 
-## Step 1: Draw Tysserand Spatial Networks
+```
+[Step 0]  Set working directory + data paths
+    ↓
+[Step 1]  Tysserand — Build spatial networks from cell coordinates
+    ↓
+[Step 2]  Assortativity — Compute mixing statistics per network
+    ↓
+[Step 3]  Niche Analysis — Cluster niches from aggregated neighborhoods
+```
 
-This step generate Tysserand networks for each patient/sample. You must fill **Tysserand** section.
+### Input data format
 
-| Parameter                      | Description       |
-|--------------------------|-------------------|
-| **X coordinates column**     | Name of the column containing the X spatial coordinates |
-| **Y coordinates column**     | Name of the column containing the Y spatial coordinates |
-| **Phenotype column**         | Column defining the phenotype of each cell |
-| **Edges method**             | Method used to compute edges | 
-| **Min neighbors**            | Minimum number of neighbors for the KNN edges |
-| **CPU**                      | Number of CPUs used for the parallelization process |
+Your input files must be CSV or Parquet tables following this structure:
 
-## Step 2: Generate Assortativity
+| CellID | patient | sample | X_position | Y_position | Phenotype |
+|--------|---------|--------|------------|------------|-----------|
+| c001   | pt-01   | s1     | 120.3      | 84.7       | CD8_T     |
+| …      | …       | …      | …          | …          | …         |
 
-For this step you must fill **Assortativity** section. This step allow you to generate assortativity for each patient/sample networks and for an aggregate data.
+File naming convention expected by the tool:
 
-| Parameter                   | Description       |
-|-----------------------|-------------------|
-| **Phenotype column**      | Name of the first level of division for your file for example: 'patient' |
-| **Index**                 | Name of the column for the cells reference |
-| **Number of shuffle**     | Number of shuffling to generate the randomization matrix for the assortativity |
-| **Randomization diagnostic** | Test how much it will take approximatively for the number of shuffle selected |
+```
+nodes_patient-01_sample-s1.parquet
+nodes_patient-02_sample-s1.parquet
+```
 
-## Step 3: Plot Niches Analysis
+---
 
-In this step you must fill **NAS** section. This step will generate for you niches composition and all networks recolored by niche for each patient/sample and also the niche composition for aggregated nodes for all images of one type. 
+### Step 0 — Project setup
 
-| Parameter                   | Description       |
-|-----------------------|-------------------|
-| **Saving directory**       | Name of the saving folder to multiply the analysis | 
-| **Processing method** | Choose the method of processing (per sample (work in progress) or aggregation) |
-| **Niches method** | Choose the method of niche analysis (NAS, SCAN-IT (work in progress)) |
-| **Phenotype column** | Column defining the phenotype of each cell |
-| **Column to aggregate** | Columns use in aggretated network |
-| **X coordinates column for niches**    | X column if it exist to rebuild all networks with niches clustering |
-| **Y coordinates column for niches**    | Y column if it exist to rebuild all networks with niches clustering |
-| **CPU** | Number of CPUs used for the parallelization process |
+| Parameter | Description |
+|---|---|
+| **Nodes directory** | Folder containing your spatial cell tables |
+| **Network directory** | Folder with pre-built edges/nodes (default: auto-generated by Step 1) |
+| **Patient column name** | Column used as the first grouping level (e.g. `patient`) |
+| **Sample column name** | Optional second grouping level (e.g. `sample`) |
+| **Extension** | File format: `csv`, `parquet`, or `tsv` |
 
-**Niche clustering parameters:**
+---
 
-| Parameter               | Description       |
-|-------------------|-------------------|
-| **order** | Neighborhood order used in **NAS** aggregation. `order=1` uses direct neighbors only, while higher values include more distant neighbors in the graph |
-| **stat_funcs** | Statistical functions applied to aggregated neighbor features in **NAS**, such as `mean`, `std`, `max`, or `median` |
-| **stat_names** | Names associated with `stat_funcs`, used to label the generated feature columns |
-| **clusterer_type** | Clustering method used to define niches or groups, for example `gmm`, `spectral`, `hdbscan`, or `leiden` |
-| **metric** | Distance metric used to compare observations, for example `euclidean`, `manhattan`, or `cosine` |
-| **normalize** | Normalization method applied to niche composition features before the predictive model, for example `total`, `obs`, `niche`, `clr` or `all` |
-| **reducer_type** | Dimensionality reduction method applied before clustering, such as `umap` |
+### Step 1 — Tysserand spatial networks
 
-### Reducer Parameters
+| Parameter | Description |
+|---|---|
+| **X / Y coordinates column** | Spatial position columns |
+| **Phenotype column** | Cell type or cluster column |
+| **Edges method** | `delaunay` (triangulation) or `knn` (k-nearest neighbours) |
+| **Min neighbors** | Minimum neighbours for KNN |
+| **CPU** | Cores for parallel processing |
 
-| Parameter               | Description       |
-|----------|---------|
-| **n_neighbors** | Number of neighbors used to build the local structure of the data, especially in UMAP or graph construction |
-| **min_dist** | UMAP parameter controlling how close points can be in the reduced space. Smaller values usually produce tighter groups |
-| **dim_clust** | Number of dimensions kept in the reduced space for clustering |
+---
 
-### Clusterer Parameters
+### Step 2 — Assortativity
 
-| Parameter               | Description       |
-|----------|---------|
-| **k_cluster** | Number of neighbors used during the clustering step when building or refining the graph structure |
-| **n_clusters** (`gmm` and `spectral`) | Number of clusters to produce for methods that require it, mainly `gmm` and `spectral` |
-| **resolution** (`Leiden`) | Granularity parameter specific to **Leiden** clustering. Lower values usually give fewer clusters, higher values give more |
-| **min_cluster_size** (`HDBSCAN`) | Minimum cluster size for **HDBSCAN**. Smaller values allow rare clusters, larger values make clustering more conservative |
+| Parameter | Description |
+|---|---|
+| **Phenotype column** | Column defining cell types |
+| **Index** | Cell index column (`index` = DataFrame index) |
+| **Number of shuffle** | Randomizations to build the null distribution |
+| **Randomization diagnostic** | Estimate time cost for your shuffle count |
 
+---
 
+### Step 3 — Niche Analysis (NAS)
+
+| Parameter | Description |
+|---|---|
+| **Saving directory** | Output subfolder name |
+| **Processing method** | `Aggregated nodes` or `Per sample` |
+| **Niches method** | `NAS` (SCAN-IT is work in progress) |
+| **Phenotype column** | Cell type column |
+| **Column to aggregate** | Columns used in the aggregated network |
+| **X / Y coordinates for niches** | Spatial columns to rebuild coloured networks |
+| **CPU** | Cores for parallel processing |
+
+**Clustering parameters:**
+
+| Parameter | Description |
+|---|---|
+| `order` | Neighborhood order (1 = direct neighbors) |
+| `stat_funcs` | Aggregation functions: `np.mean`, `np.std`, … |
+| `clusterer_type` | `gmm`, `leiden`, `hdbscan`, `spectral`, `ecg` |
+| `metric` | Distance metric: `euclidean`, `manhattan`, `cosine` |
+| `normalize` | Feature normalization: `total`, `niche`, `obs`, `clr`, `all` |
+| `reducer_type` | Dimensionality reduction: `umap` |
+| `n_neighbors` | Neighbors for graph/UMAP construction |
+| `min_dist` | UMAP tightness (smaller = more compact) |
+| `dim_clust` | Reduced dimensions used for clustering |
+| `n_clusters` | Number of clusters (gmm, spectral) |
+| `resolution` | Leiden resolution (higher = more clusters) |
+| `min_cluster_size` | HDBSCAN minimum cluster size |
+
+---
+
+## CLI usage
+
+```bash
+conda activate mosna-GUI
+cd /path/to/MOSNA_GUI
+
+python -m package.tysserand_network \
+    --file CONFIG/configuration.yaml \
+    --working_dir /path/to/output/
+
+python -m package.assortativity \
+    --file CONFIG/configuration.yaml \
+    --working_dir /path/to/output/
+
+python -m package.niche_analysis \
+    --file CONFIG/configuration.yaml \
+    --working_dir /path/to/output/
+```
+
+---
+
+## Configuration reference
+
+Copy [`CONFIG/configuration.yaml.example`](CONFIG/configuration.yaml.example) to `CONFIG/configuration.yaml` and fill in your paths. The `configuration.yaml` file is git-ignored (it contains absolute paths specific to your machine).

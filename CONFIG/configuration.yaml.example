@@ -1,0 +1,74 @@
+# =============================================================
+#  MOSNA GUI — Configuration example
+#  Copy this file to configuration.yaml and fill in your paths.
+#  configuration.yaml is git-ignored; this example is versioned.
+# =============================================================
+
+Tysserand:
+  Nodes directory: /path/to/your/nodes/folder
+  Patient column name: patient
+  Sample column name: sample          # set to null if no sample level
+  Extension: parquet                  # csv | parquet | tsv
+  X coordinates column: X_position
+  Y coordinates column: Y_position
+  Phenotype column: Phenotype
+  Edges method: delaunay              # delaunay | knn
+  Min neighbors: 3
+  CPU: 4
+
+Assortativity:
+  Network directory: Default          # Default uses working_dir/temp/net_dir_mosna
+  Phenotype column: Phenotype
+  Patient column name: patient
+  Sample column name: sample
+  Extension: parquet
+  Index: index                        # index | name of the cell ID column
+  Number of shuffle: 200
+  Randomization diagnostic: false
+
+Niche Analysis:
+  Network directory: Default
+  Saving directory: niche_1           # subfolder name under working_dir/Niches_Analysis/
+  Extension: parquet
+  Patient column name: patient
+  Sample column name: sample
+  Processing method: Aggregated nodes # "Aggregated nodes" | "Per sample"
+  Niches method: NAS                  # NAS | SCAN-IT (WIP)
+  Phenotype column: Phenotype
+  Column to aggregate: Phenotype
+  Plot Network: false
+  X coordinates column for niches: X_position
+  Y coordinates column for niches: Y_position
+  CPU: 4
+
+  Aggregated nodes:
+    order: '1'
+    stat_funcs: [np.mean, np.std]
+    stat_names: [mean, std]
+    clusterer_type: gmm               # leiden | ecg | spectral | gmm | hdbscan
+    n_clusters: 8
+    reducer_type: umap
+    metric: manhattan                 # manhattan | euclidean | cosine
+    resolution: 0.05
+    n_neighbors: 20
+    min_dist: 0.0
+    dim_clust: 3
+    min_cluster_size: 100
+    k_cluster: 20
+    normalize: all                    # total | niche | obs | clr | niche&obs | all
+
+  Per sample:
+    order: '1'
+    stat_funcs: [np.mean, np.std]
+    stat_names: [mean, std]
+    clusterer_type: gmm
+    n_clusters: 6
+    reducer_type: umap
+    metric: manhattan
+    resolution: 0.001
+    n_neighbors: 50
+    min_dist: 0.0
+    dim_clust: 3
+    min_cluster_size: 1
+    k_cluster: 20
+    normalize: all

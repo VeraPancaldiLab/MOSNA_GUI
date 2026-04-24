@@ -1,310 +1,270 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableExtensions EnableDelayedExpansion
+title MOSNA GUI — Installation Windows
 
-title MOSNA GUI - Installation Windows
+rem =============================================================
+rem  MOSNA GUI — Windows installer
+rem  Double-click to run, or:  setup_windows.bat [--no-shortcut]
+rem  Requirements: conda / miniconda (auto-installed if missing)
+rem =============================================================
 
-rem ---------------------------------------------------------------------------
-rem Configuration fixe du projet
-rem ---------------------------------------------------------------------------
+rem ── Configuration ────────────────────────────────────────────
 set "ENV_NAME=mosna-GUI"
 set "PYTHON_VERSION=3.10"
 
+rem Resolve project root (folder containing this .bat)
 set "PROJECT_DIR=%~dp0"
 if "%PROJECT_DIR:~-1%"=="\" set "PROJECT_DIR=%PROJECT_DIR:~0,-1%"
+
+set "GUI_SCRIPT=%PROJECT_DIR%\GUI_MOSNA.py"
+set "MOSNA_PACKAGE=%PROJECT_DIR%\mosna-package"
+set "ICON_FILE=%PROJECT_DIR%\assets\logo.ico"
+set "LAUNCHER_BAT=%PROJECT_DIR%\MosnaGUI.bat"
+set "DESKTOP_SHORTCUT=%USERPROFILE%\Desktop\MOSNA GUI.lnk"
 
 set "MINICONDA_DIR=%USERPROFILE%\miniconda3"
 set "MINICONDA_INSTALLER=%TEMP%\Miniconda3-latest-Windows-x86_64.exe"
 set "MINICONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
 
 set "CONDA_BAT="
-set "GUI_SCRIPT=%PROJECT_DIR%\GUI_MOSNA.py"
-set "ICON_FILE=%PROJECT_DIR%\assets\logo.ico"
-set "PACKAGE_DIR=%PROJECT_DIR%\mosna-package"
+set "CREATE_SHORTCUT=1"
 
-set "DESKTOP_SHORTCUT=%USERPROFILE%\Desktop\MOSNA GUI.lnk"
-set "EXE_DIR=%PROJECT_DIR%\dist\MosnaGUI"
-set "EXE_FILE=%EXE_DIR%\MosnaGUI.exe"
-set "EXE_FILE_ONEFILE=%PROJECT_DIR%\dist\MosnaGUI.exe"
+rem ── Parse optional arguments ─────────────────────────────────
+for %%A in (%*) do (
+    if /I "%%A"=="--no-shortcut" set "CREATE_SHORTCUT=0"
+)
 
+rem ── Banner ───────────────────────────────────────────────────
 echo.
 echo ============================================================
-echo                MOSNA GUI - Installation Windows
+echo          MOSNA GUI ^— Windows Installation
 echo ============================================================
 echo.
-echo Dossier du projet :
-echo %PROJECT_DIR%
+echo  Project : %PROJECT_DIR%
 echo.
 
-rem ---------------------------------------------------------------------------
-rem Verification de l'arborescence attendue
-rem ---------------------------------------------------------------------------
+rem ── Sanity checks ────────────────────────────────────────────
+echo [0/5] Sanity checks...
+
 if not exist "%GUI_SCRIPT%" (
-    echo [ERREUR] Le fichier GUI_MOSNA.py est introuvable.
-    echo Le script .bat doit etre lance depuis la racine du projet.
+    echo [ERROR] GUI_MOSNA.py not found.
+    echo         Run this script from the project root directory.
     goto :fail
 )
 
-if not exist "%PACKAGE_DIR%\setup.py" (
-    echo [ERREUR] Le package local attendu est introuvable :
-    echo %PACKAGE_DIR%\setup.py
+if not exist "%MOSNA_PACKAGE%" (
+    echo [ERROR] mosna-package directory not found:
+    echo         %MOSNA_PACKAGE%
     goto :fail
 )
 
 cd /d "%PROJECT_DIR%"
 
-rem ---------------------------------------------------------------------------
-rem Recherche de Conda
-rem ---------------------------------------------------------------------------
+rem ── Locate conda ────────────────────────────────────────────
 call :find_conda
 if errorlevel 1 (
-    echo [INFO] Conda n'a pas ete trouve. Installation automatique de Miniconda.
+    echo [INFO] Conda not found — downloading Miniconda automatically...
     call :install_miniconda
     if errorlevel 1 goto :fail
-
     call :find_conda
     if errorlevel 1 (
-        echo [ERREUR] Conda reste introuvable apres l'installation de Miniconda.
+        echo [ERROR] Conda still not found after Miniconda installation.
         goto :fail
     )
 )
-
-echo [INFO] Conda detecte ici :
-echo %CONDA_BAT%
+echo [OK]   Conda: %CONDA_BAT%
 echo.
 
-rem ---------------------------------------------------------------------------
-rem Creation de l'environnement si besoin
-rem ---------------------------------------------------------------------------
-echo [ETAPE 1/7] Verification de l'environnement Conda "%ENV_NAME%"...
+rem ── Step 1: Environment ──────────────────────────────────────
+echo [1/5] Conda environment "%ENV_NAME%"...
 call :ensure_env
 if errorlevel 1 goto :fail
 
+rem ── Step 2: Conda packages ───────────────────────────────────
 echo.
-echo [ETAPE 2/7] Installation des dependances Conda...
+echo [2/5] Installing conda-forge packages...
 call "%CONDA_BAT%" install -n "%ENV_NAME%" -y -c conda-forge ^
-    pyside6 pandas scipy networkx scikit-learn matplotlib seaborn pillow openpyxl xlsxwriter
+    "python=%PYTHON_VERSION%" ^
+    pyside6 ^
+    pyyaml ^
+    pandas ^
+    pyarrow ^
+    "scipy=1.13" ^
+    scikit-learn ^
+    networkx ^
+    matplotlib ^
+    seaborn ^
+    scanpy ^
+    tqdm ^
+    lifelines ^
+    ipykernel ^
+    ipywidgets ^
+    markdown
 if errorlevel 1 (
-    echo [ERREUR] Echec lors de l'installation des dependances Conda.
+    echo [ERROR] conda install failed.
+    goto :fail
+)
+echo [OK]   Conda packages installed.
+
+rem ── Step 3: mosna-package ────────────────────────────────────
+echo.
+echo [3/5] Installing mosna-package...
+call "%CONDA_BAT%" run -n "%ENV_NAME%" python -m pip install "%MOSNA_PACKAGE%" --quiet
+if errorlevel 1 (
+    echo [ERROR] mosna-package installation failed.
+    goto :fail
+)
+echo [OK]   mosna-package installed.
+
+rem ── Step 4: Verify imports ───────────────────────────────────
+echo.
+echo [4/5] Verifying key imports...
+call "%CONDA_BAT%" run -n "%ENV_NAME%" python -c ^
+    "import PySide6, yaml, pandas, mosna; print('[OK]   All imports successful.')"
+if errorlevel 1 (
+    echo [ERROR] Import verification failed. Check the output above.
     goto :fail
 )
 
+rem ── Step 5: Launcher + shortcut ──────────────────────────────
 echo.
-echo [ETAPE 3/7] Installation des outils Python...
-call "%CONDA_BAT%" run -n "%ENV_NAME%" python -m pip install --upgrade pip setuptools wheel pyinstaller
-if errorlevel 1 (
-    echo [ERREUR] Echec lors de l'installation de pip, setuptools, wheel ou pyinstaller.
-    goto :fail
+echo [5/5] Creating launcher and desktop shortcut...
+
+rem Generate MosnaGUI.bat launcher
+(
+    echo @echo off
+    echo rem Auto-generated by setup_windows.bat
+    echo set "CONDA_BAT=%CONDA_BAT%"
+    echo call "%%CONDA_BAT%%" activate "%ENV_NAME%"
+    echo cd /d "%PROJECT_DIR%"
+    echo python "%GUI_SCRIPT%"
+) > "%LAUNCHER_BAT%"
+echo [OK]   Launcher: %LAUNCHER_BAT%
+
+if "%CREATE_SHORTCUT%"=="1" (
+    call :create_shortcut
+    if errorlevel 1 (
+        echo [WARN]  Could not create desktop shortcut ^(non-fatal^).
+    ) else (
+        echo [OK]   Shortcut: %DESKTOP_SHORTCUT%
+    )
+) else (
+    echo [INFO]  Desktop shortcut skipped ^(--no-shortcut^).
 )
 
-echo.
-echo [ETAPE 4/7] Installation du package local...
-call "%CONDA_BAT%" run -n "%ENV_NAME%" python -m pip install -e "%PACKAGE_DIR%"
-if errorlevel 1 (
-    echo [ERREUR] Echec lors de l'installation du package local.
-    goto :fail
-)
-
-echo.
-echo [ETAPE 5/7] Nettoyage des anciens fichiers de build...
-if exist "%PROJECT_DIR%\build" rmdir /s /q "%PROJECT_DIR%\build"
-if exist "%PROJECT_DIR%\dist" rmdir /s /q "%PROJECT_DIR%\dist"
-if exist "%PROJECT_DIR%\MosnaGUI.spec" del /f /q "%PROJECT_DIR%\MosnaGUI.spec"
-
-echo.
-echo [ETAPE 6/7] Construction de l'executable avec PyInstaller...
-call :build_pyinstaller
-if errorlevel 1 goto :fail
-
-echo.
-echo [ETAPE 7/7] Creation du raccourci bureau...
-call :resolve_final_exe
-if errorlevel 1 (
-    echo [ERREUR] L'executable n'a pas ete trouve apres la compilation.
-    goto :fail
-)
-
-call :create_desktop_shortcut
-if errorlevel 1 (
-    echo [ERREUR] Echec lors de la creation du raccourci bureau.
-    goto :fail
-)
-
+rem ── Done ─────────────────────────────────────────────────────
 echo.
 echo ============================================================
-echo Installation terminee avec succes.
+echo  Installation complete!
 echo ============================================================
 echo.
-echo Executable :
-echo %FINAL_EXE%
+echo  To launch: double-click  MosnaGUI.bat  in the project folder
+echo             or the shortcut on your Desktop.
 echo.
-echo Raccourci bureau :
-echo %DESKTOP_SHORTCUT%
-echo.
+pause
 goto :eof
 
 
-rem ===========================================================================
-rem Sous-routines
-rem ===========================================================================
+rem =============================================================
+rem  Subroutines
+rem =============================================================
 
 :find_conda
 set "CONDA_BAT="
-
 if exist "%MINICONDA_DIR%\condabin\conda.bat" (
     set "CONDA_BAT=%MINICONDA_DIR%\condabin\conda.bat"
     exit /b 0
 )
-
 if exist "%USERPROFILE%\anaconda3\condabin\conda.bat" (
     set "CONDA_BAT=%USERPROFILE%\anaconda3\condabin\conda.bat"
     exit /b 0
 )
-
+if exist "%USERPROFILE%\Miniconda3\condabin\conda.bat" (
+    set "CONDA_BAT=%USERPROFILE%\Miniconda3\condabin\conda.bat"
+    exit /b 0
+)
+rem Search PATH
 for /f "delims=" %%I in ('where conda.bat 2^>nul') do (
     set "CONDA_BAT=%%I"
     exit /b 0
 )
-
 exit /b 1
 
 
 :install_miniconda
 echo.
-echo ============================================================
-echo                 Installation de Miniconda
-echo ============================================================
+echo ── Miniconda auto-install ──────────────────────────────────
 echo.
-
-echo [INFO] Telechargement de l'installeur...
+echo [INFO] Downloading installer from:
+echo        %MINICONDA_URL%
+echo.
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "try { Invoke-WebRequest -Uri '%MINICONDA_URL%' -OutFile '%MINICONDA_INSTALLER%' } catch { exit 1 }"
+    "try { Invoke-WebRequest -Uri '%MINICONDA_URL%' -OutFile '%MINICONDA_INSTALLER%' -UseBasicParsing } catch { Write-Error $_; exit 1 }"
 if errorlevel 1 (
-    echo [ERREUR] Echec du telechargement de Miniconda.
+    echo [ERROR] Download failed. Check your internet connection.
     exit /b 1
 )
-
 if not exist "%MINICONDA_INSTALLER%" (
-    echo [ERREUR] Le fichier d'installation de Miniconda est introuvable apres telechargement.
+    echo [ERROR] Installer file missing after download.
     exit /b 1
 )
-
-echo [INFO] Installation silencieuse de Miniconda dans :
-echo %MINICONDA_DIR%
-echo.
-
+echo [INFO] Installing Miniconda silently to:
+echo        %MINICONDA_DIR%
 start /wait "" "%MINICONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%MINICONDA_DIR%
 if errorlevel 1 (
-    echo [ERREUR] L'installation de Miniconda a echoue.
+    echo [ERROR] Miniconda installer returned an error.
     exit /b 1
 )
-
 if not exist "%MINICONDA_DIR%\condabin\conda.bat" (
-    echo [ERREUR] Miniconda semble installe, mais conda.bat est introuvable.
+    echo [ERROR] Miniconda installed but conda.bat not found.
     exit /b 1
 )
-
-echo [INFO] Miniconda a ete installe correctement.
+echo [OK]   Miniconda installed at %MINICONDA_DIR%
 exit /b 0
+
 
 :ensure_env
-call "%CONDA_BAT%" env list > "%TEMP%\mosna_env_list.txt" 2>nul
+call "%CONDA_BAT%" env list > "%TEMP%\mosna_envs.txt" 2>nul
 if errorlevel 1 (
-    echo [ERREUR] Impossible de recuperer la liste des environnements Conda.
+    echo [ERROR] Cannot list conda environments.
     exit /b 1
 )
-
-findstr /R /C:"\<%ENV_NAME%\>" "%TEMP%\mosna_env_list.txt" >nul 2>nul
+findstr /C:"%ENV_NAME%" "%TEMP%\mosna_envs.txt" >nul 2>nul
 if not errorlevel 1 (
-    echo [INFO] L'environnement "%ENV_NAME%" existe deja.
-    del /f /q "%TEMP%\mosna_env_list.txt" >nul 2>nul
+    echo [OK]   Environment "%ENV_NAME%" already exists — reusing.
+    del /f /q "%TEMP%\mosna_envs.txt" >nul 2>nul
     exit /b 0
 )
-
-echo [INFO] L'environnement n'existe pas encore. Creation en cours...
+echo [INFO] Creating environment "%ENV_NAME%" ...
 call "%CONDA_BAT%" create -n "%ENV_NAME%" python=%PYTHON_VERSION% -y
 if errorlevel 1 (
-    echo [ERREUR] Echec lors de la creation de l'environnement Conda.
-    del /f /q "%TEMP%\mosna_env_list.txt" >nul 2>nul
+    echo [ERROR] conda env create failed.
+    del /f /q "%TEMP%\mosna_envs.txt" >nul 2>nul
     exit /b 1
 )
-
-del /f /q "%TEMP%\mosna_env_list.txt" >nul 2>nul
-exit /b 0
-
-:build_pyinstaller
-if exist "%ICON_FILE%" (
-    call "%CONDA_BAT%" run -n "%ENV_NAME%" pyinstaller ^
-        --noconfirm ^
-        --windowed ^
-        --name MosnaGUI ^
-        --icon "%ICON_FILE%" ^
-        --add-data "%PROJECT_DIR%\docs;docs" ^
-        --add-data "%PROJECT_DIR%\stylesheet.css;." ^
-        --add-data "%PROJECT_DIR%\config.json;." ^
-        --add-data "%PROJECT_DIR%\package;package" ^
-        "%GUI_SCRIPT%"
-) else (
-    call "%CONDA_BAT%" run -n "%ENV_NAME%" pyinstaller ^
-        --noconfirm ^
-        --windowed ^
-        --name MosnaGUI ^
-        --add-data "%PROJECT_DIR%\docs;docs" ^
-        --add-data "%PROJECT_DIR%\stylesheet.css;." ^
-        --add-data "%PROJECT_DIR%\config.json;." ^
-        --add-data "%PROJECT_DIR%\package;package" ^
-        "%GUI_SCRIPT%"
-)
-
-if errorlevel 1 (
-    echo [ERREUR] PyInstaller a echoue.
-    exit /b 1
-)
-
+del /f /q "%TEMP%\mosna_envs.txt" >nul 2>nul
 exit /b 0
 
 
-:resolve_final_exe
-set "FINAL_EXE="
-
-if exist "%EXE_FILE%" set "FINAL_EXE=%EXE_FILE%"
-if not defined FINAL_EXE if exist "%EXE_FILE_ONEFILE%" set "FINAL_EXE=%EXE_FILE_ONEFILE%"
-
-if defined FINAL_EXE (
-    exit /b 0
-)
-
-exit /b 1
-
-
-:create_desktop_shortcut
-if not defined FINAL_EXE (
-    echo [ERREUR] FINAL_EXE n'est pas defini.
-    exit /b 1
-)
-
-set "SHORTCUT_ICON=%FINAL_EXE%"
-if exist "%ICON_FILE%" set "SHORTCUT_ICON=%ICON_FILE%"
+:create_shortcut
+set "ICON_ARG=%GUI_SCRIPT%"
+if exist "%ICON_FILE%" set "ICON_ARG=%ICON_FILE%"
 
 powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-    "$WshShell = New-Object -ComObject WScript.Shell; ^
-    $Shortcut = $WshShell.CreateShortcut('%DESKTOP_SHORTCUT%'); ^
-    $Shortcut.TargetPath = '%FINAL_EXE%'; ^
-    $Shortcut.WorkingDirectory = [System.IO.Path]::GetDirectoryName('%FINAL_EXE%'); ^
-    $Shortcut.IconLocation = '%SHORTCUT_ICON%'; ^
-    $Shortcut.Description = 'Launch MOSNA GUI'; ^
-    $Shortcut.Save()"
-
-if errorlevel 1 (
-    exit /b 1
-)
-
-exit /b 0
+    "$s = (New-Object -Com WScript.Shell).CreateShortcut('%DESKTOP_SHORTCUT%'); ^
+    $s.TargetPath = '%LAUNCHER_BAT%'; ^
+    $s.WorkingDirectory = '%PROJECT_DIR%'; ^
+    $s.IconLocation = '%ICON_ARG%'; ^
+    $s.Description = 'Launch MOSNA GUI'; ^
+    $s.Save()"
+exit /b %ERRORLEVEL%
 
 
 :fail
 echo.
 echo ============================================================
-echo Le processus s'est arrete a cause d'une erreur.
+echo  Installation FAILED — see errors above.
 echo ============================================================
 echo.
+pause
 exit /b 1
