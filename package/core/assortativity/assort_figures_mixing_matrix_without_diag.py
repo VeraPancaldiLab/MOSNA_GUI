@@ -46,9 +46,20 @@ def assort_figures_mixing_matrix_without_diag(net_stat, save_dir, is_sample):
 
         vals = mat_Z.to_numpy()
 
-        norm = TwoSlopeNorm(vmin=np.nanmin(vals), 
+        vmin=np.nanmin(vals)
+        vmax=np.nanmax(vals)
+
+        if vmin >= 0:
+            vmin = -1e-6
+        if vmax <= 0:
+            vmax = 1e-6
+        if vmin == vmax:
+            vmin -= 1e-6
+            vmax += 1e-6
+
+        norm = TwoSlopeNorm(vmin=vmin, 
                             vcenter=0, 
-                            vmax=np.nanmax(vals))
+                            vmax=vmax)
 
         cmap = plt.cm.coolwarm.copy()
         cmap.set_bad(color="black")
