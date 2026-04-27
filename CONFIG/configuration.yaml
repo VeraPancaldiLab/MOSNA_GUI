@@ -1,10 +1,10 @@
 Tysserand:
-  Nodes directory: /home/owen.griere/Desktop/MOSNA_GUI/test/patient_folder
+  Nodes directory: /home/owen.griere/Desktop/MOSNA_GUI/test/patient_sample_folder
   Patient column name: patient
-  Sample column name: null
+  Sample column name: chunk
   Extension: parquet
-  X coordinates column: X
-  Y coordinates column: Y
+  X coordinates column: x_centroid
+  Y coordinates column: y_centroid
   Phenotype column: phenotype
   Edges method: delaunay
   Min neighbors: 3
@@ -13,21 +13,21 @@ Assortativity:
   Network directory: Default
   Phenotype column: phenotype
   Patient column name: patient
-  Sample column name: null
+  Sample column name: chunk
   Extension: parquet
   Index: index
-  Number of shuffle: 50
+  Number of shuffle: 20
   Randomization diagnostic: false
 Niche Analysis:
   Network directory: Default
   Saving directory: niche_1
   Extension: parquet
   Patient column name: patient
-  Sample column name: null
-  Processing method: Aggregated nodes
+  Sample column name: chunk
+  Processing method: Per sample
   Niches method: NAS
-  Phenotype column: null
-  Column to aggregate: null
+  Phenotype column: phenotype
+  Column to aggregate: phenotype
   Plot Network: false
   X coordinates column for niches: null
   Y coordinates column for niches: null

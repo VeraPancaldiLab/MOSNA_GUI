@@ -167,7 +167,7 @@ def main():
         data_info = []
         for file in files:
             if config.get("Sample column name", "sample") is None:
-                patient = find_sample_from_file(file, config.get("Patient column name", "patient"), config.get("Sample column name", "sample"))
+                patient, _ = find_sample_from_file(file, config.get("Patient column name", "patient"), config.get("Sample column name", "sample"))
                 data_info.append([patient])
             else:
                 patient, sample = find_sample_from_file(file, config.get("Patient column name", "patient"), config.get("Sample column name", "sample"))
@@ -209,7 +209,7 @@ def main():
                 ########## Normalisation composition niches
                 "normalize": config["Per sample"].get("normalize", "total"),
             }
-            
+
             niches_per_sample(**kwargs)
 
             for path in save_dir_sample.glob("reducer-umap*"):
