@@ -15,8 +15,8 @@ Assortativity:
   Patient column name: patient
   Sample column name: chunk
   Extension: parquet
-  Index: index
-  Number of shuffle: 20
+  Index: cell_id
+  Number of shuffle: 100
   Randomization diagnostic: false
 Niche Analysis:
   Network directory: Default
@@ -24,22 +24,22 @@ Niche Analysis:
   Extension: parquet
   Patient column name: patient
   Sample column name: chunk
-  Processing method: Per sample
+  Processing method: Aggregated nodes
   Niches method: NAS
   Phenotype column: phenotype
   Column to aggregate: phenotype
-  Plot Network: false
-  X coordinates column for niches: null
-  Y coordinates column for niches: null
+  Plot Network: true
+  X coordinates column for niches: x_centroid
+  Y coordinates column for niches: y_centroid
   CPU: 20
   Aggregated nodes:
     order: '1'
     stat_funcs: np.mean,np.std
     stat_names: [mean, std]
     clusterer_type: gmm
-    n_clusters: 8
+    n_clusters: 7
     reducer_type: umap
-    metric: manhattan
+    metric: cosine
     resolution: 0.05
     n_neighbors: 20
     min_dist: 0.0
