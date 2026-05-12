@@ -3,15 +3,9 @@ import gc
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-plt.rcParams.update({ "figure.facecolor": "#0b1020", 
-                    "axes.facecolor": "#0b1020", 
-                    "axes.edgecolor": "#b8c1ec", 
-                    "axes.labelcolor": "#e0e6ff", 
-                    "xtick.color": "#cdd6ff",
-                    "ytick.color": "#cdd6ff", 
-                    "text.color": "#e0e6ff", 
-                    "font.size": 14, 
-                    "axes.titleweight": "bold"}) 
+from ...utils.style_figures import apply_style
+apply_style()
+
 from matplotlib.collections import LineCollection
 from matplotlib.lines import Line2D
 

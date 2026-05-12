@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.pyplot as plt
+from ...utils.style_figures import apply_style
+apply_style()
 import seaborn as sns
 
 from matplotlib.colors import TwoSlopeNorm

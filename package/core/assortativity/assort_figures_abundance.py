@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from ...utils.style_figures import apply_style
+apply_style()
 
 def assort_figures_abundance(net_stat, save_dir):
 

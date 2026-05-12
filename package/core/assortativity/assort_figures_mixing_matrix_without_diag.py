@@ -5,15 +5,8 @@ from pathlib import Path
 
 from mosna import mosna
 
-plt.rcParams.update({ "figure.facecolor": "#0b1020", 
-                    "axes.facecolor": "#0b1020", 
-                    "axes.edgecolor": "#b8c1ec", 
-                    "axes.labelcolor": "#e0e6ff", 
-                    "xtick.color": "#cdd6ff",
-                    "ytick.color": "#cdd6ff", 
-                    "text.color": "#e0e6ff", 
-                    "font.size": 14, 
-                    "axes.titleweight": "bold"})
+from ...utils.style_figures import apply_style
+apply_style()
 
 def assort_figures_mixing_matrix_without_diag(net_stat, save_dir, is_sample):
 

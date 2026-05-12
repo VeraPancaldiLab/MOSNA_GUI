@@ -1,5 +1,7 @@
 from mosna import mosna
 import matplotlib.pyplot as plt
+from ...utils.style_figures import apply_style
+apply_style()
 
 def mosna_figures(niches, counts, save_dir, norm=None):
     if norm is not None:
