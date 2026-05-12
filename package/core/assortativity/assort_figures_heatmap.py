@@ -52,7 +52,7 @@ def assort_figures_heatmap(net_stat, save_dir, homo_pair=False):
     zlim = np.nanmax(np.abs(valid_vals))
     norm = TwoSlopeNorm(vmin=-zlim, vcenter=0, vmax=zlim)
 
-    cmap = plt.cm.coolwarm.copy()
+    cmap = plt.cm.RdBu_r.copy()
     cmap.set_bad(color="black")
 
     fig = plt.figure(figsize=(28, 24))

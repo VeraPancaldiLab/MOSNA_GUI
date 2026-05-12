@@ -51,7 +51,7 @@ def assort_figures_mixing_matrix(net_stat, save_dir, is_sample=None):
                             vcenter=0, 
                             vmax=vmax)
 
-        cmap = plt.cm.coolwarm.copy()
+        cmap = plt.cm.RdBu_r.copy()
         cmap.set_bad(color="black")
 
         im = ax.imshow(
