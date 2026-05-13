@@ -18,7 +18,7 @@ step()    { echo -e "\n${BOLD}── $* ──${RESET}"; }
 
 # ── Parse arguments ───────────────────────────────────────────
 CREATE_SHORTCUT=true
-DEV_MODE=false
+DEV_MODE=true
 for arg in "$@"; do
     case "$arg" in
         --no-shortcut) CREATE_SHORTCUT=false ;;
@@ -39,10 +39,39 @@ PY_VER="3.10"
 MOSNA_PACKAGE_DIR="${SCRIPT_DIR}/mosna-package"
 GUI_SCRIPT="${SCRIPT_DIR}/GUI_MOSNA.py"
 LAUNCHER_SH="${SCRIPT_DIR}/MosnaGUI.sh"
-DESKTOP_DIR="${HOME}/Desktop"
 APP_NAME="Mosna GUI"
 ICON_FILE="${SCRIPT_DIR}/assets/logo.ico"
 
+find_desktop() {
+    # 1. Try XDG standard (covers most modern Linux DEs)
+    if command -v xdg-user-dir &>/dev/null; then
+        local xdg_desk
+        xdg_desk="$(xdg-user-dir DESKTOP 2>/dev/null || true)"
+        if [ -n "${xdg_desk}" ] && [ -d "${xdg_desk}" ]; then
+            echo "${xdg_desk}"; return
+        fi
+    fi
+    # 2. Try common names in order
+    for candidate in \
+        "${HOME}/Desktop" \
+        "${HOME}/Bureau" \
+        "${HOME}/Escritorio" \
+        "${HOME}/Schreibtisch" \
+        "${HOME}/Escritorio" \
+        "${HOME}/Bureaublad" \
+        "${HOME}/Рабочий стол" \
+        "${HOME}/桌面" \
+        "${HOME}/デスクトップ"; do
+        if [ -d "${candidate}" ]; then
+            echo "${candidate}"; return
+        fi
+    done
+    # 3. Fallback: create ~/Desktop
+    warn "No desktop directory found — using ${HOME}/Desktop"
+    mkdir -p "${HOME}/Desktop"
+    echo "${HOME}/Desktop"
+}
+DESKTOP_DIR="$(find_desktop)"
 # ── Banner ────────────────────────────────────────────────────
 echo -e "${BOLD}"
 echo "╔══════════════════════════════════════════════╗"
@@ -131,7 +160,7 @@ success "mosna-package installed."
 step "Step 3/4 — Verifying imports"
 
 python - <<'PYCHECK'
-import importlib, sys
+import importlib.util, sys
 missing = []
 for mod in ["PySide6", "yaml", "pandas", "mosna"]:
     if importlib.util.find_spec(mod) is None:
