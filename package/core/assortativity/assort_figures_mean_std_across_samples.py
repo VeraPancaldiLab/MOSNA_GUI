@@ -15,16 +15,13 @@ def assort_figures_mean_std_across_samples(net_stat, save_dir, homo_pair=False):
     assort_cols = [col for col in assort_cols if col != "assort Z"]
 
     cmap = plt.cm.RdBu_r.copy()
-    
+    cmap.set_bad(color="#888888")
     if not homo_pair:
-        col_to_remove = []
         for col in assort_cols:
             pheno1, pheno2 = col.split(' - ', maxsplit=1)
             pheno2 = pheno2[:-2]
             if pheno1 == pheno2:
-                col_to_remove.append(col)
-        assort_cols = [col for col in assort_cols if col not in col_to_remove]
-        cmap.set_bad(color="black")
+                net_stat[col] = np.nan
 
     assort = net_stat[assort_cols].copy()
     assort = assort.replace([np.inf, -np.inf], np.nan)
@@ -100,6 +97,11 @@ def assort_figures_mean_std_across_samples(net_stat, save_dir, homo_pair=False):
             mean_val = matrix_mean.loc[ct1, ct2]
             sem_val  = matrix_sem.loc[ct1, ct2]
             if np.isnan(mean_val):
+                ax.add_patch(patches.Rectangle(
+                        (j, i), 1, 1,
+                        facecolor='#888888', edgecolor='white',
+                        linewidth=0.5, zorder=2
+                    ))
                 continue
             size   = sem_to_size(sem_val)
             offset = (1 - size) / 2

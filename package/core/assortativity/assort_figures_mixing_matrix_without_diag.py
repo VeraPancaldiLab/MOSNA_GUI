@@ -55,7 +55,7 @@ def assort_figures_mixing_matrix_without_diag(net_stat, save_dir, is_sample):
                             vmax=vmax)
 
         cmap = plt.cm.RdBu_r.copy()
-        cmap.set_bad(color="black")
+        cmap.set_bad(color="#888888")
 
         im = ax.imshow(
             mat_Z.to_numpy(),
