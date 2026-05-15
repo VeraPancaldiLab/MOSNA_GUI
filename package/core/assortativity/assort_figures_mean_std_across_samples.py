@@ -117,7 +117,7 @@ def assort_figures_mean_std_across_samples(net_stat, save_dir, homo_pair=False):
     sm = cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     cbar = fig.colorbar(sm, cax=cbar_ax)
-    cbar.set_label('Mean assortativity Z (log scale)', fontsize=20)
+    cbar.set_label('Mean assortativity Z (SymLogNorm scale)', fontsize=20)
     cbar.ax.tick_params(labelsize=12)
 
     tick_candidates = []
