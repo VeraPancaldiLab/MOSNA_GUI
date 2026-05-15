@@ -14,6 +14,8 @@ def assort_figures_mean_std_across_samples(net_stat, save_dir, homo_pair=False):
     assort_cols = net_stat.columns[net_stat.columns.str.endswith(" Z")]
     assort_cols = [col for col in assort_cols if col != "assort Z"]
 
+    cmap = plt.cm.RdBu_r.copy()
+    
     if not homo_pair:
         col_to_remove = []
         for col in assort_cols:
@@ -22,6 +24,7 @@ def assort_figures_mean_std_across_samples(net_stat, save_dir, homo_pair=False):
             if pheno1 == pheno2:
                 col_to_remove.append(col)
         assort_cols = [col for col in assort_cols if col not in col_to_remove]
+        cmap.set_bad(color="black")
 
     assort = net_stat[assort_cols].copy()
     assort = assort.replace([np.inf, -np.inf], np.nan)
@@ -58,11 +61,10 @@ def assort_figures_mean_std_across_samples(net_stat, save_dir, homo_pair=False):
     if matrix_mean.notna().sum().sum() == 0:
         raise ValueError("matrix_mean est entièrement vide.")
 
-    zlim      = np.nanmax(np.abs(matrix_mean.values))
+    zlim = np.nanmax(np.abs(matrix_mean.values))
     linthresh = max(0.1, zlim * 0.05)
 
     norm = SymLogNorm(linthresh=linthresh, linscale=1, vmin=-zlim, vmax=zlim, base=10)
-    cmap = cm.RdBu_r
 
     sem_vals = matrix_sem.values.flatten()
     sem_vals = sem_vals[~np.isnan(sem_vals)]
