@@ -9,6 +9,7 @@ from package.core.assortativity.assort_figures_abundance import assort_figures_a
 from package.core.assortativity.assort_figures_heatmap import assort_figures_heatmap
 from package.core.assortativity.assort_figures_mixing_matrix import assort_figures_mixing_matrix
 from package.core.assortativity.assort_figures_mixing_matrix_without_diag import assort_figures_mixing_matrix_without_diag
+from package.core.assortativity.assort_figures_mean_std_across_samples import assort_figures_mean_std_across_samples
 
 from mosna import mosna
 
@@ -66,7 +67,8 @@ def main():
         assort_figures_heatmap(net_stat, saving_folder, True)
         assort_figures_heatmap(net_stat, saving_folder, False)
         assort_figures_abundance(net_stat, saving_folder)
-
+        assort_figures_mean_std_across_samples(net_stat, saving_folder, True)
+        assort_figures_mean_std_across_samples(net_stat, saving_folder, False)
 
 if __name__ == '__main__':
     main()

@@ -54,7 +54,7 @@ def draw_per_sample(node_file,
     
     for line in ax.lines:
         if isinstance(line, Line2D):
-            line.set_color("white")
+            line.set_color("black")
             line.set_alpha(0.8)
             line.set_linewidth(0.6)
     

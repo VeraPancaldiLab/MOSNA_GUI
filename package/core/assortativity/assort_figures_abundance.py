@@ -29,11 +29,12 @@ def assort_figures_abundance(net_stat, save_dir):
         color=colors
     )
 
-    ax.set_xlabel('Sample')
-    ax.set_ylabel('Proportion')
-    ax.set_title('Abondance relative des types cellulaires par sample')
+    ax.set_xlabel('Sample', fontsize=20)
+    ax.set_ylabel('Proportion', fontsize=20)
+    ax.set_title('Abondance relative des types cellulaires par sample', fontsize=25)
 
     handles, labels = ax.get_legend_handles_labels()
+    labels = [l[2:] for l in labels]
     ax.legend(
         handles[::-1],
         labels[::-1],
@@ -41,7 +42,7 @@ def assort_figures_abundance(net_stat, save_dir):
         bbox_to_anchor=(1.02, 1),
         loc='upper left',
         fontsize=8,
-        title_fontsize=9
+        title_fontsize=12
     )
 
     plt.xticks(rotation=45, ha='right')

@@ -6,8 +6,8 @@ BG_COLOR      = "white"
 TEXT_COLOR    = "#1a1a2e"
 TICK_COLOR    = "#2d2d2d"
 EDGE_COLOR    = "#cccccc"
-GRID_COLOR    = "#e8e8e8"
-CELL_BG_COLOR = "#f5f5f5"
+GRID_COLOR    = "#f5f5f5e4"
+CELL_BG_COLOR = "#f5f5f5e4"
 
 RCPARAMS = {
     # Fond
@@ -50,7 +50,7 @@ RCPARAMS = {
     "lines.antialiased":  True,
 
     # Figure
-    "figure.dpi":         150,
+    "figure.dpi":         300,
     "savefig.dpi":        300,
     "savefig.bbox":       "tight",
     "figure.constrained_layout.use": False,

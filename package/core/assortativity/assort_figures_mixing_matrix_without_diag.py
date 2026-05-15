@@ -27,7 +27,7 @@ def assort_figures_mixing_matrix_without_diag(net_stat, save_dir, is_sample):
         assort_df_Z = assort_df_Z.reset_index().drop(columns=['id','assort Z'])
         mat_Z = mosna.series_to_mixmat(assort_df_Z.iloc[0])
 
-        fig, ax = plt.subplots(figsize=(12, 10))
+        fig, ax = plt.subplots(figsize=(24, 15))
 
         mat_Z = mat_Z.astype(float)
         mat_Z = mat_Z.replace([np.inf, -np.inf], np.nan)
@@ -66,13 +66,13 @@ def assort_figures_mixing_matrix_without_diag(net_stat, save_dir, is_sample):
 
         ax.set_xticks(np.arange(mat_Z.shape[1]))
         ax.set_yticks(np.arange(mat_Z.shape[0]))
-        ax.set_xticklabels(mat_Z.columns, rotation=90)
+        ax.set_xticklabels(mat_Z.columns, rotation=45, ha='right')
         ax.set_yticklabels(mat_Z.index)
 
-        cbar = fig.colorbar(im, ax=ax)
-        cbar.set_label("Z-score")
+        cbar = fig.colorbar(im, ax=ax, shrink=0.8)
+        cbar.set_label("Z-score", fontsize=20)
 
-        ax.set_title(f"Z-score heatmap with a general assortativity: {assort_Z.values[0]}")
+        ax.set_title(f"Z-score heatmap with a general assortativity: {assort_Z.values[0]}", fontsize=25)
         fig.tight_layout()
 
         if is_sample is not None:

@@ -94,7 +94,19 @@ def assort_figures_heatmap(net_stat, save_dir, homo_pair=False):
     ax_dendro_col.set_yticks([])
     ax_dendro_col.set_xlabel("")
     ax_dendro_col.set_ylabel("")
-    ax_dendro_col.set_title("Images Clustering", fontsize=14)
+    ax_dendro_col.set_title("Images Clustering", fontsize=20)
+
+    n_rows = heatmap_data.shape[0]
+    n_cols = heatmap_data.shape[1]
+
+    fig_height = 24
+    fig_width = 28
+
+    max_ylabels = int(fig_height * 2.5)
+    max_xlabels = int(fig_width * 2.5)
+
+    yticklabels = heatmap_data.index.str[:-2] if n_rows <= max_ylabels else False
+    xticklabels = heatmap_data.columns if n_cols <= max_xlabels else False
 
     sns.heatmap(
         heatmap_data,
@@ -105,13 +117,13 @@ def assort_figures_heatmap(net_stat, save_dir, homo_pair=False):
         ax=ax_heat,
         cbar_ax=cbar_ax,
         cbar_kws={"label": "Z-score"},
-        yticklabels=heatmap_data.index,
-        xticklabels=heatmap_data.columns
+        yticklabels=yticklabels,
+        xticklabels=xticklabels
     )
 
-    ax_heat.set_ylabel("Assortativity Z-scores", fontsize=13)
-    ax_heat.set_xlabel("Images sample", fontsize=13)
-    ax_heat.set_title("Assortativity heatmap by images", fontsize=16)
+    ax_heat.set_ylabel("Phenotype pairs", fontsize=20)
+    ax_heat.set_xlabel("Images sample", fontsize=20)
+    ax_heat.set_title("Assortativity heatmap by images", fontsize=25)
     ax_heat.tick_params(axis="x", rotation=45, labelsize=9)
     ax_heat.tick_params(axis="y", labelsize=9)
 
@@ -135,8 +147,8 @@ def assort_figures_heatmap(net_stat, save_dir, homo_pair=False):
     n_rows = heatmap_data.shape[0]
     ax_dendro_row.set_ylim(10 * n_rows, 0)
 
-    cbar_ax.tick_params(labelsize=11)
-    cbar_ax.set_ylabel("Z-score", fontsize=13)
+    cbar_ax.tick_params(labelsize=15)
+    cbar_ax.set_ylabel("Z-score", fontsize=20)
 
     plt.tight_layout()
     if homo_pair:
