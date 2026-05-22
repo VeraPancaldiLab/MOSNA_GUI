@@ -15,7 +15,7 @@ Assortativity:
   Patient column name: patient
   Sample column name: chunk
   Extension: parquet
-  Index: cell_id
+  Index: null
   Number of shuffle: 50
   Randomization diagnostic: false
 Niche Analysis:
@@ -26,8 +26,8 @@ Niche Analysis:
   Sample column name: chunk
   Processing method: Aggregated nodes
   Niches method: NAS
-  Phenotype column: null
-  Column to aggregate: null
+  Phenotype column: phenotype
+  Column to aggregate: phenotype
   Plot Network: true
   X coordinates column for niches: null
   Y coordinates column for niches: null

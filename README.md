@@ -30,6 +30,8 @@ A graphical interface for [MOSNA](https://github.com/PancaldiLab/MOSNA) and [Tys
 
 > **Requirement:** [Miniconda](https://docs.conda.io/en/latest/miniconda.html) or Anaconda must be installed and available in your `PATH`.
 
+Carefull, you must accept all channel of Conda, create a random environement and don't proceed just to accept channel before to run the next command lines
+
 ```bash
 git clone <repo-url> MOSNA_GUI
 cd MOSNA_GUI
