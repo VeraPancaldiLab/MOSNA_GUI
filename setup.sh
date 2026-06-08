@@ -129,6 +129,7 @@ else
         -c conda-forge \
         python="${PY_VER}" \
         scanpy \
+        pip \
         "scipy==1.13" \
         pyside6 \
         pyyaml \
