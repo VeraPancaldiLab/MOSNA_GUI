@@ -148,10 +148,10 @@ step "Step 2/4 — mosna-package"
 cd "${MOSNA_PACKAGE_DIR}"
 if ${DEV_MODE}; then
     info "Installing mosna-package in editable/dev mode ..."
-    pip install -e .
+    python -m pip install -e .
 else
     info "Installing mosna-package ..."
-    pip install .
+    python -m pip install .
 fi
 cd "${SCRIPT_DIR}"
 success "mosna-package installed."
