@@ -1236,6 +1236,21 @@ class ParametersPanel(QWidget):
 
         layout.addWidget(action_bar)
 
+    # Keys that belong to each group in the niche subsection tabs
+    NICHE_REDUCTION_KEYS  = {"reducer_type", "dim_clust", "n_neighbors", "metric", "min_dist"}
+    NICHE_CLUSTERING_KEYS = {"clusterer_type", "k_cluster", "resolution", "n_clusters", "min_cluster_size"}
+    NICHE_NORM_KEYS       = {"normalize"}
+
+    NICHE_GENERAL_KEYS = {
+        "Network directory", "Saving directory", "Extension",
+        "Patient column name", "Sample column name", "Processing method",
+        "Niches method", "Phenotype column", "Column to aggregate",
+    }
+    NICHE_REPLOT_KEYS = {
+        "Plot Network", "X coordinates column for niches",
+        "Y coordinates column for niches", "CPU",
+    }
+
     def _add_section_tab(self, section, data):
         tab = QWidget()
         tab_layout = QVBoxLayout(tab)
@@ -1247,13 +1262,190 @@ class ParametersPanel(QWidget):
             if not isinstance(v, dict) and k not in self.BROWSER_KEYS
         }
         if general:
-            self._add_form(inner_tabs, "General", section, general)
+            if section == "Niche Analysis":
+                self._add_niche_general_tab(inner_tabs, section, general)
+            else:
+                self._add_form(inner_tabs, "General", section, general)
 
         for subsec, subdata in data.items():
             if isinstance(subdata, dict):
-                self._add_form(inner_tabs, subsec, f"{section}__{subsec}", subdata)
+                # Use the specialized grouped layout for Niche Analysis subsections
+                if section == "Niche Analysis" and subsec in ("Aggregated nodes", "Per sample"):
+                    self._add_niche_subsection_tab(inner_tabs, subsec, f"{section}__{subsec}", subdata)
+                else:
+                    self._add_form(inner_tabs, subsec, f"{section}__{subsec}", subdata)
 
         self.tabs.addTab(tab, section)
+
+    def _add_niche_general_tab(self, tab_widget, section_key, data):
+        """Render the Niche Analysis General tab with 2 QGroupBox blocks."""
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        inner = QWidget()
+        outer_layout = QVBoxLayout(inner)
+        outer_layout.setContentsMargins(6, 6, 6, 6)
+        outer_layout.setSpacing(10)
+
+        def add_group(group_title, keys):
+            group = QGroupBox(group_title)
+            form  = QFormLayout(group)
+            form.setSpacing(8)
+            form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            for k in keys:
+                if k not in data:
+                    continue
+                v     = data[k]
+                label = QLabel(k)
+                tip   = self.PARAM_TOOLTIPS.get(k)
+                if tip:
+                    label.setToolTip(tip)
+                    label.setText(f"{k} ⓘ")
+                    label.setObjectName("SmallInfo")
+                field = self._get_widget(k, v)
+                if tip and hasattr(field, "setToolTip"):
+                    field.setToolTip(tip)
+                form.addRow(label, field)
+                self.entries.setdefault(section_key, {})[k] = field
+            return group
+
+        general_keys = [k for k in data if k in self.NICHE_GENERAL_KEYS]
+        if general_keys:
+            outer_layout.addWidget(add_group("Niche General Parameters", general_keys))
+
+        replot_keys = [k for k in data if k in self.NICHE_REPLOT_KEYS]
+        if replot_keys:
+            outer_layout.addWidget(add_group("Replot Network with Niche Labels", replot_keys))
+
+        # any remaining keys not in either group
+        other_keys = [k for k in data if k not in self.NICHE_GENERAL_KEYS | self.NICHE_REPLOT_KEYS]
+        if other_keys:
+            outer_layout.addWidget(add_group("Other", other_keys))
+
+        outer_layout.addStretch()
+        scroll.setWidget(inner)
+        tab_widget.addTab(scroll, "General")
+
+    def _add_niche_subsection_tab(self, tab_widget, title, section_key, data):
+        """Render a niche subsection (Aggregated nodes / Per sample) with 3 QGroupBox blocks."""
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        inner = QWidget()
+        outer_layout = QVBoxLayout(inner)
+        outer_layout.setContentsMargins(6, 6, 6, 6)
+        outer_layout.setSpacing(10)
+
+        # ── helpers ──────────────────────────────────────────────────────
+        def make_group(title_grp, keys):
+            group = QGroupBox(title_grp)
+            form  = QFormLayout(group)
+            form.setSpacing(8)
+            form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            for k in keys:
+                if k not in data:
+                    continue
+                v     = data[k]
+                label = QLabel(k)
+                tip   = self.PARAM_TOOLTIPS.get(k)
+                if tip:
+                    label.setToolTip(tip)
+                    label.setText(f"{k} ⓘ")
+                    label.setObjectName("SmallInfo")
+                field = self._get_widget(k, v)
+                if tip and hasattr(field, "setToolTip"):
+                    field.setToolTip(tip)
+                form.addRow(label, field)
+                self.entries.setdefault(section_key, {})[k] = field
+            return group
+
+        # ── Reduction ────────────────────────────────────────────────────
+        reduction_keys = [k for k in data if k in self.NICHE_REDUCTION_KEYS]
+        if reduction_keys:
+            outer_layout.addWidget(make_group("Reduction", reduction_keys))
+
+        # ── Clustering ───────────────────────────────────────────────────
+        clustering_keys = [k for k in data if k in self.NICHE_CLUSTERING_KEYS]
+        if clustering_keys:
+            clust_group = QGroupBox("Clustering")
+            clust_form  = QFormLayout(clust_group)
+            clust_form.setSpacing(8)
+            clust_form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
+
+            # We need the clusterer_type widget to drive conditional enabling
+            clusterer_widget = None
+            field_map = {}   # key -> (label_widget, field_widget)
+
+            for k in clustering_keys:
+                v     = data[k]
+                label = QLabel(k)
+                tip   = self.PARAM_TOOLTIPS.get(k)
+                if tip:
+                    label.setToolTip(tip)
+                    label.setText(f"{k} ⓘ")
+                    label.setObjectName("SmallInfo")
+                field = self._get_widget(k, v)
+                if tip and hasattr(field, "setToolTip"):
+                    field.setToolTip(tip)
+                clust_form.addRow(label, field)
+                self.entries.setdefault(section_key, {})[k] = field
+                field_map[k] = (label, field)
+                if k == "clusterer_type":
+                    clusterer_widget = field
+
+            outer_layout.addWidget(clust_group)
+
+            # Conditional enabling: resolution ↔ leiden
+            #                       n_clusters   ↔ gmm | spectral
+            #                       min_cluster_size ↔ hdbscan
+            def update_clustering_fields():
+                if clusterer_widget is None:
+                    return
+                ct = clusterer_widget.currentText() if isinstance(clusterer_widget, QComboBox) else ""
+                for param, activators in [
+                    ("resolution",       {"leiden"}),
+                    ("n_clusters",       {"gmm", "spectral"}),
+                    ("min_cluster_size", {"hdbscan"}),
+                ]:
+                    if param in field_map:
+                        lbl, fld = field_map[param]
+                        enabled = ct in activators
+                        lbl.setEnabled(enabled)
+                        fld.setEnabled(enabled)
+
+            if clusterer_widget is not None and isinstance(clusterer_widget, QComboBox):
+                clusterer_widget.currentIndexChanged.connect(update_clustering_fields)
+                update_clustering_fields()   # apply initial state
+
+        # ── Niche Normalisation ──────────────────────────────────────────
+        norm_keys = [k for k in data if k in self.NICHE_NORM_KEYS]
+        if norm_keys:
+            outer_layout.addWidget(make_group("Niche Normalisation", norm_keys))
+
+        # remaining keys not in any of the three groups
+        other_keys = [k for k in data if k not in
+                      self.NICHE_REDUCTION_KEYS | self.NICHE_CLUSTERING_KEYS | self.NICHE_NORM_KEYS]
+        if other_keys:
+            other_group = QGroupBox("Other")
+            other_form  = QFormLayout(other_group)
+            other_form.setSpacing(8)
+            other_form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            for k in other_keys:
+                v     = data[k]
+                label = QLabel(k)
+                tip   = self.PARAM_TOOLTIPS.get(k)
+                if tip:
+                    label.setToolTip(tip)
+                    label.setText(f"{k} ⓘ")
+                    label.setObjectName("SmallInfo")
+                field = self._get_widget(k, v)
+                if tip and hasattr(field, "setToolTip"):
+                    field.setToolTip(tip)
+                other_form.addRow(label, field)
+                self.entries.setdefault(section_key, {})[k] = field
+            outer_layout.addWidget(other_group)
+
+        outer_layout.addStretch()
+        scroll.setWidget(inner)
+        tab_widget.addTab(scroll, title)
 
     # Tooltips shown on parameter labels (ⓘ hover)
     PARAM_TOOLTIPS = {

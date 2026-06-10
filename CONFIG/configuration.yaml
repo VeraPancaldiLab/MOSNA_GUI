@@ -36,29 +36,29 @@ Niche Analysis:
     order: '1'
     stat_funcs: np.mean,np.std
     stat_names: [mean, std]
-    clusterer_type: gmm
-    n_clusters: 7
     reducer_type: umap
-    metric: cosine
-    resolution: 0.05
-    n_neighbors: 20
-    min_dist: 0.0
     dim_clust: 3
-    min_cluster_size: 100
+    n_neighbors: 20
+    metric: cosine
+    min_dist: 0.0
+    clusterer_type: gmm
     k_cluster: 20
+    n_clusters: 7
+    resolution: 0.05
+    min_cluster_size: 100
     normalize: all
   Per sample:
     order: '1'
     stat_funcs: np.mean,np.std
     stat_names: [mean, std]
-    clusterer_type: gmm
-    n_clusters: 6
     reducer_type: umap
-    metric: cosine
-    resolution: 0.001
-    n_neighbors: 50
-    min_dist: 0.0
     dim_clust: 3
-    min_cluster_size: 1
+    n_neighbors: 20
+    metric: cosine
+    min_dist: 0.0
+    clusterer_type: gmm
     k_cluster: 20
+    n_clusters: 7
+    resolution: 0.05
+    min_cluster_size: 100
     normalize: all
