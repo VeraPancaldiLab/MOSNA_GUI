@@ -4723,7 +4723,7 @@ def plot_clusters(embed_viz,
                 labels, handles = zip(*sorted(zip(labels, handles), key=lambda t: t[0]))
                 ax.legend(handles, labels, **legend_opt)
     else:
-        plt.scatter(embed_viz[:, 0], embed_viz[:, 1], c=cluster_colors, marker='.');
+        plt.scatter(embed_viz[:, 0], embed_viz[:, 1], c=cluster_colors, marker='.')
     plt.axis('off')
     if aspect == 'equal':
         ax.set_aspect('equal')

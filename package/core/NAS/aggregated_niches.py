@@ -3,6 +3,7 @@ from mosna import mosna
 from package.utils.emit_qt_progress import emit_qt_progress, emit_qt_info
 from package.core.NAS.merge_niche_pheno import merge_niche_pheno
 from package.core.NAS.mosna_figures import mosna_figures
+from package.core.NAS.plot_embedding import plot_embedding
 
 def aggregated_niches(method, net_dir, save_dir, temp_dir ,attributes_col, pheno_col, uniq_pheno, stat_funcs, stat_names, id_level_1, id_level_2, 
                      reducer_type, clusterer_type, n_neighbors, metric, n_clusters, resolution, min_dist, dim_clust, 
@@ -39,7 +40,7 @@ def aggregated_niches(method, net_dir, save_dir, temp_dir ,attributes_col, pheno
     emit_qt_progress(1,3, "[PROCESS] Niches Analysis")
 
     emit_qt_info("[PROCESS] Reduction and Clustering of Spatial Niches")
-    cluster_labels, _, _, _ = mosna.get_clusterer(
+    cluster_labels, clusterer_dir, _, _ = mosna.get_clusterer(
         data=var_aggreg.values,
         data_dir=save_dir,
         reducer_type=reducer_type,
@@ -57,6 +58,10 @@ def aggregated_niches(method, net_dir, save_dir, temp_dir ,attributes_col, pheno
     )
     emit_qt_progress(2,3, "[PROCESS] Niches Analysis")
 
+    plot_embedding(clusterer_dir.parent / "embedding.npy", cluster_labels, save_dir, {"reducer_type" : reducer_type,
+                                                                                      "metric" : metric,
+                                                                                      "n_neighbors" : n_neighbors,
+                                                                                      "min_dist" : min_dist})
     cell_types = merge_niche_pheno(net_dir, pheno_col, cluster_labels)
 
     emit_qt_info("[PROCESS] Generate Niches Composition")

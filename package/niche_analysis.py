@@ -114,13 +114,9 @@ def main():
 
         emit_qt_info('[INFO] Niches found for aggregated nodes')
 
-        for path in save_dir.glob("reducer-umap*"):
-            if path.is_dir():
-                shutil.rmtree(path)
         save_config(save_dir, config)
 
         X, Y = config['X coordinates column for niches'], config['Y coordinates column for niches']
-        
         if X is not None and Y is not None and config['Plot Network']:
             
             c_map = generate_cmap(net_dir, 'niches', 'parquet', kwargs['id_level_1'], kwargs['id_level_2'])
@@ -212,9 +208,6 @@ def main():
 
             niches_per_sample(**kwargs)
 
-            for path in save_dir_sample.glob("reducer-umap*"):
-                if path.is_dir():
-                    shutil.rmtree(path)
             save_config(save_dir_sample, config)
 
             X, Y = config['X coordinates column for niches'], config['Y coordinates column for niches']
