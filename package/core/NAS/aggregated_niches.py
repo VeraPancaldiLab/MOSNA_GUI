@@ -4,6 +4,8 @@ from package.utils.emit_qt_progress import emit_qt_progress, emit_qt_info
 from package.core.NAS.merge_niche_pheno import merge_niche_pheno
 from package.core.NAS.mosna_figures import mosna_figures
 from package.core.NAS.plot_embedding import plot_embedding
+from package.utils.find_sample_from_file import find_sample_from_file
+from package.utils.find_sample import find_sample
 
 def aggregated_niches(method, net_dir, save_dir, temp_dir ,attributes_col, pheno_col, uniq_pheno, stat_funcs, stat_names, id_level_1, id_level_2, 
                      reducer_type, clusterer_type, n_neighbors, metric, n_clusters, resolution, min_dist, dim_clust, 
@@ -62,8 +64,31 @@ def aggregated_niches(method, net_dir, save_dir, temp_dir ,attributes_col, pheno
                                                                                       "metric" : metric,
                                                                                       "n_neighbors" : n_neighbors,
                                                                                       "min_dist" : min_dist})
-    cell_types = merge_niche_pheno(net_dir, pheno_col, cluster_labels)
+    #cell_types = merge_niche_pheno(net_dir, pheno_col, cluster_labels)
 
+    files = find_sample(net_dir, "parquet", id_level_1, id_level_2)
+    frames = []
+    for f in files:
+        df = pd.read_parquet(f, columns=['cell_id', pheno_col])
+        patient, sample = find_sample_from_file(f, id_level_1, id_level_2)
+        df[id_level_1] = patient
+        df[id_level_2] = int(sample)   # voir piège ci-dessous
+        frames.append(df)
+    cohort_data = pd.concat(frames, ignore_index=True)
+
+    var_aggreg_samples_info = var_aggreg[[id_level_1, id_level_2]]
+
+    cell_types = mosna.aggregate_cell_types(
+        var_aggreg_samples_info=var_aggreg_samples_info,
+        cohort_data=cohort_data,
+        pheno_col=pheno_col,
+        patient_col=id_level_1,
+        sample_col=id_level_2,
+        nodes_dir=save_dir,
+        file_name='cell_types.npy',
+        save_data=True,
+        force_recompute=False,
+    )
     emit_qt_info("[PROCESS] Generate Niches Composition")
     if normalize == 'all':
         for normalization in ['total', 'niche', 'obs', 'clr', 'niche&obs']:
