@@ -43,7 +43,6 @@ Options:
 | Flag | Effect |
 |---|---|
 | `--no-shortcut` | Skip desktop launcher creation |
-| `--dev` | Install `mosna-package` in editable mode (`pip install -e`) |
 
 The script will:
 1. Create a `mosna-GUI` conda environment (Python 3.10)
@@ -73,7 +72,6 @@ The installer will:
 |---|---|
 | Linux / macOS | `bash MosnaGUI.sh` or double-click the Desktop shortcut |
 | Windows | Double-click `MosnaGUI.bat` or the Desktop shortcut |
-| Any (manual) | `conda activate mosna-GUI && python GUI_MOSNA.py` |
 
 ---
 
@@ -133,6 +131,8 @@ Your input files must be CSV or Parquet tables following this structure:
 |--------|---------|--------|------------|------------|-----------|
 | c001   | pt-01   | s1     | 120.3      | 84.7       | CD8_T     |
 | …      | …       | …      | …          | …          | …         |
+
+patient and sample is not needed and also you can add other attributes likes marker intensities
 
 File naming convention expected by the tool:
 
