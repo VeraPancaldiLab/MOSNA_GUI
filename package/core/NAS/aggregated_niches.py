@@ -72,7 +72,7 @@ def aggregated_niches(method, net_dir, save_dir, temp_dir ,attributes_col, pheno
         df = pd.read_parquet(f, columns=['cell_id', pheno_col])
         patient, sample = find_sample_from_file(f, id_level_1, id_level_2)
         df[id_level_1] = patient
-        df[id_level_2] = int(sample)   # voir piège ci-dessous
+        df[id_level_2] = sample
         frames.append(df)
     cohort_data = pd.concat(frames, ignore_index=True)
 
