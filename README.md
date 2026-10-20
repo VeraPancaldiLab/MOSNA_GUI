@@ -31,7 +31,7 @@ runs unchanged:
 | Step | Done by | Started from |
 |---|---|---|
 | 1 — spatial networks | [Tysserand](https://github.com/PancaldiLab/tysserand) | `package/tysserand_network.py` |
-| 2 — assortativity | [MOSNA]([https://github.com/PancaldiLab/MOSNA](https://github.com/AlexCoul/mosna) | `package/assortativity.py` |
+| 2 — assortativity | [MOSNA](https://github.com/AlexCoul/mosna) | `package/assortativity.py` |
 | 3 — niche analysis | MOSNA | `package/niche_analysis.py` |
 
 The interface (`crates/mosna-gui`) edits the configuration and starts each step
