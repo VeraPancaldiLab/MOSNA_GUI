@@ -1,33 +1,33 @@
 Tysserand:
-  Nodes directory: /home/owen.griere/Desktop/Xenium_analysis/nodes_mapped/mes_chunks_4/nodes
+  Nodes directory: /home/owen.griere/Desktop/tanmoy_networks/data
   Patient column name: patient
   Sample column name: sample
-  Extension: parquet
-  X coordinates column: null
-  Y coordinates column: null
-  Phenotype column: null
+  Extension: csv
+  X coordinates column: x
+  Y coordinates column: 'y'
+  Phenotype column: infected
   Edges method: delaunay
   Min neighbors: 3
   CPU: 20
 Assortativity:
-  Network directory: /home/owen.griere/Desktop/IMC-IF_Pierre/temp/mIF_C1
-  Phenotype column: null
+  Network directory: Default
+  Phenotype column: infected
   Patient column name: patient
   Sample column name: sample
-  Extension: parquet
+  Extension: csv
   Index: index
   Number of shuffle: 50
   Randomization diagnostic: false
 Niche Analysis:
-  Network directory: /home/owen.griere/Desktop/IMC-IF_Pierre/temp/mIF_C1
+  Network directory: Default
   Saving directory: niche_marker
-  Extension: parquet
+  Extension: csv
   Patient column name: patient
   Sample column name: sample
   Processing method: Aggregated nodes
   Niches method: NAS
-  Phenotype column: Cluster
-  Column to aggregate: [CD206, CD163, CD68, CD16]
+  Phenotype column: null
+  Column to aggregate: null
   Plot Network: false
   X coordinates column for niches: null
   Y coordinates column for niches: null
